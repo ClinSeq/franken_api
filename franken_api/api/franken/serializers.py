@@ -1,5 +1,5 @@
 from flask_restplus import fields
-from flanken_api.api.restplus import api
+from franken_api.api.restplus import api
 
 status_result = api.model('server status', {'server_status': fields.Boolean(default=False, required=True)})
 

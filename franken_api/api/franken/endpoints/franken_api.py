@@ -2,21 +2,21 @@ import logging
 from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
 from flask_restplus import Resource
-#from flanken_api.api.flanken.serializers import search_result
-from flanken_api.api.flanken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, igv_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments
-from flanken_api.api.restplus import api
+#from franken_api.api.franken.serializers import search_result
+from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, igv_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments
+from franken_api.api.restplus import api
 from flask import jsonify
-from flanken_api.api.flanken.business import pdfs_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header
-from flanken_api.api.flanken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
+from franken_api.api.franken.business import pdfs_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header
+from franken_api.api.franken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
 import io
-#import  flanken_api.database.models 
+#import  franken_api.database.models
 log = logging.getLogger(__name__)
-ns = api.namespace('flanken', description='Interactive Flanken Plots')
+ns = api.namespace('franken', description='Interactive franken Plots')
 
 @ns.route('/')
 @api.response(200, 'Status of API')
 @api.response(400, '/nfs is not mount locally')
-class FlankenStatus(Resource):
+class frankenStatus(Resource):
     @api.expect(project_arguments, validate=True)
     @api.marshal_with(status_result)
     def get(self):
@@ -116,13 +116,13 @@ class FrankenStaticImages(Resource):
 @ns.route('/plot')
 @api.response(200, 'Json file to plot')
 @api.response(400, 'sample or json file not found')
-class FlankenPlot(Resource):
+class frankenPlot(Resource):
     @api.expect(search_arguments, validate=True)
     def get(self):
         """
         Returns Json file to plot.
         ```
-        Json data to plot the flanken plots
+        Json data to plot the franken plots
         ```
         """
         args = search_arguments.parse_args()

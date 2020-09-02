@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='flanken_api',
+    name='franken_api',
     version='1.0.0',
     description='Json file to plot franken plots',
     url='',
@@ -18,9 +18,10 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        
     ],
 
-    keywords='Flanken, Plots, Plotly, Json',
+    keywords='franken, Plots, Plotly, Json',
 
     packages=find_packages(),
 
@@ -28,7 +29,7 @@ setup(
 
     entry_points={
         'console_scripts': [
-            'flanken_api = flanken_api.app:main'
+            'franken_api = franken_api.app:main'
         ]
     }
 )

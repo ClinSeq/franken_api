@@ -1,14 +1,14 @@
-from flanken_api.database import db
-from flanken_api.database.models import ProbioBloodReferral as probio
-from flanken_api.database.models import PSFFBloodReferral as psff
-from flanken_api.database.models import TableIgvGermline as igv_germline_table
-from flanken_api.database.models import TableIgvSomatic as igv_somatic_table
-from flanken_api.database.models import TableSVS as svs_table
+from franken_api.database import db
+from franken_api.database.models import ProbioBloodReferral as probio
+from franken_api.database.models import PSFFBloodReferral as psff
+from franken_api.database.models import TableIgvGermline as igv_germline_table
+from franken_api.database.models import TableIgvSomatic as igv_somatic_table
+from franken_api.database.models import TableSVS as svs_table
 from sqlalchemy import and_
 import os, io
-#from flanken_api.settings import MOUNT_POINT
+#from franken_api.settings import MOUNT_POINT
 from flask import current_app
-from flanken_api.util_notfound import Not_found
+from franken_api.util_notfound import Not_found
 import json
 import csv
 import re
@@ -16,6 +16,7 @@ import ast
 from flask import jsonify
 import subprocess
 from collections import OrderedDict
+import pandas as pd
 
 def run_cmd(cmd):
     "Run external commands"
@@ -64,8 +65,8 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
     status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
     if status:
         for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
-            #temp_url_list.append('http://localhost:5000/api/flanken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
-            temp_url_list.append('http://' + ip_addr + ':5000/api/flanken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
+            #temp_url_list.append('http://localhost:5000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
+            temp_url_list.append('http://' + ip_addr + ':5000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
 
         if len(temp_url_list) > 0:
             return {'image_url': temp_url_list, 'status': True}, 200
@@ -165,6 +166,33 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
                             os.listdir(file_path)))[0]
     data = []
     if os.path.exists(file_path):
+        df = pd.read_csv(file_path,delimiter="\t", header=0)
+        column_list = list(df.columns)
+        
+        # Dataframe soted based on the below columns
+        df_sorted = df.sort_values(["GENE_A-GENE_B-sorted","CHROM_A","START_A","CHROM_B","START_B","TOOL","SUPPORT_READS"], ascending = (True,False,False,False,False,False,False))
+        df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES')]
+        
+        result = df_filter.to_json(orient="records")
+        data = json.loads(result)
+        
+        header = list(generate_headers_ngx_table(column_list))
+        
+        #Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
+        new_keys = {
+            'CALL': {'key': 'CALL', 'title': 'CALL'},
+            'TYPE': {'key': 'TYPE', 'title': 'TYPE'},
+            'SECONDHIT': {'key': 'SECONDHIT', 'title': 'SECONDHIT'},
+            'COMMENT': {'key': 'COMMENT', 'title': 'COMMENT'}
+        }
+        for each_new_key in new_keys:
+            if each_new_key not in header:
+                header.insert(0, new_keys[each_new_key])
+
+        return {'header': header, 'data': data, 'filename': file_path, 'status': True}, 200
+
+        #====== Start : Old code for structural variant ===========#
+        '''
         with open(file_path, 'r') as f:
             reader_ponter = csv.DictReader(f, delimiter ='\t')
             #for each_row in reader_ponter:
@@ -194,6 +222,8 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
              #               {'key': 'COMMENT', 'title': 'COMMENT'}] + header
 
             return {'header': header, 'data': data, 'filename': file_path, 'status': True}, 200
+        '''
+        #====== End : Old code for structural variant ===========#
 
     else:
         return {'header': [], 'data': [], 'filename': '', 'status': False}, 400

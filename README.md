@@ -4,7 +4,7 @@ Franken Plot  API
 - Instal
     --
 ``` 
-    - cd flanken_api
+    - cd franken_api
     - python setup.py  install
     - pip install -r requirements.txt
     - pip install .
@@ -12,7 +12,7 @@ Franken Plot  API
  - Run application
     --
 ```
-    - flanken_api -p 8090
+    - franken_api -p 8090
 ```
 
 - Run DB Migration script:
@@ -28,7 +28,7 @@ GRANT ALL PRIVILEGES ON DATABASE referrals TO referral_writer;
 GRANT ALL PRIVILEGES ON DATABASE curation TO referral_writer;
 exit
 
-python flanken_api/migrate.py db init --multidb
-python flanken_api/migrate.py db migrate
-python flanken_api/migrate.py db upgrade
+python franken_api/migrate.py db init --multidb
+python franken_api/migrate.py db migrate
+python franken_api/migrate.py db upgrade
 ```

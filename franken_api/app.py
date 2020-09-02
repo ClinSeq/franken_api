@@ -2,14 +2,12 @@ import logging.config
 import click
 from flask import Flask, Blueprint
 
-from flanken_api import settings
-from flanken_api.api.flanken.endpoints.flanken_api import ns as flanken_namespace
-from flanken_api.api.flanken.endpoints.referral_db_api import ns2 as referral_namespace
-from flanken_api.api.flanken.endpoints.curation_db_api import ns3 as curation_namespace
-from flanken_api.api.restplus import api
-from flanken_api.database import db
-from flask_migrate import Migrate, MigrateCommand
-from flask_script import Manager
+from franken_api import settings
+from franken_api.api.franken.endpoints.franken_api import ns as franken_namespace
+from franken_api.api.franken.endpoints.referral_db_api import ns2 as referral_namespace
+from franken_api.api.franken.endpoints.curation_db_api import ns3 as curation_namespace
+from franken_api.api.restplus import api
+from franken_api.database import db
 
 def configure_app(flask_app):
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
@@ -26,7 +24,7 @@ def initialize_app(flask_app):
     configure_app(flask_app)
     blueprint = Blueprint('api', __name__, url_prefix='/api')
     api.init_app(blueprint)
-    api.add_namespace(flanken_namespace)
+    api.add_namespace(franken_namespace)
     api.add_namespace(referral_namespace)
     api.add_namespace(curation_namespace)
     flask_app.register_blueprint(blueprint)
@@ -34,11 +32,10 @@ def initialize_app(flask_app):
 
 
 app = Flask(__name__)
-initialize_app(app)
-migrate = Migrate(app, db)
-manager = Manager(app)
 
-manager.add_command('db', MigrateCommand)
-
-if __name__ == '__main__':
-    manager.run()
+@click.command()
+@click.option('-p', '--port', type=int, default=5000)
+def main(port):
+    initialize_app(app)
+    logging.info('>>>>> Starting development server at http://{}/api/ <<<<<'.format('localhost'))
+    app.run(debug=settings.FLASK_DEBUG, port=port, host='0.0.0.0')

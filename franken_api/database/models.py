@@ -1,4 +1,4 @@
-from flanken_api.database import db as pssql
+from franken_api.database import db as pssql
 
 
 class ProbioBloodReferral(pssql.Model):
