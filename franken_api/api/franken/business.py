@@ -61,7 +61,7 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
     file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/'
     temp_url_list = []
     ip_addr = run_cmd('hostname -I').split(' ')[0]
-    ip_addr = 'localhost' #its a temparry fix for local forwarding........................................................................
+    #ip_addr = 'localhost' #its a temparry fix for local forwarding........................................................................
     status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
     if status:
         for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
@@ -110,7 +110,7 @@ def generate_headers_table_sv(headers):
 def generate_headers_ngx_table(headers):
     columns= []
     for each_head in headers:
-          columns.append({ 'key': each_head ,'title':each_head})
+          columns.append({ 'key': each_head,'title':each_head.upper()})
     return columns
 
 
@@ -135,8 +135,8 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
                 'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
                 'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
                 'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
-                'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
-                'Comment': {'key': 'Comment', 'title': 'Comment'}
+                'OVERALL QC': {'key': 'OVERALL QC', 'title': 'OVERALL QC'},
+                'COMMENT': {'key': 'COMMENT', 'title': 'COMMENT'}
             }
 
             for each_new_key in new_keys:
@@ -159,7 +159,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
     "read structural variant file from sdid_annotate_combined_SV.txt and return as json"
     file_path = project_path + '/' + sdid + '/' + capture_id + '/svs/igv/'
 
-    file_path = file_path + list(filter(lambda x: (re.match('[-\w]+-CFDNA-[A-Za-z0-9-]+-sv-annotated.txt', x) or
+    file_path = file_path + list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt', x) or
                                        x.endswith('_annotate_combined_SV.txt'))
                                       and not x.startswith('.')
                                       and not x.endswith('.out'),
@@ -237,10 +237,10 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
 
     if variant_type == 'germline':
-        regex = '^(?:(?!CFDNA).)*igvnav-input.txt$'
+        regex = '^(?:(?!(CFDNA|T)).)*igvnav-input.txt$'
     elif variant_type == 'somatic':
         missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
-        regex = '.*-CFDNA-.*igvnav-input.txt$'
+        regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
     else:
         missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
         return {'header': {}, 'data': [], 'status': False, 'error': 'unknown variant type: ' + variant_type}, 400
@@ -351,7 +351,7 @@ def pdfs_files(variant_type, project_path, sdid, capture_id):
         return '', 400
 
     file_path = project_path + '/' + sdid + '/' + capture_id + '/' + variant_type + '/'
-    pdf_file = list(filter(lambda x: (re.match('[-\w]+-CFDNA-[A-Za-z0-9-]+.pdf', x) or x.endswith('.qc_overview.pdf')) and not x.startswith('.') and not x.endswith('.out'),
+    pdf_file = list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.pdf', x) or x.endswith('.qc_overview.pdf')) and not x.startswith('.') and not x.endswith('.out'),
                                os.listdir(file_path)))[0]
     if os.path.exists(file_path):
         file_path = file_path + '/' + pdf_file
@@ -475,11 +475,11 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
     data = []
     file_path = project_path + '/' + sdid + '/' + capture_id + '/' + 'cnv/'
     if variant_type == 'somatic':
-        regex = '[-\w]+-CFDNA-[A-Za-z0-9-]+.cns'
+        regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns'
         set_save_file = '_somatic_curated.cns'
     elif variant_type == 'germline':
         #regex = '^(?:(?!CFDNA).)*.cns$'
-        regex = '^(?:(?!(CFDNA|germline_curated)).)*.cns$'
+        regex = '^(?:(?!(CFDNA|germline_curated|T)).)*.cns$'
         set_save_file = '_germline_curated.cns'
     else:
         return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400
