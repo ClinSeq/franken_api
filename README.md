@@ -1,7 +1,7 @@
 Franken Plot  API
 =============
 
-- Instal
+- Install
     --
 ``` 
     - cd franken_api

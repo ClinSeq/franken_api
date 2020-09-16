@@ -18,6 +18,35 @@ import subprocess
 from collections import OrderedDict
 import pandas as pd
 
+
+# check the string contains special character or not 
+def check_special_char(seq_str):
+    result = any(not c.isalnum() for c in seq_str)
+    return result
+
+# split the sequence into three letter and convert into one letter
+def get_three_to_one_amino_code(code_seq):
+    amino_code_dict = {'CYS': 'C', 'ASP': 'D', 'SER': 'S', 'GLN': 'Q', 'LYS': 'K',
+     'ILE': 'I', 'PRO': 'P', 'THR': 'T', 'PHE': 'F', 'ASN': 'N', 
+     'GLY': 'G', 'HIS': 'H', 'LEU': 'L', 'ARG': 'R', 'TRP': 'W', 
+     'ALA': 'A', 'VAL':'V', 'GLU': 'E', 'TYR': 'Y', 'MET': 'M'}
+
+    one_code_res = ''
+    
+    # split the code based on digit and special character
+    three_code = re.split('([0-9]+|[a-zA-Z \s\n\.]+)', code_seq)
+    three_code = [i for i in three_code if i]
+    
+    for c in three_code:
+        validate_seq = check_special_char(c)
+        if(not validate_seq):
+            if not c.isdigit() and c.upper() in amino_code_dict:
+                code = amino_code_dict[c.upper()]
+                c = code
+        one_code_res = one_code_res + c
+    
+    return one_code_res
+    
 def run_cmd(cmd):
     "Run external commands"
     return subprocess.check_output(cmd, shell=True).decode('utf-8')
@@ -131,24 +160,20 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
                 each_row['indexs'] = i
                 data.append(each_row)
             header = list(generate_headers_ngx_table(data[0].keys()))
+
             new_keys = {
                 'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
                 'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
                 'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
-                'OVERALL QC': {'key': 'OVERALL QC', 'title': 'OVERALL QC'},
-                'COMMENT': {'key': 'COMMENT', 'title': 'COMMENT'}
+                'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
+                'Comment': {'key': 'Comment', 'title': 'Comment'}
             }
 
-            for each_new_key in new_keys:
-                if each_new_key not in header:
-                    #header.insert(0, new_keys[each_new_key])
-                    header.append(new_keys[each_new_key])
+            for idx,value in enumerate(new_keys):
+                n_key = [item for item in header if item.get('key')==value]
+                if(not n_key):
+                    header.append(new_keys[value])  
 
-            #if not any(list(map(lambda x : x in ['PURITY', 'PLOIDY', 'CHIP'], data[0].keys()))):
-             #   header = [ {'key': 'PURITY', 'title': 'PURITY'},
-             #              {'key': 'PLOIDY', 'title': 'PLOIDY'},
-              #             {'key': 'CHIP', 'title': 'CHIP'}
-              #        ] + header
             return {'header': header, 'data': data, 'filename': qc_filename, 'status': True}, 200
 
     else:
@@ -166,13 +191,19 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
                             os.listdir(file_path)))[0]
     data = []
     if os.path.exists(file_path):
-        df = pd.read_csv(file_path,delimiter="\t", header=0)
-        column_list = list(df.columns)
         
+        df = pd.read_csv(file_path,delimiter="\t")
+       
         # Dataframe soted based on the below columns
         df_sorted = df.sort_values(["GENE_A-GENE_B-sorted","CHROM_A","START_A","CHROM_B","START_B","TOOL","SUPPORT_READS"], ascending = (True,False,False,False,False,False,False))
         df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES')]
         
+        # Add Index column in the dataframe
+        if 'indexs' not in df_filter.columns:
+            df_filter['indexs'] = df_filter.index
+
+        column_list = list(df_filter.columns)
+
         result = df_filter.to_json(orient="records")
         data = json.loads(result)
         
@@ -190,7 +221,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
                 header.insert(0, new_keys[each_new_key])
 
         return {'header': header, 'data': data, 'filename': file_path, 'status': True}, 200
-
+        
         #====== Start : Old code for structural variant ===========#
         '''
         with open(file_path, 'r') as f:
@@ -222,11 +253,12 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
              #               {'key': 'COMMENT', 'title': 'COMMENT'}] + header
 
             return {'header': header, 'data': data, 'filename': file_path, 'status': True}, 200
-        '''
+            '''
         #====== End : Old code for structural variant ===========#
 
     else:
         return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
+
 
 def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
     "read  variant file for given sdid and return as json"
@@ -256,6 +288,9 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
             for i, each_row in enumerate(reader_pointer):
                 each_row = dict(each_row)
                 each_row['indexs'] = i
+                if each_row['HGVSp']:
+                    one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
+                    each_row['HGVSp'] = one_amino_code
                 if None in each_row:
                     if isinstance(each_row[None], list):
                         for i, each_none in enumerate(each_row[None]):
@@ -267,6 +302,15 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
         #header = generate_headers_table_sv(data[0].keys())
         header = generate_headers_ngx_table(data[0].keys())
+
+        if variant_type == 'somatic':
+            new_keys = {
+                'HOTSPOT': {'key': 'HOTSPOT', 'title': 'HOTSPOT'}
+            }
+            for each_new_key in new_keys:
+                if each_new_key not in header:
+                    header.insert(11, new_keys[each_new_key])
+                
         return {'header': header, 'data': data, 'filename' : igv_nav_file, 'status': True}, 200
 
     except Exception as e:
@@ -508,8 +552,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 each_row = dict(each_row)
                 each_row['indexs'] = i
                 data.append(each_row)
-            # set gene column to end
-            # header = data[0].keys()
+
             header = list(data[0])
             #compute size for cnv using start and end
             if 'SIZE' not in header:
@@ -519,31 +562,40 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                     size = int(data_dict['end']) - int(data_dict['start']) + 1
                     data_dict['SIZE'] = str(size)
 
+            acn_key = 'ABSOLUTE_COPY_NUMBER'
+            ass_key = 'ASSESSMENT'
+            com_key = 'COMMENT'
+
+            if acn_key in header:
+                acn_indx = header.index(acn_key)
+                del header[acn_indx]
+                header.insert(0,acn_key)
+
+            if ass_key in header:
+                ass_indx = header.index(ass_key)
+                del header[ass_indx]
+                header.insert(0,ass_key)
+
+            if com_key in header:
+                com_indx = header.index(com_key)
+                del header[com_indx]
+                header.insert(0,com_key)
+            
             del header[header.index('gene')]
             header.append('gene')
             header = generate_headers_ngx_table(header)
+
             new_keys = {
-               'ABSOLUTE_COPY_NUMBER': {'key': 'ABSOLUTE_COPY_NUMBER', 'title': 'ABSOLUTE_COPY_NUMBER'},
-               'ASSESSMENT': {'key': 'ASSESSMENT', 'title': 'ASSESSMENT'},
-               'COMMENT':  {'key': 'COMMENT', 'title': 'COMMENT'}
+               acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
+               ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
+               com_key :  {'key': com_key, 'title': 'COMMENT'}
             }
 
-            #compute size for cnv using start and end
-            #if not 'size'
-            #start_index = header.index('size')
-            #end_index = header.index('end')
-            #for data_array in data:
-            #    size = data_array[end_index] - data_array[start_index]
+            for idx,value in enumerate(new_keys):
+                n_key = [item for item in header if item.get('key')==value]
+                if(not n_key):
+                    header.insert(0, new_keys[value])
 
-
-            for each_new_key in new_keys:
-                if each_new_key not in header:
-                    header.insert(0, new_keys[each_new_key])
-
-            #if not any(list(map(lambda x : x in ['ABSOLUTE_COPY_NUMBER', 'ASSESSMENT', 'COMMENT'], data[0].keys()))):
-            #    header = [ {'key': 'ASSESSMENT', 'title': 'ASSESSMENT'},
-            #               {'key': 'COMMENT', 'title': 'COMMENT'}
-            #          ] + header
             return {'header': header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
 
     else:
