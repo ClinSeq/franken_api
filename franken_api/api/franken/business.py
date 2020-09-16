@@ -288,7 +288,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
             for i, each_row in enumerate(reader_pointer):
                 each_row = dict(each_row)
                 each_row['indexs'] = i
-                if each_row['HGVSp']:
+                if if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
                     one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
                     each_row['HGVSp'] = one_amino_code
                 if None in each_row:
