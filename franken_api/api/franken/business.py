@@ -115,7 +115,6 @@ def get_static_image(project_path, sample_id, capture_id, image_name):
 def get_interactive_plot(project_path, sample_id, capture_id, plotname):
     'retrun the json files to plot interative frankenplots'
     file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/'
-    print(file_path)
     status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
     if status:
         for each_file in filter(lambda x: x.endswith('_' + plotname + '.json'),
@@ -139,7 +138,7 @@ def generate_headers_table_sv(headers):
 def generate_headers_ngx_table(headers):
     columns= []
     for each_head in headers:
-          columns.append({ 'key': each_head,'title':each_head.upper()})
+          columns.append({ 'key': each_head,'title':each_head.upper().replace("_"," ")})
     return columns
 
 
@@ -282,15 +281,14 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
         igv_nav_file = file_path + '/' + igv_nav_file
         with open(igv_nav_file, 'r') as f:
             reader_pointer = csv.DictReader(f, delimiter='\t')
-            #for each_row in reader_pointer:
-            #   each_row = dict(each_row)
-            #    print(each_row)
             for i, each_row in enumerate(reader_pointer):
                 each_row = dict(each_row)
                 each_row['indexs'] = i
                 if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
                     one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
                     each_row['HGVSp'] = one_amino_code
+                consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
+                each_row['CONSEQUENCE'] = consequence
                 if None in each_row:
                     if isinstance(each_row[None], list):
                         for i, each_none in enumerate(each_row[None]):
@@ -551,6 +549,10 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
             for i, each_row in enumerate(reader_ponter):
                 each_row = dict(each_row)
                 each_row['indexs'] = i
+                gene_list = each_row['gene'].split(",")
+                glist = []
+                [glist.append(x) for x in gene_list if x not in glist]
+                each_row['gene'] = ', '.join(glist)
                 data.append(each_row)
 
             header = list(data[0])
