@@ -554,6 +554,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 [glist.append(x) for x in gene_list if x not in glist]
                 each_row['gene'] = ', '.join(glist)
                 data.append(each_row)
+                each_row['SIZE'] = '{0:.2f} Mb'.format(int(each_row['SIZE'])/1000000)
 
             header = list(data[0])
             #compute size for cnv using start and end
