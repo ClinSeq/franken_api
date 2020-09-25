@@ -553,8 +553,10 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 glist = []
                 [glist.append(x) for x in gene_list if x not in glist]
                 each_row['gene'] = ', '.join(glist)
+                if 'SIZE' in each_row.keys():
+                    each_row['SIZE'] = '{0:.2f} Mb'.format(int(each_row['SIZE'])/1000000)
                 data.append(each_row)
-                each_row['SIZE'] = '{0:.2f} Mb'.format(int(each_row['SIZE'])/1000000)
+
 
             header = list(data[0])
             #compute size for cnv using start and end
@@ -563,7 +565,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 header.insert(end_index, 'SIZE')
                 for data_dict in data:
                     size = int(data_dict['end']) - int(data_dict['start']) + 1
-                    data_dict['SIZE'] = str(size)
+                    data_dict['SIZE'] = '{0:.2f} Mb'.format(size/1000000)
 
             acn_key = 'ABSOLUTE_COPY_NUMBER'
             ass_key = 'ASSESSMENT'
