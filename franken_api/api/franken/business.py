@@ -337,7 +337,7 @@ def get_probio_blood_referrals():
     try:
         return {'status': True, 'data': probio.query.filter().all(), 'header': generate_headers_ngx_table(header), 'error': '' }, 200
     except Exception as e:
-        return {'status': True, 'data': [], 'header': header, 'error': str(e) }, 400
+        return {'status': True, 'data': [], 'header': generate_headers_ngx_table(header), 'error': str(e) }, 400
 
 def get_psff_blood_referrals():
     "Fetch the all the records from probio referral database"
@@ -345,7 +345,7 @@ def get_psff_blood_referrals():
     try:
         return {'status': True, 'data': psff.query.filter().all(), 'header': generate_headers_ngx_table(header), 'error': '' }, 200
     except Exception as e:
-        return {'status': True, 'data': [], 'header': header, 'error': str(e) }, 400
+        return {'status': True, 'data': [], 'header': generate_headers_ngx_table(header), 'error': str(e) }, 400
 
 
 def update_referrals(db_name):
@@ -475,7 +475,7 @@ def get_curation_igv_germline():
                     'header': generate_headers_ngx_table(header),
                     'error': ''}, 200
         except Exception as e:
-            return {'status': True, 'data': [], 'header': header, 'error': str(e)}, 400
+            return {'status': True, 'data': [], 'header':  generate_headers_ngx_table(header), 'error': str(e)}, 400
 
     except Exception as e:
         return "Error :" + str(e), 400
