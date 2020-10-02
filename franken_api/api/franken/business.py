@@ -152,8 +152,6 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
     if os.path.exists(qc_filename):
         with open(qc_filename, 'r') as f:
             reader_ponter = csv.DictReader(f, delimiter ='\t')
-            #for each_row in reader_ponter:
-            #    data.append(dict(each_row))
             for i, each_row in enumerate(reader_ponter):
                 each_row = dict(each_row)
                 each_row['indexs'] = i
@@ -205,19 +203,46 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 
         result = df_filter.to_json(orient="records")
         data = json.loads(result)
+
+        cal_key = 'CALL'
+        typ_key = 'TYPE'
+        sec_key = 'SECONDHIT'
+        com_key = 'COMMENT'
+
+        if cal_key in column_list:
+            cal_indx = column_list.index(cal_key)
+            del column_list[cal_indx]
+            column_list.insert(0,cal_key)
+
+        if typ_key in column_list:
+            typ_indx = column_list.index(typ_key)
+            del column_list[typ_indx]
+            column_list.insert(0,typ_key)
+            
+        if sec_key in column_list:
+            sec_indx = column_list.index(sec_key)
+            del column_list[sec_indx]
+            column_list.insert(0,sec_key)    
+
+        if com_key in column_list:
+            com_indx = column_list.index(com_key)
+            del column_list[com_indx]
+            column_list.insert(0,com_key)
         
         header = list(generate_headers_ngx_table(column_list))
         
         #Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
         new_keys = {
-            'CALL': {'key': 'CALL', 'title': 'CALL'},
-            'TYPE': {'key': 'TYPE', 'title': 'TYPE'},
-            'SECONDHIT': {'key': 'SECONDHIT', 'title': 'SECONDHIT'},
-            'COMMENT': {'key': 'COMMENT', 'title': 'COMMENT'}
+            cal_key: {'key': cal_key, 'title': 'CALL'},
+            typ_key: {'key': typ_key, 'title': 'TYPE'},
+            sec_key :  {'key': sec_key, 'title': 'SECONDHIT'},
+            com_key :  {'key': com_key, 'title': 'COMMENT'}
         }
-        for each_new_key in new_keys:
-            if each_new_key not in header:
-                header.insert(0, new_keys[each_new_key])
+
+        for idx,value in enumerate(new_keys):
+            n_key = [item for item in header if item.get('key')==value]
+            if(not n_key):
+                header.insert(0, new_keys[value])
 
         return {'header': header, 'data': data, 'filename': file_path, 'status': True}, 200
         
@@ -225,34 +250,28 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
         '''
         with open(file_path, 'r') as f:
             reader_ponter = csv.DictReader(f, delimiter ='\t')
-            #for each_row in reader_ponter:
-            #    data.append(dict(each_row))
             for i, each_row in enumerate(reader_ponter):
                 each_row = dict(each_row)
+                print(i)
                 each_row['indexs'] = i
                 data.append(each_row)
-            #header = generate_headers_table_sv(data[0].keys())
             header = list(generate_headers_ngx_table(data[0].keys()))
-            #Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
 
+            #Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
             new_keys = {
                 'CALL': {'key': 'CALL', 'title': 'CALL'},
                 'TYPE': {'key': 'TYPE', 'title': 'TYPE'},
                 'SECONDHIT': {'key': 'SECONDHIT', 'title': 'SECONDHIT'},
                 'COMMENT': {'key': 'COMMENT', 'title': 'COMMENT'}
             }
-            for each_new_key in new_keys:
-                if each_new_key not in header:
-                    header.insert(0, new_keys[each_new_key])
-
-            #if not any(list(map(lambda x: x in ['CALL', 'TYPE', 'SECONDHIT', 'COMMENT'], data[0].keys()))):
-             #   header = [{'key': 'CALL', 'title': 'CALL'},
-             #               {'key': 'TYPE', 'title': 'TYPE'},
-             #               {'key': 'SECONDHIT', 'title': 'SECONDHIT'},
-             #               {'key': 'COMMENT', 'title': 'COMMENT'}] + header
+            
+            for idx,value in enumerate(new_keys):
+                n_key = [item for item in header if item.get('key')==value]
+                if(not n_key):
+                    header.insert(0, new_keys[value])
 
             return {'header': header, 'data': data, 'filename': file_path, 'status': True}, 200
-            '''
+         '''   
         #====== End : Old code for structural variant ===========#
 
     else:
