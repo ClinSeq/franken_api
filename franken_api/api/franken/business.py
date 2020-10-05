@@ -196,8 +196,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
         df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES')]
         
         # Add Index column in the dataframe
-        if 'indexs' not in df_filter.columns:
-            df_filter['indexs'] = df_filter.index
+        df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
 
         column_list = list(df_filter.columns)
 
@@ -475,10 +474,8 @@ def post_curation(record, table_name):
             db.session.commit()
             return {'status': True, 'error': ''}, 200
         else:
-            for each_column in current_record:
-                current_record[each_column] = record[each_column]
-
-            db.session.add(current_record)
+            for each_col in record:
+                setattr(current_record, each_col, record[each_col])
             db.session.commit()
             return {'status': True, 'error': ''}, 200
     except Exception as e :

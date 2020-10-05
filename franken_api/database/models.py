@@ -127,6 +127,7 @@ class TableIgvSomatic(pssql.Model):
     gnomAD = pssql.Column(pssql.String)
     BRCAEx = pssql.Column(pssql.String)
     OncoKB = pssql.Column(pssql.String)
+
     def __init__(self, row_dict):
 
         self.PROJECT_ID = row_dict.get('PROJECT_ID', None)
@@ -134,7 +135,7 @@ class TableIgvSomatic(pssql.Model):
         self.CAPTURE_ID = row_dict.get('CAPTURE_ID', None)
         self.CHROM = row_dict.get('CHROM', None)
         self.START = row_dict.get('START', None)
-        self.END = row_dict.get('STOP', None)
+        self.END = row_dict.get('END', None)
         self.REF = row_dict.get('REF', None)
         self.ALT = row_dict.get('ALT', None)
         self.CALL = row_dict.get('CALL', None)
@@ -215,5 +216,5 @@ class TableSVS(pssql.Model):
         self.COMMENT = row_dict.get('COMMENT', None)
 
     def __repr__(self):
-        return "<TableIgvSomatic (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,
+        return "<TableSVS (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,
                                                                                             self.SDID, self.CAPTURE_ID)
