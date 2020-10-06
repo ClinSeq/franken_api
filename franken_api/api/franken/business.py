@@ -569,7 +569,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 glist = []
                 [glist.append(x) for x in gene_list if x not in glist]
                 each_row['gene'] = ', '.join(glist)
-                if 'SIZE' in each_row.keys():
+                if 'SIZE' in each_row.keys() and each_row['SIZE'].isdecimal():
                     each_row['SIZE'] = '{0:.2f} Mb'.format(int(each_row['SIZE'])/1000000)
                 data.append(each_row)
 
