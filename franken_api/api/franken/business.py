@@ -18,6 +18,8 @@ import subprocess
 from collections import OrderedDict
 import pandas as pd
 
+import sys
+
 
 # check the string contains special character or not 
 def check_special_char(seq_str):
@@ -90,12 +92,13 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
     file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/'
     temp_url_list = []
     ip_addr = run_cmd('hostname -I').split(' ')[0]
+    port_no = sys.argv[sys.argv.index("-p") + 1] if '-p' in sys.argv else 5000
     #ip_addr = 'localhost' #its a temparry fix for local forwarding........................................................................
     status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
     if status:
         for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
             #temp_url_list.append('http://localhost:5000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
-            temp_url_list.append('http://' + ip_addr + ':5000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
+            temp_url_list.append('http://' + ip_addr + ':' + port_no + '/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
 
         if len(temp_url_list) > 0:
             return {'image_url': temp_url_list, 'status': True}, 200
