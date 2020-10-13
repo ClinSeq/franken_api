@@ -17,8 +17,9 @@ from flask import jsonify
 import subprocess
 from collections import OrderedDict
 import pandas as pd
-
 import sys
+from flask import request
+
 
 
 # check the string contains special character or not 
@@ -91,7 +92,9 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
 
     file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/'
     temp_url_list = []
-    ip_addr = run_cmd('hostname -I').split(' ')[0]
+    host_addr = request.host.split(":")
+    host_ip = run_cmd('hostname -I').split(' ')[0]
+    ip_addr = host_addr[0] if host_addr[0] in 'localhost' else host_ip
     port_no = sys.argv[sys.argv.index("-p") + 1] if '-p' in sys.argv else 5000
     #ip_addr = 'localhost' #its a temparry fix for local forwarding........................................................................
     status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
