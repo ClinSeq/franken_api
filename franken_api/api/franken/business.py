@@ -100,7 +100,7 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
     status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
     if status:
         for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
-            #temp_url_list.append('http://localhost:5000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
+            temp_url_list.append('http://localhost:9000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
             temp_url_list.append('http://' + ip_addr + ':' + port_no + '/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
 
         if len(temp_url_list) > 0:
