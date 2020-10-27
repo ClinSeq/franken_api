@@ -19,8 +19,7 @@ from collections import OrderedDict
 import pandas as pd
 import sys
 from flask import request
-
-
+import requests
 
 # check the string contains special character or not 
 def check_special_char(seq_str):
@@ -87,27 +86,43 @@ def get_sample_ids(project_path):
 
     return {'sidis': [], 'status': False}, error
 
+def check_franken_plot_link(url_list):
+    valid_url_list = []
+    for url in url_list:
+        try:
+            response = requests.get(url)
+            status = response.status_code
+            valid_url_list.append(url)
+        except requests.ConnectionError:
+           print("Failed to connect : {}".format(url))
+    return valid_url_list
+
+
 def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
     "return the static franken plots as image"
 
     file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/'
     temp_url_list = []
+    #temp_base_url_list = []
     host_addr = request.host.split(":")
     host_ip = run_cmd('hostname -I').split(' ')[0]
-    ip_addr = host_ip if host_addr[0] not in 'localhost' else 'localhost'
-    port_no = '5000' if host_addr[1] not in '9000' else '9000'
-    print(host_addr)
-    print(host_ip)
-    print(ip_addr,port_no)
-    #ip_addr = 'localhost' #its a temparry fix for local forwarding........................................................................
+    ip_addr = 'localhost' if host_addr[0] in 'localhost' else host_ip
+    port_no = host_addr[1] if host_addr[1] not in '9000' else '9000'
+    print(host_addr, port_no, ip_addr)
+    # temp_base_url_list.append('http://'+ip_addr+':'+port_no+'/')
+    # temp_base_url_list.append('http://localhost:9000/') #its a temparry fix for local forwarding
+    # base_url_list = check_franken_plot_link(temp_base_url_list)
+
     status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
     if status:
         for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
-            temp_url_list.append('http://localhost:9000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
-            temp_url_list.append('http://' + ip_addr + ':' + port_no + '/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file)
+            link = 'http://localhost:9000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
+            link = 'http://'+ip_addr+':'+port_no+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
+            temp_url_list.append(link)
 
         if len(temp_url_list) > 0:
-            return {'image_url': temp_url_list, 'status': True}, 200
+            image_url_list = check_franken_plot_link(temp_url_list)
+            return {'image_url': image_url_list, 'status': True}, 200
 
     return {'image_url':[], 'status': False}, 400
 
