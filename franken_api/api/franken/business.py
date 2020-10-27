@@ -106,7 +106,7 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
     #temp_base_url_list = []
     host_addr = request.host.split(":")
     host_ip = run_cmd('hostname -I').split(' ')[0]
-    ip_addr = 'localhost' if host_addr[0] in 'localhost' else host_ip
+    ip_addr = host_ip
     port_no = host_addr[1] if host_addr[1] not in '9000' else '9000'
     print(host_addr, port_no, ip_addr)
     # temp_base_url_list.append('http://'+ip_addr+':'+port_no+'/')
