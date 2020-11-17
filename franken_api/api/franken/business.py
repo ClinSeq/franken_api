@@ -108,20 +108,17 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
     host_ip = run_cmd('hostname -I').split(' ')[0]
     ip_addr = host_ip
     port_no = host_addr[1] if host_addr[1] not in '9000' else '9000'
-    print(host_addr, port_no, ip_addr)
-    # temp_base_url_list.append('http://'+ip_addr+':'+port_no+'/')
-    # temp_base_url_list.append('http://localhost:9000/') #its a temparry fix for local forwarding
-    # base_url_list = check_franken_plot_link(temp_base_url_list)
 
     status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
     if status:
         for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
             link = 'http://localhost:9000/api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
-            link = 'http://'+ip_addr+':'+port_no+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
+            #link = 'http://'+ip_addr+':'+port_no+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
             temp_url_list.append(link)
 
         if len(temp_url_list) > 0:
-            image_url_list = check_franken_plot_link(temp_url_list)
+            #image_url_list = check_franken_plot_link(temp_url_list)
+            image_url_list = temp_url_list
             return {'image_url': image_url_list, 'status': True}, 200
 
     return {'image_url':[], 'status': False}, 400
