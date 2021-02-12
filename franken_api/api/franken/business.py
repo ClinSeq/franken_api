@@ -607,6 +607,9 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
             acn_key = 'ABSOLUTE_COPY_NUMBER'
             ass_key = 'ASSESSMENT'
             com_key = 'COMMENT'
+            pur_key = 'PURITY'
+            plo_key = 'PLOIDY'
+            copy_nu_key = 'COPY_NUMBER'
 
             if acn_key in header:
                 acn_indx = header.index(acn_key)
@@ -622,6 +625,21 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 com_indx = header.index(com_key)
                 del header[com_indx]
                 header.insert(0,com_key)
+
+            if pur_key in header:
+                pur_indx = header.index(pur_key)
+                del header[pur_indx]
+                header.insert(0,pur_key)
+
+            if plo_key in header:
+                plo_indx = header.index(plo_key)
+                del header[plo_indx]
+                header.insert(0,plo_key)
+
+            if copy_nu_key in header:
+                copy_nu_indx = header.index(copy_nu_key)
+                del header[copy_nu_indx]
+                header.insert(0,copy_nu_key)
             
             del header[header.index('gene')]
             header.append('gene')
@@ -630,14 +648,17 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
             new_keys = {
                acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
                ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
-               com_key :  {'key': com_key, 'title': 'COMMENT'}
+               com_key :  {'key': com_key, 'title': 'COMMENT'},
+               pur_key :  {'key': pur_key, 'title': 'PURITY'},
+               plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
+               copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'}
             }
 
             for idx,value in enumerate(new_keys):
                 n_key = [item for item in header if item.get('key')==value]
                 if(not n_key):
                     header.insert(0, new_keys[value])
-
+                    
             return {'header': header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
 
     else:
