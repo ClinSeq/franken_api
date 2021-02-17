@@ -218,3 +218,76 @@ class TableSVS(pssql.Model):
     def __repr__(self):
         return "<TableSVS (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,
                                                                                             self.SDID, self.CAPTURE_ID)
+
+class TableIgvHotspot(pssql.Model):
+    __bind_key__ = 'curation'
+    __tablename__ = "hotspot_table"
+
+    id = pssql.Column(pssql.Integer, primary_key=True, nullable=False)
+    gene = pssql.Column(pssql.String)
+    aapos = pssql.Column(pssql.String)
+    nmut = pssql.Column(pssql.String)
+    protmut = pssql.Column(pssql.String)
+    prot2mut = pssql.Column(pssql.String)
+    dnamut = pssql.Column(pssql.String)
+    canmut = pssql.Column(pssql.String)
+    conseqmut = pssql.Column(pssql.String)
+    transcript = pssql.Column(pssql.String)
+    dn_ds = pssql.Column(pssql.String) 
+    community_notes = pssql.Column(pssql.String)
+
+    def __init__(self, row_dict):
+
+        self.id = row_dict.get('id', None)
+        self.gene = row_dict.get('gene', None)
+        self.aapos = row_dict.get('aapos', None)
+        self.nmut = row_dict.get('nmut', None)
+        self.protmut = row_dict.get('protmut', None)
+        self.prot2mut = row_dict.get('prot2mut', None)
+        self.dnamut = row_dict.get('dnamut', None)
+        self.canmut = row_dict.get('canmut', None)
+        self.conseqmut = row_dict.get('conseqmut', None)
+        self.transcript = row_dict.get('transcript', None)
+        self.dn_ds = row_dict.get('dn_ds', None) 
+        self.community_notes = row_dict.get('community_notes', None)
+
+    def __repr__(self):
+        return "<TableIgvHotspot (id='%s', gene='%s', aapos='%s', nmut='%s')>" % (self.id,self.gene,
+                                                                                            self.aapos,self.nmut)
+
+
+class TableIgvWarmspot(pssql.Model):
+    __bind_key__ = 'curation'
+    __tablename__ = "warmspots_table"
+
+    id = pssql.Column(pssql.Integer, primary_key=True, nullable=False)
+    gene = pssql.Column(pssql.String)
+    aapos = pssql.Column(pssql.String)
+    nmut = pssql.Column(pssql.String)
+    protmut = pssql.Column(pssql.String)
+    prot2mut = pssql.Column(pssql.String)
+    dnamut = pssql.Column(pssql.String)
+    canmut = pssql.Column(pssql.String)
+    conseqmut = pssql.Column(pssql.String)
+    transcript = pssql.Column(pssql.String)
+    dn_ds = pssql.Column(pssql.String) 
+    community_notes = pssql.Column(pssql.String)
+
+    def __init__(self, row_dict):
+
+        self.id = row_dict.get('id', None)
+        self.gene = row_dict.get('gene', None)
+        self.aapos = row_dict.get('aapos', None)
+        self.nmut = row_dict.get('nmut', None)
+        self.protmut = row_dict.get('protmut', None)
+        self.prot2mut = row_dict.get('prot2mut', None)
+        self.dnamut = row_dict.get('dnamut', None)
+        self.canmut = row_dict.get('canmut', None)
+        self.conseqmut = row_dict.get('conseqmut', None)
+        self.transcript = row_dict.get('transcript', None)
+        self.dn_ds = row_dict.get('dn_ds', None) 
+        self.community_notes = row_dict.get('community_notes', None)
+
+    def __repr__(self):
+        return "<TableIgvWarmspot (id='%s', gene='%s', aapos='%s', nmut='%s')>" % (self.id,self.gene,
+                                                                                            self.aapos,self.nmut)
