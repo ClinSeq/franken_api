@@ -137,6 +137,36 @@ curation_svs = api.model('SVS', {
         'COMMENT': fields.String(description='')
 })
 
+curation_hotspot = api.model('IGV Hotspot', {
+        'id': fields.String(description=''),
+        'gene': fields.String(description=''),
+        'aapos': fields.String(description=''),
+        'nmut': fields.String(description=''),
+        'protmut': fields.String(description=''),
+        'prot2mut': fields.String(description=''),
+        'dnamut': fields.String(description=''),
+        'canmut': fields.String(description=''),
+        'conseqmut': fields.String(description=''),
+        'transcript': fields.String(description=''),
+        'dn_ds': fields.String(description=''), 
+        'community_notes': fields.String(description='')
+})
+
+curation_warmspot = api.model('IGV Warmspot', {
+        'id': fields.String(description=''),
+        'gene': fields.String(description=''),
+        'aapos': fields.String(description=''),
+        'nmut': fields.String(description=''),
+        'protmut': fields.String(description=''),
+        'prot2mut': fields.String(description=''),
+        'dnamut': fields.String(description=''),
+        'canmut': fields.String(description=''),
+        'conseqmut': fields.String(description=''),
+        'transcript': fields.String(description=''),
+        'dn_ds': fields.String(description=''), 
+        'community_notes': fields.String(description='')
+})
+
 header_curation = api.model('Curation Header', {'key':fields.String(description='Column name') ,
                                         'title': fields.String(description='Column display name')})
 
@@ -152,5 +182,15 @@ somatic_data_list = api.model('Curation Somatic DB Data', { 'status':fields.Bool
 
 svs_data_list = api.model('Curation SVS DB Data', { 'status':fields.Boolean(required=True),
                                                      'data': fields.List(fields.Nested(curation_svs)),
+                                                     'header': fields.List(fields.Nested(header_curation)),
+                                                     'error': fields.String()})
+
+hotspot_data_list = api.model('Curation Hotspot DB Data', { 'status':fields.Boolean(required=True),
+                                                     'data': fields.List(fields.Nested(curation_hotspot)),
+                                                     'header': fields.List(fields.Nested(header_curation)),
+                                                     'error': fields.String()})
+
+warmspot_data_list = api.model('Curation Warmspot DB Data', { 'status':fields.Boolean(required=True),
+                                                     'data': fields.List(fields.Nested(curation_warmspot)),
                                                      'header': fields.List(fields.Nested(header_curation)),
                                                      'error': fields.String()})
