@@ -382,7 +382,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
     header = []
 
     if variant_type == 'germline':
-        regex = '^(?:(?!(CFDNA|T)).)*igvnav-input.txt$'
+        regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
     elif variant_type == 'somatic':
         missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
         regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
@@ -399,21 +399,15 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
                 each_row = dict(each_row)
                 each_row['indexs'] = i
                 gene = each_row['GENE']
-                # print(each_row['HGVSp'])
                 if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
                     one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
                     each_row['HGVSp'] = one_amino_code
-                
-                if variant_type == 'somatic':
-                    HGVSp_status = get_HGVSp_status(gene,each_row['HGVSp'] )
-                # else:
-                #     HGVSp_status = get_HGVSp_status(gene, each_row['HGVSp'])
-
+                    if variant_type == 'somatic':
+                        HGVSp_status = get_HGVSp_status(gene,one_amino_code)
+                        each_row['HOTSPOT'] = HGVSp_status
+                    
                 consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
-                each_row['CONSEQUENCE'] = consequence
-                
-                if variant_type == 'somatic':
-                    each_row['HOTSPOT'] = HGVSp_status
+                each_row['CONSEQUENCE'] = consequence              
 
                 if None in each_row:
                     if isinstance(each_row[None], list):
@@ -425,7 +419,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
                 data.append(dict(each_row))
 
         header = list(data[0])
-        if variant_type == 'somatic':
+        if 'HOTSPOT' in header and variant_type == 'somatic':
             del header[header.index('HOTSPOT')]
 
         if 'HOTSPOT' not in header and variant_type == 'somatic':
@@ -591,7 +585,7 @@ def post_curation(record, table_name):
 
 def get_curation_hotspot():
     try:
-        header = ['gene', 'aapos', 'nmut', 'p', 'q', 'protmut', 'prot2mut', 'dnamut', 'canmut', 'conseqmut', 'hotness', 'stem_strength', 'ss_loop_pos', 'ss_loop_len', 'transcript', 'synsites', 'nonsynsites', 'apobec3a_hairpin', 'mc_n_syn', 'mc_n_mis', 'mc_n_non', 'mc_n_spl', 'mc_n_ind', 'mc_wmis_cv', 'mc_wnon_cv', 'mc_wspl_cv', 'mc_wind_cv', 'mc_pmis_cv', 'mc_ptrunc_cv', 'mc_pallsubs_cv', 'mc_pind_cv', 'mc_qmis_cv', 'mc_qtrunc_cv', 'mc_qallsubs_cv', 'mc_pglobal_cv', 'mc_qglobal_cv', 'dn_ds', 'community_notes']
+        header = ['gene', 'aapos', 'nmut', 'protmut', 'prot2mut', 'dnamut', 'canmut', 'conseqmut', 'transcript', 'dn_ds', 'community_notes']
         try:
             return {'status': True, 'data': igv_hotspot_table.query.filter().all(),
                     'header': generate_headers_ngx_table(header),
@@ -604,7 +598,7 @@ def get_curation_hotspot():
 
 def get_curation_warmspot():
     try:
-        header = ['gene', 'aapos', 'nmut', 'p', 'q', 'protmut', 'prot2mut', 'dnamut', 'canmut', 'conseqmut', 'hotness', 'stem_strength', 'ss_loop_pos', 'ss_loop_len', 'transcript', 'synsites', 'nonsynsites', 'apobec3a_hairpin', 'mc_n_syn', 'mc_n_mis', 'mc_n_non', 'mc_n_spl', 'mc_n_ind', 'mc_wmis_cv', 'mc_wnon_cv', 'mc_wspl_cv', 'mc_wind_cv', 'mc_pmis_cv', 'mc_ptrunc_cv', 'mc_pallsubs_cv', 'mc_pind_cv', 'mc_qmis_cv', 'mc_qtrunc_cv', 'mc_qallsubs_cv', 'mc_pglobal_cv', 'mc_qglobal_cv', 'dn_ds', 'community_notes']
+        header = ['gene', 'aapos', 'nmut', 'protmut', 'prot2mut', 'dnamut', 'canmut', 'conseqmut', 'transcript', 'dn_ds', 'community_notes']
         try:
             return {'status': True, 'data': igv_warmspot_table.query.filter().all(),
                     'header': generate_headers_ngx_table(header),
@@ -671,7 +665,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
         set_save_file = '_somatic_curated.cns'
     elif variant_type == 'germline':
         #regex = '^(?:(?!CFDNA).)*.cns$'
-        regex = '^(?:(?!(CFDNA|germline_curated|T)).)*.cns$'
+        regex = '^(?:(?!-(CFDNA|germline_curated|T)).)*.cns$'
         set_save_file = '_germline_curated.cns'
     else:
         return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400
