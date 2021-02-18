@@ -402,10 +402,11 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
                 if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
                     one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
                     each_row['HGVSp'] = one_amino_code
-                    if variant_type == 'somatic':
-                        HGVSp_status = get_HGVSp_status(gene,one_amino_code)
-                        each_row['HOTSPOT'] = HGVSp_status
-                    
+                
+                if variant_type == 'somatic' and each_row['HGVSp']:
+                    HGVSp_status = get_HGVSp_status(gene,each_row['HGVSp'])
+                    each_row['HOTSPOT'] = HGVSp_status
+
                 consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
                 each_row['CONSEQUENCE'] = consequence              
 
@@ -423,8 +424,8 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
             del header[header.index('HOTSPOT')]
 
         if 'HOTSPOT' not in header and variant_type == 'somatic':
-                conseq_index = header.index('CONSEQUENCE') + 1
-                header.insert(conseq_index, 'HOTSPOT')
+            conseq_index = header.index('CONSEQUENCE') + 1
+            header.insert(conseq_index, 'HOTSPOT')
 
         header = generate_headers_ngx_table(header)
 
