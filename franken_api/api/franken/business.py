@@ -718,6 +718,8 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
             pur_key = 'PURITY'
             plo_key = 'PLOIDY'
             copy_nu_key = 'COPY_NUMBER'
+            plo_tp_key = 'PLOIDY_TYPE'
+
 
             if acn_key in header:
                 acn_indx = header.index(acn_key)
@@ -749,6 +751,11 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 del header[copy_nu_indx]
                 header.insert(0,copy_nu_key)
             
+            if plo_tp_key in header:
+                plo_tp_indx = header.index(plo_tp_key)
+                del header[plo_tp_indx]
+                header.insert(0,plo_tp_key)
+            
             del header[header.index('gene')]
             header.append('gene')
             header = generate_headers_ngx_table(header)
@@ -759,7 +766,8 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                com_key :  {'key': com_key, 'title': 'COMMENT'},
                pur_key :  {'key': pur_key, 'title': 'PURITY'},
                plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
-               copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'}
+               copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
+               plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
             }
 
             for idx,value in enumerate(new_keys):
