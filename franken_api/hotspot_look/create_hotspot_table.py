@@ -17,7 +17,7 @@ def build_dataframe_to_table(dir_path, src_file_path, table_name, csv_file_name)
     df_data = df_data.rename(columns={'index': 'id'})
 
     #INPUT YOUR OWN CONNECTION STRING HERE
-    conn_string = 'postgres://postgres:postgres@127.0.0.1:5432/curation'
+    conn_string = 'postgres://referral_writer:ProbioWriter@127.0.0.1:5432/curation'
 
     csv_path = dir_path+'/'+csv_file_name+'.csv'
 

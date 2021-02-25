@@ -402,10 +402,11 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
                 if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
                     one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
                     each_row['HGVSp'] = one_amino_code
-                    if variant_type == 'somatic':
-                        HGVSp_status = get_HGVSp_status(gene,one_amino_code)
-                        each_row['HOTSPOT'] = HGVSp_status
-                    
+                
+                if variant_type == 'somatic' and each_row['HGVSp']:
+                    HGVSp_status = get_HGVSp_status(gene,each_row['HGVSp'])
+                    each_row['HOTSPOT'] = HGVSp_status
+
                 consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
                 each_row['CONSEQUENCE'] = consequence              
 
@@ -423,8 +424,8 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
             del header[header.index('HOTSPOT')]
 
         if 'HOTSPOT' not in header and variant_type == 'somatic':
-                conseq_index = header.index('CONSEQUENCE') + 1
-                header.insert(conseq_index, 'HOTSPOT')
+            conseq_index = header.index('CONSEQUENCE') + 1
+            header.insert(conseq_index, 'HOTSPOT')
 
         header = generate_headers_ngx_table(header)
 
@@ -665,7 +666,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
         set_save_file = '_somatic_curated.cns'
     elif variant_type == 'germline':
         #regex = '^(?:(?!CFDNA).)*.cns$'
-        regex = '^(?:(?!-(CFDNA|germline_curated|T)).)*.cns$'
+        regex = '^(?:(?!(-CFDNA|germline_curated|-T)).)*.cns$'
         set_save_file = '_germline_curated.cns'
     else:
         return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400
@@ -717,6 +718,8 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
             pur_key = 'PURITY'
             plo_key = 'PLOIDY'
             copy_nu_key = 'COPY_NUMBER'
+            plo_tp_key = 'PLOIDY_TYPE'
+
 
             if acn_key in header:
                 acn_indx = header.index(acn_key)
@@ -748,6 +751,11 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 del header[copy_nu_indx]
                 header.insert(0,copy_nu_key)
             
+            if plo_tp_key in header:
+                plo_tp_indx = header.index(plo_tp_key)
+                del header[plo_tp_indx]
+                header.insert(0,plo_tp_key)
+            
             del header[header.index('gene')]
             header.append('gene')
             header = generate_headers_ngx_table(header)
@@ -758,7 +766,8 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                com_key :  {'key': com_key, 'title': 'COMMENT'},
                pur_key :  {'key': pur_key, 'title': 'PURITY'},
                plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
-               copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'}
+               copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
+               plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
             }
 
             for idx,value in enumerate(new_keys):
