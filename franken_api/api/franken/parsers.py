@@ -1,18 +1,18 @@
 from flask_restplus import reqparse
 
 project_arguments = reqparse.RequestParser()
-project_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL'")
+project_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL")
 
 capture_arguments = reqparse.RequestParser()
-capture_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL'")
+capture_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL'")
 capture_arguments.add_argument('sdid', type=str, required=True,  help='sdid example : P-00360714')
 
 
 common_arguments = reqparse.RequestParser()
-common_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL")
+common_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL'")
 common_arguments.add_argument('sdid', type=str, required=True,  help='sdid example : P-00360714')
 common_arguments.add_argument('capture_id', type=str, required=True,  help='capture id')
 
