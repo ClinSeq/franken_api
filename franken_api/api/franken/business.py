@@ -329,21 +329,25 @@ def get_HGVSp_status(gene, HGVSp):
 
     engine = create_engine(current_app.config['SQLALCHEMY_BINDS']['curation'])
 
+    HGVSp = 'p.'+HGVSp 
+
     hotspot_list = get_hotspot_info(gene,engine)
     hotspot_list =  [x.strip(' ') for x in hotspot_list]
 
     warmspot_list = get_warmspot_info(gene,engine)
     warmspot_list =  [x.strip(' ') for x in warmspot_list]
 
+    hotspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x.strip()), HGVSp), hotspot_list))
+    warmspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x.strip()), HGVSp), warmspot_list))
 
     hotspot_status = ''
     warmspot_status = ''
     if(hotspot_list):
-        if('p.'+HGVSp in hotspot_list):
+        if(HGVSp in hotspot_list or (''.join(hotspot_arr) in hotspot_list and hotspot_arr != []) ):
             hotspot_status = 0
 
     if(warmspot_list):
-        if('p.'+HGVSp in warmspot_list):
+        if(HGVSp in warmspot_list or (''.join(hotspot_arr) in warmspot_list and hotspot_arr != []) ):
             warmspot_status = 1 
 
     if(hotspot_status == 0 and warmspot_status == ''):
