@@ -19,6 +19,9 @@ def configure_app(flask_app):
     flask_app.config['ERROR_404_HELP'] = settings.RESTPLUS_ERROR_404_HELP
     flask_app.config['PROBIO'] = settings.MOUNT_POINT_PROBIO
     flask_app.config['PSFF'] = settings.MOUNT_POINT_PSFF
+    flask_app.config['LARS_DUCTAL'] = settings.MOUNT_POINT_LARS_DUCTAL
+    flask_app.config['AZ_RINGTRIAL'] = settings.MOUNT_POINT_AZ_RINGTRIAL
+    flask_app.config['msHSPC'] = settings.MOUNT_POINT_MS_HSPC
 
 def initialize_app(flask_app):
     configure_app(flask_app)

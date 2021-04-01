@@ -68,3 +68,6 @@ ENV/
 
 # Editors
 .idea/
+
+franken_api/hotspot_look/*.csv
+migrations/versions/*.py

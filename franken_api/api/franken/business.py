@@ -4,6 +4,10 @@ from franken_api.database.models import PSFFBloodReferral as psff
 from franken_api.database.models import TableIgvGermline as igv_germline_table
 from franken_api.database.models import TableIgvSomatic as igv_somatic_table
 from franken_api.database.models import TableSVS as svs_table
+from franken_api.database.models import TableIgvHotspot as igv_hotspot_table
+from franken_api.database.models import TableIgvWarmspot as igv_warmspot_table
+
+
 from sqlalchemy import and_
 import os, io
 #from franken_api.settings import MOUNT_POINT
@@ -16,10 +20,13 @@ import ast
 from flask import jsonify
 import subprocess
 from collections import OrderedDict
+from datetime import datetime
 import pandas as pd
 import sys
 from flask import request
 import requests
+from sqlalchemy import create_engine
+
 
 # check the string contains special character or not 
 def check_special_char(seq_str):
@@ -48,6 +55,19 @@ def get_three_to_one_amino_code(code_seq):
         one_code_res = one_code_res + c
     
     return one_code_res
+
+def generate_list_to_dict(result):
+    d, row = {}, []
+    for rowproxy in result:
+        for column, value in rowproxy.items():
+            if isinstance(value, datetime):
+                value = datetime.strftime(value, "%Y-%m-%d")
+            else:
+                value = str(value)
+            d = {**d, **{column: value}}
+        row.append(d)
+    
+    return row
     
 def run_cmd(cmd):
     "Run external commands"
@@ -298,16 +318,72 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
         return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
 
 
+def get_HGVSp_status(gene, HGVSp):
+    '''
+        hotspot status - '', 0, 1, 2
+            '' - empty
+            0 - hotspot
+            1 - warmspot
+            2- both hotspot and warmspot
+    '''
+
+    HGVSp = 'p.'+HGVSp 
+
+    hotspot_list = get_hotspot_info(gene)
+    hotspot_list =  [x.strip(' ') for x in hotspot_list]
+
+    warmspot_list = get_warmspot_info(gene)
+    warmspot_list =  [x.strip(' ') for x in warmspot_list]
+
+    hotspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x.strip()), HGVSp), hotspot_list))
+    warmspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x.strip()), HGVSp), warmspot_list))
+
+    hotspot_status = ''
+    warmspot_status = ''
+    if(hotspot_list):
+        if(HGVSp in hotspot_list or (''.join(hotspot_arr) in hotspot_list and hotspot_arr != []) ):
+            hotspot_status = 0
+
+    if(warmspot_list):
+        if(HGVSp in warmspot_list or (''.join(hotspot_arr) in warmspot_list and hotspot_arr != []) ):
+            warmspot_status = 1 
+
+    status = ''
+
+    if(hotspot_status == 0 and warmspot_status == ''):
+        status = '0'
+    elif(hotspot_status == '' and warmspot_status == 1):
+        status = '1'
+    elif(hotspot_status == 0 and warmspot_status == 1):
+        status = '0'
+
+    return status
+
+def get_hotspot_info(gene):
+    res = igv_hotspot_table.query.filter(igv_hotspot_table.gene == '{}'.format(gene)).all()
+    protmut = []
+    if(res):
+        for r in res:
+            protmut.append(r.protmut)
+    return protmut
+
+def get_warmspot_info(gene):
+    res = igv_warmspot_table.query.filter(igv_warmspot_table.gene == '{}'.format(gene)).all()
+    protmut = []
+    if(res):
+        for r in res:
+            protmut.append(r.protmut)
+    return protmut
+
 def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
     "read  variant file for given sdid and return as json"
-
     file_path = project_path + '/' + sdid + '/' + capture_id
     data = []
     missing_header = []
-
+    header = []
 
     if variant_type == 'germline':
-        regex = '^(?:(?!(CFDNA|T)).)*igvnav-input.txt$'
+        regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
     elif variant_type == 'somatic':
         missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
         regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
@@ -323,11 +399,18 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
             for i, each_row in enumerate(reader_pointer):
                 each_row = dict(each_row)
                 each_row['indexs'] = i
+                gene = each_row['GENE']
                 if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
                     one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
                     each_row['HGVSp'] = one_amino_code
+                
+                if variant_type == 'somatic' and each_row['HGVSp']:
+                    HGVSp_status = get_HGVSp_status(gene,each_row['HGVSp'])
+                    each_row['HOTSPOT'] = HGVSp_status
+
                 consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
-                each_row['CONSEQUENCE'] = consequence
+                each_row['CONSEQUENCE'] = consequence              
+
                 if None in each_row:
                     if isinstance(each_row[None], list):
                         for i, each_none in enumerate(each_row[None]):
@@ -337,17 +420,16 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
                 data.append(dict(each_row))
 
-        #header = generate_headers_table_sv(data[0].keys())
-        header = generate_headers_ngx_table(data[0].keys())
+        header = list(data[0])
+        if 'HOTSPOT' in header and variant_type == 'somatic':
+            del header[header.index('HOTSPOT')]
 
-        if variant_type == 'somatic':
-            new_keys = {
-                'HOTSPOT': {'key': 'HOTSPOT', 'title': 'HOTSPOT'}
-            }
-            for each_new_key in new_keys:
-                if each_new_key not in header:
-                    header.insert(11, new_keys[each_new_key])
-                
+        if 'HOTSPOT' not in header and variant_type == 'somatic':
+            conseq_index = header.index('CONSEQUENCE') + 1
+            header.insert(conseq_index, 'HOTSPOT')
+
+        header = generate_headers_ngx_table(header)
+
         return {'header': header, 'data': data, 'filename' : igv_nav_file, 'status': True}, 200
 
     except Exception as e:
@@ -502,6 +584,33 @@ def post_curation(record, table_name):
     except Exception as e :
         return {'status': False, 'error': str(e)}, 400
 
+
+def get_curation_hotspot():
+    try:
+        header = ['gene', 'aapos', 'nmut', 'protmut', 'prot2mut', 'dnamut', 'canmut', 'conseqmut', 'transcript', 'dn_ds', 'community_notes']
+        try:
+            return {'status': True, 'data': igv_hotspot_table.query.filter().all(),
+                    'header': generate_headers_ngx_table(header),
+                    'error': ''}, 200
+        except Exception as e:
+            return {'status': True, 'data': [], 'header':  generate_headers_ngx_table(header), 'error': str(e)}, 400
+
+    except Exception as e:
+        return "Error :" + str(e), 400
+
+def get_curation_warmspot():
+    try:
+        header = ['gene', 'aapos', 'nmut', 'protmut', 'prot2mut', 'dnamut', 'canmut', 'conseqmut', 'transcript', 'dn_ds', 'community_notes']
+        try:
+            return {'status': True, 'data': igv_warmspot_table.query.filter().all(),
+                    'header': generate_headers_ngx_table(header),
+                    'error': ''}, 200
+        except Exception as e:
+            return {'status': True, 'data': [], 'header':  generate_headers_ngx_table(header), 'error': str(e)}, 400
+
+    except Exception as e:
+        return "Error :" + str(e), 400
+
 def get_curation_igv_germline():
     try:
         header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', 'CHROM', 'START', 'END',
@@ -558,11 +667,11 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
         set_save_file = '_somatic_curated.cns'
     elif variant_type == 'germline':
         #regex = '^(?:(?!CFDNA).)*.cns$'
-        regex = '^(?:(?!(CFDNA|germline_curated|T)).)*.cns$'
+        regex = '^(?:(?!(-CFDNA|germline_curated|-T)).)*.cns$'
         set_save_file = '_germline_curated.cns'
     else:
         return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400
-
+    
     cnv_filename = file_path + list(filter(lambda x: (re.match(regex, x) )
                                                      and not x.startswith('.')
                                                      and not x.endswith('.out'),
@@ -607,6 +716,11 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
             acn_key = 'ABSOLUTE_COPY_NUMBER'
             ass_key = 'ASSESSMENT'
             com_key = 'COMMENT'
+            pur_key = 'PURITY'
+            plo_key = 'PLOIDY'
+            copy_nu_key = 'COPY_NUMBER'
+            plo_tp_key = 'PLOIDY_TYPE'
+
 
             if acn_key in header:
                 acn_indx = header.index(acn_key)
@@ -622,6 +736,26 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
                 com_indx = header.index(com_key)
                 del header[com_indx]
                 header.insert(0,com_key)
+
+            if pur_key in header:
+                pur_indx = header.index(pur_key)
+                del header[pur_indx]
+                header.insert(0,pur_key)
+
+            if plo_key in header:
+                plo_indx = header.index(plo_key)
+                del header[plo_indx]
+                header.insert(0,plo_key)
+
+            if copy_nu_key in header:
+                copy_nu_indx = header.index(copy_nu_key)
+                del header[copy_nu_indx]
+                header.insert(0,copy_nu_key)
+            
+            if plo_tp_key in header:
+                plo_tp_indx = header.index(plo_tp_key)
+                del header[plo_tp_indx]
+                header.insert(0,plo_tp_key)
             
             del header[header.index('gene')]
             header.append('gene')
@@ -630,14 +764,18 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
             new_keys = {
                acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
                ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
-               com_key :  {'key': com_key, 'title': 'COMMENT'}
+               com_key :  {'key': com_key, 'title': 'COMMENT'},
+               pur_key :  {'key': pur_key, 'title': 'PURITY'},
+               plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
+               copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
+               plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
             }
 
             for idx,value in enumerate(new_keys):
                 n_key = [item for item in header if item.get('key')==value]
                 if(not n_key):
                     header.insert(0, new_keys[value])
-
+                    
             return {'header': header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
 
     else:
