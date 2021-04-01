@@ -252,8 +252,8 @@ class TableIgvHotspot(pssql.Model):
         self.community_notes = row_dict.get('community_notes', None)
 
     def __repr__(self):
-        return "<TableIgvHotspot (id='%s', gene='%s', aapos='%s', nmut='%s')>" % (self.id,self.gene,
-                                                                                            self.aapos,self.nmut)
+        return "<TableIgvHotspot (id='%s', gene='%s', protmut='%s', prot2mut='%s')>" % (self.id,self.gene,
+                                                                                            self.protmut,self.prot2mut)
 
 
 class TableIgvWarmspot(pssql.Model):
@@ -289,5 +289,5 @@ class TableIgvWarmspot(pssql.Model):
         self.community_notes = row_dict.get('community_notes', None)
 
     def __repr__(self):
-        return "<TableIgvWarmspot (id='%s', gene='%s', aapos='%s', nmut='%s')>" % (self.id,self.gene,
-                                                                                            self.aapos,self.nmut)
+        return "<TableIgvWarmspot (id='%s', gene='%s', protmut='%s', prot2mut='%s')>" % (self.id,self.gene,
+                                                                                            self.protmut,self.prot2mut)

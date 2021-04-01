@@ -327,14 +327,12 @@ def get_HGVSp_status(gene, HGVSp):
             2- both hotspot and warmspot
     '''
 
-    engine = create_engine(current_app.config['SQLALCHEMY_BINDS']['curation'])
-
     HGVSp = 'p.'+HGVSp 
 
-    hotspot_list = get_hotspot_info(gene,engine)
+    hotspot_list = get_hotspot_info(gene)
     hotspot_list =  [x.strip(' ') for x in hotspot_list]
 
-    warmspot_list = get_warmspot_info(gene,engine)
+    warmspot_list = get_warmspot_info(gene)
     warmspot_list =  [x.strip(' ') for x in warmspot_list]
 
     hotspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x.strip()), HGVSp), hotspot_list))
@@ -350,33 +348,32 @@ def get_HGVSp_status(gene, HGVSp):
         if(HGVSp in warmspot_list or (''.join(hotspot_arr) in warmspot_list and hotspot_arr != []) ):
             warmspot_status = 1 
 
+    status = ''
+
     if(hotspot_status == 0 and warmspot_status == ''):
         status = '0'
     elif(hotspot_status == '' and warmspot_status == 1):
         status = '1'
     elif(hotspot_status == 0 and warmspot_status == 1):
         status = '0'
-    else:
-        status = ''
 
     return status
 
-def get_hotspot_info(gene, engine):
-    res = db.session.execute("SELECT string_agg(protmut, ',') as protmut, count(*) as count from hotspot_table where gene='{}'".format(gene),bind = engine)
-    row = generate_list_to_dict(res)
-    protmut = ''
-    if(int(row[0]['count']) > 0):
-        protmut = row[0]['protmut'].split(',')
+def get_hotspot_info(gene):
+    res = igv_hotspot_table.query.filter(igv_hotspot_table.gene == '{}'.format(gene)).all()
+    protmut = []
+    if(res):
+        for r in res:
+            protmut.append(r.protmut)
     return protmut
 
-def get_warmspot_info(gene, engine):
-    res = db.session.execute("SELECT string_agg(protmut, ',') as protmut, count(*) as count from warmspots_table where gene='{}'".format(gene),bind = engine)
-    row = generate_list_to_dict(res)
-    protmut = ''
-    if(int(row[0]['count']) > 0):
-        protmut = row[0]['protmut'].split(',')
+def get_warmspot_info(gene):
+    res = igv_warmspot_table.query.filter(igv_warmspot_table.gene == '{}'.format(gene)).all()
+    protmut = []
+    if(res):
+        for r in res:
+            protmut.append(r.protmut)
     return protmut
-
 
 def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
     "read  variant file for given sdid and return as json"
