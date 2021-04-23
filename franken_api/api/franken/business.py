@@ -87,7 +87,7 @@ def get_sample_design_ids(project_path, sample_id):
     if not status:
         return {'sample_capture': [], 'status': False}, error
 
-    sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-')),
+    sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-')),
                 os.listdir(capture_dir)))
 
     if len(sample_capture_list) < 1:
