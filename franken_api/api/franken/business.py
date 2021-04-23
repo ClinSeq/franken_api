@@ -87,7 +87,7 @@ def get_sample_design_ids(project_path, sample_id):
     if not status:
         return {'sample_capture': [], 'status': False}, error
 
-    sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-')),
+    sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-')),
                 os.listdir(capture_dir)))
 
     if len(sample_capture_list) < 1:
@@ -330,22 +330,24 @@ def get_HGVSp_status(gene, HGVSp):
     HGVSp = 'p.'+HGVSp 
 
     hotspot_list = get_hotspot_info(gene)
-    hotspot_list =  [x.strip(' ') for x in hotspot_list]
 
     warmspot_list = get_warmspot_info(gene)
-    warmspot_list =  [x.strip(' ') for x in warmspot_list]
-
-    hotspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x.strip()), HGVSp), hotspot_list))
-    warmspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x.strip()), HGVSp), warmspot_list))
 
     hotspot_status = ''
     warmspot_status = ''
+
     if(hotspot_list):
+        hotspot_list =  [x.strip(' ') for x in hotspot_list.split(',')]
+        hotspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x), HGVSp), hotspot_list))
+        
         if(HGVSp in hotspot_list or (''.join(hotspot_arr) in hotspot_list and hotspot_arr != []) ):
             hotspot_status = 0
 
     if(warmspot_list):
-        if(HGVSp in warmspot_list or (''.join(hotspot_arr) in warmspot_list and hotspot_arr != []) ):
+        warmspot_list =  [x.strip(' ') for x in warmspot_list.split(',')]
+        warmspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x), HGVSp), warmspot_list))
+
+        if(HGVSp in warmspot_list or (''.join(warmspot_arr) in warmspot_list and warmspot_arr != []) ):
             warmspot_status = 1 
 
     status = ''
@@ -361,19 +363,20 @@ def get_HGVSp_status(gene, HGVSp):
 
 def get_hotspot_info(gene):
     res = igv_hotspot_table.query.filter(igv_hotspot_table.gene == '{}'.format(gene)).all()
-    protmut = []
+    protmut = ''
     if(res):
         for r in res:
-            protmut.append(r.protmut)
-    return protmut
+            protmut += r.protmut + ','
+    return protmut.rstrip(',')
 
 def get_warmspot_info(gene):
     res = igv_warmspot_table.query.filter(igv_warmspot_table.gene == '{}'.format(gene)).all()
-    protmut = []
+    protmut = ''
     if(res):
         for r in res:
-            protmut.append(r.protmut)
-    return protmut
+            # protmut.append(r.protmut)
+            protmut += r.protmut + ','
+    return protmut.rstrip(',')
 
 def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
     "read  variant file for given sdid and return as json"

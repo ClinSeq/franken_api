@@ -22,6 +22,8 @@ def configure_app(flask_app):
     flask_app.config['LARS_DUCTAL'] = settings.MOUNT_POINT_LARS_DUCTAL
     flask_app.config['AZ_RINGTRIAL'] = settings.MOUNT_POINT_AZ_RINGTRIAL
     flask_app.config['msHSPC'] = settings.MOUNT_POINT_MS_HSPC
+    flask_app.config['RESBIO'] = settings.MOUNT_POINT_RESBIO
+
 
 def initialize_app(flask_app):
     configure_app(flask_app)
