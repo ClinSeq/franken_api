@@ -133,8 +133,40 @@ curation_svs_arguments.add_argument('SECONDHIT' , type=str,  help="")
 curation_svs_arguments.add_argument('COMMENT' , type=str,  help="")
 
 
+curation_psff_profile_arguments = reqparse.RequestParser()
+curation_psff_profile_arguments.add_argument('sample_id' , type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('capture_id' , type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('basic_qc', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('franken_plot', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('ploidy', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('ctdna_fraction', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('study_code', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('study_site' , type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('somatic_mutations' , type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('germline_alterations', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('structural_variants', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('cnvs', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('comment_info', type=str, required=True, help="")
+
+curation_psff_profile_id_arguments = reqparse.RequestParser()
+curation_psff_profile_id_arguments.add_argument('sample_id' , type=str, required=True, help="")
 
 
+curation_probio_profile_arguments = reqparse.RequestParser()
+curation_probio_profile_arguments.add_argument('sample_id' , type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('capture_id' , type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('basic_qc', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('franken_plot', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('ploidy', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('ctdna_fraction', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('ctdna_category', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('study_code', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('study_site' , type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('somatic_mutations' , type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('germline_alterations', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('structural_variants', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('cnvs', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('comment_info', type=str, required=True, help="")
 
-
-
+curation_probio_profile_id_arguments = reqparse.RequestParser()
+curation_probio_profile_id_arguments.add_argument('sample_id' , type=str, required=True, help="")
