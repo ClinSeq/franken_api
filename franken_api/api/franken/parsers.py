@@ -24,6 +24,9 @@ search_arguments.add_argument('pname', choices=('normal', 'variant_allelic', 'pl
 
 ploturls_arguments = common_arguments.copy()
 
+purecn_arguments = common_arguments.copy()
+
+
 
 staticplot_arguments = common_arguments.copy()
 staticplot_arguments.add_argument('imagename', type=str, required=True,  help='static franken plot name')
@@ -140,6 +143,8 @@ curation_psff_profile_arguments.add_argument('basic_qc', type=str, required=True
 curation_psff_profile_arguments.add_argument('franken_plot', type=str, required=True, help="")
 curation_psff_profile_arguments.add_argument('ploidy', type=str, required=True, help="")
 curation_psff_profile_arguments.add_argument('ctdna_fraction', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('ctdna_param', type=str, required=True, help="")
+curation_psff_profile_arguments.add_argument('ctdna_method', type=str, required=True, help="")
 curation_psff_profile_arguments.add_argument('study_code', type=str, required=True, help="")
 curation_psff_profile_arguments.add_argument('study_site' , type=str, required=True, help="")
 curation_psff_profile_arguments.add_argument('somatic_mutations' , type=str, required=True, help="")
@@ -159,6 +164,8 @@ curation_probio_profile_arguments.add_argument('basic_qc', type=str, required=Tr
 curation_probio_profile_arguments.add_argument('franken_plot', type=str, required=True, help="")
 curation_probio_profile_arguments.add_argument('ploidy', type=str, required=True, help="")
 curation_probio_profile_arguments.add_argument('ctdna_fraction', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('ctdna_param', type=str, required=True, help="")
+curation_probio_profile_arguments.add_argument('ctdna_method', type=str, required=True, help="")
 curation_probio_profile_arguments.add_argument('ctdna_category', type=str, required=True, help="")
 curation_probio_profile_arguments.add_argument('study_code', type=str, required=True, help="")
 curation_probio_profile_arguments.add_argument('study_site' , type=str, required=True, help="")

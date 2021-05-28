@@ -82,6 +82,8 @@ def main():
 						profile_dict['franken_plot'] = ''
 						profile_dict['ploidy'] = ''
 						profile_dict['ctdna_fraction'] = ''
+						profile_dict['ctdna_param'] = []
+						profile_dict['ctdna_method'] = ''
 						profile_dict['ctdna_category'] = ''
 						profile_dict['study_code'] = ''
 						profile_dict['study_site'] = ''

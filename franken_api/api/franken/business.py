@@ -702,7 +702,7 @@ def get_curation_svs():
 
 def list_curation_psff_profile():
     try:
-        header = ['sample_id', 'capture_id', 'basic_qc', 'franken_plot', 'ploidy', 'ctdna_fraction', 'study_code', 'study_site', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'comment_info']
+        header = ['sample_id', 'capture_id', 'basic_qc', 'franken_plot', 'ploidy', 'ctdna_fraction', 'ctdna_param', 'ctdna_method', 'study_code', 'study_site', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'comment_info']
         try:
             return {'status': True, 'data': psff_profile.query.filter().all(),
                     'header': generate_headers_ngx_table(header),
@@ -716,7 +716,7 @@ def list_curation_psff_profile():
 
 def list_curation_probio_profile():
     try:
-        header = ['sample_id', 'capture_id', 'basic_qc', 'franken_plot', 'ploidy', 'ctdna_fraction', 'ctdna_category',  'study_code', 'study_site', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'comment_info']
+        header = ['sample_id', 'capture_id', 'basic_qc', 'franken_plot', 'ploidy', 'ctdna_fraction', 'ctdna_param', 'ctdna_method', 'ctdna_category',  'study_code', 'study_site', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'comment_info']
         try:
             return {'status': True, 'data': probio_profile.query.filter().all(),
                     'header': generate_headers_ngx_table(header),
@@ -729,13 +729,13 @@ def list_curation_probio_profile():
 
 def get_curation_psff_profile(record):
     try:
-        return {'status': True, 'data': psff_profile.query.filter().all(), 'error': ''}, 200
+        return {'status': True, 'data': psff_profile.query.filter(psff_profile.sample_id == record['sample_id']).all(), 'error': ''}, 200
     except Exception as e:
         return {'status': True, 'data': [], 'error': str(e)}, 400
 
 def get_curation_probio_profile(record):
     try:
-        return {'status': True, 'data': probio_profile.query.filter().all(), 'error': ''}, 200
+        return {'status': True, 'data': probio_profile.query.filter(probio_profile.sample_id == record['sample_id']).all(), 'error': ''}, 200
     except Exception as e:
         return {'status': True, 'data': [], 'error': str(e)}, 400
 
@@ -861,3 +861,16 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 
     else:
         return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid file', 'status': False}, 400
+
+
+def get_purecn_ctdna(project_path, sample_id, capture_id):
+    file_path = project_path + '/' + sample_id + '/' + capture_id + '/purecn/'
+    status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
+    if status:
+        regex = '[-\w]+-(CFDNA)-[A-Za-z0-9-]+.csv'
+        csv_filename = file_path + list(filter(lambda x: (re.match(regex, x) ),os.listdir(file_path)))[0]
+        df = pd.read_csv(csv_filename)
+        json_data = df.to_dict(orient='records')
+        return {'data': json_data, 'status': True}, 200
+
+    return {'data': [], 'status': False}, 400
