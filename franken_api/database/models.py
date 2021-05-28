@@ -291,3 +291,98 @@ class TableIgvWarmspot(pssql.Model):
     def __repr__(self):
         return "<TableIgvWarmspot (id='%s', gene='%s', protmut='%s', prot2mut='%s')>" % (self.id,self.gene,
                                                                                             self.protmut,self.prot2mut)
+
+class TablePsffSummary(pssql.Model):
+    __bind_key__ = 'curation'
+    __tablename__ = "psff_summary"
+
+    id = pssql.Column(pssql.Integer, primary_key=True, nullable=False)
+    sample_id = pssql.Column(pssql.String)
+    capture_id = pssql.Column(pssql.String)
+    basic_qc = pssql.Column(pssql.String)
+    franken_plot = pssql.Column(pssql.String)
+    ploidy = pssql.Column(pssql.String)
+    ctdna_fraction = pssql.Column(pssql.String)
+    ctdna_param = pssql.Column(pssql.String)
+    ctdna_method = pssql.Column(pssql.String)
+    study_code = pssql.Column(pssql.String)
+    study_site = pssql.Column(pssql.String)
+    somatic_mutations = pssql.Column(pssql.String) 
+    germline_alterations = pssql.Column(pssql.String)
+    structural_variants = pssql.Column(pssql.String)
+    cnvs = pssql.Column(pssql.String)
+    comment_info = pssql.Column(pssql.String)
+
+
+    def __init__(self, row_dict):
+
+        self.id = row_dict.get('id', None)
+        self.sample_id = row_dict.get('sample_id', None)
+        self.capture_id = row_dict.get('capture_id', None)
+        self.basic_qc = row_dict.get('basic_qc', None)
+        self.franken_plot = row_dict.get('franken_plot', None)
+        self.ploidy = row_dict.get('ploidy', None)
+        self.ctdna_fraction = row_dict.get('ctdna_fraction', None)
+        self.ctdna_param = row_dict.get('ctdna_param', None)
+        self.ctdna_method = row_dict.get('ctdna_method', None)
+        self.study_code = row_dict.get('study_code', None)
+        self.study_site = row_dict.get('study_site', None)
+        self.somatic_mutations = row_dict.get('somatic_mutations', None)
+        self.germline_alterations = row_dict.get('germline_alterations', None)
+        self.structural_variants = row_dict.get('structural_variants', None)
+        self.cnvs = row_dict.get('cnvs', None)
+        self.comment_info = row_dict.get('comment_info', None)
+
+
+
+    def __repr__(self):
+        return "<TablePsffSummary (id='%s', sample_id='%s', capture_id='%s', basic_qc='%s')>" % (self.id,self.sample_id,self.capture_id, self.basic_qc)
+
+
+class TableProbioSummary(pssql.Model):
+    __bind_key__ = 'curation'
+    __tablename__ = "probio_summary"
+
+    id = pssql.Column(pssql.Integer, primary_key=True, nullable=False)
+    sample_id = pssql.Column(pssql.String)
+    capture_id = pssql.Column(pssql.String)
+    basic_qc = pssql.Column(pssql.String)
+    franken_plot = pssql.Column(pssql.String)
+    ploidy = pssql.Column(pssql.String)
+    ctdna_fraction = pssql.Column(pssql.String)
+    ctdna_param = pssql.Column(pssql.String)
+    ctdna_method = pssql.Column(pssql.String)
+    ctdna_category = pssql.Column(pssql.String)
+    study_code = pssql.Column(pssql.String)
+    study_site = pssql.Column(pssql.String)
+    somatic_mutations = pssql.Column(pssql.String) 
+    germline_alterations = pssql.Column(pssql.String)
+    structural_variants = pssql.Column(pssql.String)
+    cnvs = pssql.Column(pssql.String)
+    comment_info = pssql.Column(pssql.String)
+
+
+    def __init__(self, row_dict):
+
+        self.id = row_dict.get('id', None)
+        self.sample_id = row_dict.get('sample_id', None)
+        self.capture_id = row_dict.get('capture_id', None)
+        self.basic_qc = row_dict.get('basic_qc', None)
+        self.franken_plot = row_dict.get('franken_plot', None)
+        self.ploidy = row_dict.get('ploidy', None)
+        self.ctdna_fraction = row_dict.get('ctdna_fraction', None)
+        self.ctdna_param = row_dict.get('ctdna_param', None)
+        self.ctdna_method = row_dict.get('ctdna_method', None)
+        self.ctdna_category = row_dict.get('ctdna_category', None)
+        self.study_code = row_dict.get('study_code', None)
+        self.study_site = row_dict.get('study_site', None)
+        self.somatic_mutations = row_dict.get('somatic_mutations', None)
+        self.germline_alterations = row_dict.get('germline_alterations', None)
+        self.structural_variants = row_dict.get('structural_variants', None)
+        self.cnvs = row_dict.get('cnvs', None)
+        self.comment_info = row_dict.get('comment_info', None)
+
+
+
+    def __repr__(self):
+        return "<TableProbioSummary (id='%s', sample_id='%s', capture_id='%s', basic_qc='%s')>" % (self.id,self.sample_id,self.capture_id, self.basic_qc)

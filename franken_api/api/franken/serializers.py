@@ -167,6 +167,45 @@ curation_warmspot = api.model('IGV Warmspot', {
         'community_notes': fields.String(description='')
 })
 
+curation_psff_profile = api.model('PSFF Profile', {
+        'id': fields.String(description=''),
+        'sample_id': fields.String(description=''),
+        'capture_id': fields.String(description=''),
+        'basic_qc': fields.String(description=''),
+        'franken_plot': fields.String(description=''),
+        'ploidy': fields.String(description=''),
+        'ctdna_fraction': fields.String(description=''),
+        'ctdna_param': fields.String(description=''),
+        'ctdna_method': fields.String(description=''),
+        'study_code': fields.String(description=''),
+        'study_site': fields.String(description=''),
+        'somatic_mutations': fields.String(description=''), 
+        'germline_alterations': fields.String(description=''),
+        'structural_variants': fields.String(description=''),
+        'cnvs': fields.String(description=''),
+        'comment_info': fields.String(description=''),
+})
+
+curation_probio_profile = api.model('PSFF Profile', {
+        'id': fields.String(description=''),
+        'sample_id': fields.String(description=''),
+        'capture_id': fields.String(description=''),
+        'basic_qc': fields.String(description=''),
+        'franken_plot': fields.String(description=''),
+        'ploidy': fields.String(description=''),
+        'ctdna_fraction': fields.String(description=''),
+        'ctdna_param': fields.String(description=''),
+        'ctdna_method': fields.String(description=''),
+        'ctdna_category': fields.String(description=''),
+        'study_code': fields.String(description=''),
+        'study_site': fields.String(description=''),
+        'somatic_mutations': fields.String(description=''), 
+        'germline_alterations': fields.String(description=''),
+        'structural_variants': fields.String(description=''),
+        'cnvs': fields.String(description=''),
+        'comment_info': fields.String(description=''),
+})
+
 header_curation = api.model('Curation Header', {'key':fields.String(description='Column name') ,
                                         'title': fields.String(description='Column display name')})
 
@@ -194,3 +233,13 @@ warmspot_data_list = api.model('Curation Warmspot DB Data', { 'status':fields.Bo
                                                      'data': fields.List(fields.Nested(curation_warmspot)),
                                                      'header': fields.List(fields.Nested(header_curation)),
                                                      'error': fields.String()})
+
+psff_profile_data_list = api.model('Curation PSFF Profile DB Data', { 'status':fields.Boolean(required=True),
+                                                     'data': fields.List(fields.Nested(curation_psff_profile)),
+                                                     'header': fields.List(fields.Nested(header_curation)),
+                                                     'error': fields.String()})                                                     
+
+probio_profile_data_list = api.model('Curation PSFF Profile DB Data', { 'status':fields.Boolean(required=True),
+                                                     'data': fields.List(fields.Nested(curation_probio_profile)),
+                                                     'header': fields.List(fields.Nested(header_curation)),
+                                                     'error': fields.String()})                                                        

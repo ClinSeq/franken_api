@@ -6,6 +6,9 @@ from franken_api.database.models import TableIgvSomatic as igv_somatic_table
 from franken_api.database.models import TableSVS as svs_table
 from franken_api.database.models import TableIgvHotspot as igv_hotspot_table
 from franken_api.database.models import TableIgvWarmspot as igv_warmspot_table
+from franken_api.database.models import TablePsffSummary as psff_profile
+from franken_api.database.models import TableProbioSummary as probio_profile
+
 
 
 from sqlalchemy import and_
@@ -559,6 +562,43 @@ def check_curation_svs_record(table, record):
                                    table.START_B == record['START_B']
                                    ).first()
 
+def check_curation_psff_profile_record(table, record):
+    return table.query.filter(table.sample_id == record['sample_id'],
+                                   table.capture_id == record['capture_id']
+                                   ).first()
+
+def check_curation_probio_profile_record(table, record):
+    return table.query.filter(table.sample_id == record['sample_id'],
+                                   table.capture_id == record['capture_id']
+                                   ).first()
+
+def curation_update_profile(record, table_name):
+    try:
+        tables_dict = {
+            'psff_summary':psff_profile,
+            'probio_summary':probio_profile
+        }
+        func_dict = {
+            'psff_summary':check_curation_psff_profile_record,
+            'probio_summary':check_curation_probio_profile_record
+        }
+
+        current_record = func_dict[table_name](tables_dict[table_name], record )
+        
+        if not bool(current_record):
+            obj_germline = tables_dict[table_name](record)
+            db.session.add(obj_germline)
+            db.session.commit()
+            return {'status': True, 'error': ''}, 200
+        else:
+            for each_col in record:
+                setattr(current_record, each_col, record[each_col])
+            db.session.commit()
+            return {'status': True, 'error': ''}, 200
+            
+    except Exception as e :
+        return {'status': False, 'error': str(e)}, 400
+
 def post_curation(record, table_name):
     try:
         tables_dict = {
@@ -660,6 +700,44 @@ def get_curation_svs():
     except Exception as e:
         return "Error :" + str(e), 400
 
+def list_curation_psff_profile():
+    try:
+        header = ['sample_id', 'capture_id', 'basic_qc', 'franken_plot', 'ploidy', 'ctdna_fraction', 'ctdna_param', 'ctdna_method', 'study_code', 'study_site', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'comment_info']
+        try:
+            return {'status': True, 'data': psff_profile.query.filter().all(),
+                    'header': generate_headers_ngx_table(header),
+                    'error': ''}, 200
+        except Exception as e:
+            return {'status': True, 'data': [], 'header': header, 'error': str(e)}, 400
+
+    except Exception as e:
+        return "Error :" + str(e), 400
+
+
+def list_curation_probio_profile():
+    try:
+        header = ['sample_id', 'capture_id', 'basic_qc', 'franken_plot', 'ploidy', 'ctdna_fraction', 'ctdna_param', 'ctdna_method', 'ctdna_category',  'study_code', 'study_site', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'comment_info']
+        try:
+            return {'status': True, 'data': probio_profile.query.filter().all(),
+                    'header': generate_headers_ngx_table(header),
+                    'error': ''}, 200
+        except Exception as e:
+            return {'status': True, 'data': [], 'header': header, 'error': str(e)}, 400
+
+    except Exception as e:
+        return "Error :" + str(e), 400
+
+def get_curation_psff_profile(record):
+    try:
+        return {'status': True, 'data': psff_profile.query.filter(psff_profile.sample_id == record['sample_id']).all(), 'error': ''}, 200
+    except Exception as e:
+        return {'status': True, 'data': [], 'error': str(e)}, 400
+
+def get_curation_probio_profile(record):
+    try:
+        return {'status': True, 'data': probio_profile.query.filter(probio_profile.sample_id == record['sample_id']).all(), 'error': ''}, 200
+    except Exception as e:
+        return {'status': True, 'data': [], 'error': str(e)}, 400
 
 def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='true'):
     "read qc file from qc_overview.txt and return as json"
@@ -783,3 +861,16 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 
     else:
         return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid file', 'status': False}, 400
+
+
+def get_purecn_ctdna(project_path, sample_id, capture_id):
+    file_path = project_path + '/' + sample_id + '/' + capture_id + '/purecn/'
+    status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
+    if status:
+        regex = '[-\w]+-(CFDNA)-[A-Za-z0-9-]+.csv'
+        csv_filename = file_path + list(filter(lambda x: (re.match(regex, x) ),os.listdir(file_path)))[0]
+        df = pd.read_csv(csv_filename)
+        json_data = df.to_dict(orient='records')
+        return {'data': json_data, 'status': True}, 200
+
+    return {'data': [], 'status': False}, 400
