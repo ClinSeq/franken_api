@@ -6,10 +6,10 @@ import psycopg2
 from sqlalchemy import create_engine
 import numpy as np
 import json
+
 import os 
 import glob
 import re
-
 
 def readCNVOutFile(file_name):
 	cnv_df = pd.read_csv(file_name, delimiter = "\t")
@@ -53,13 +53,15 @@ def readOutFile(file_name, condition_txt):
 
 def main():
 
-	nfs_path = '/nfs/PROBIO/autoseq-output/'
+	nfs_path = '/nfs/PSFF/autoseq-output/'
 
-	ignored = {"._.DS_Store", ".DS_Store", ".nohup.log"}
-	sdid_string = [x for x in os.listdir(nfs_path) if x not in ignored]
+	empty_file_list = []
 
 	profile_list = []
 	col_id = 1
+
+	ignored = {"._.DS_Store", ".DS_Store", ".nohup.log"}
+	sdid_string = [x for x in os.listdir(nfs_path) if x not in ignored]
 
 	for s in sdid_string:
 
@@ -72,7 +74,7 @@ def main():
 				folders = [x for x in os.listdir(sample_path) if x not in ignored]
 
 				for fold in folders:
-					if re.search('PB-P', fold):
+					if re.search('PSFF-P', fold):
 						profile_dict = {}
 						capture_id = fold
 						profile_dict['id'] = col_id
@@ -84,7 +86,6 @@ def main():
 						profile_dict['ctdna_fraction'] = ''
 						profile_dict['ctdna_param'] = []
 						profile_dict['ctdna_method'] = ''
-						profile_dict['ctdna_category'] = ''
 						profile_dict['study_code'] = ''
 						profile_dict['study_site'] = ''
 						profile_dict['comment_info'] = ''
@@ -124,10 +125,7 @@ def main():
 											second_hit = ('' if(sm['SECONDHIT'] == '' or sm['SECONDHIT'] == '-') else ', Second hit with'+sm['SECONDHIT']) if 'SECONDHIT' in sm else ''
 											hotspot = (sm['HGVSp'] if(sm['HOTSPOT'] == '') else 'hotspot mutation ('+sm['HGVSp']+') ') if 'HOTSPOT' in sm else sm['HGVSp']
 											CLONALITY = sm['CLONALITY'] if 'CLONALITY' in sm else ''
-											chrom = sm['Chromosome'] if 'Chromosome' in sm else sm['CHROM']
-											start = sm['Start'] if 'Start' in sm else sm['START']
-											end = sm['Stop'] if 'Stop' in sm else sm['END']
-											somatic_mut_txt += CLONALITY + ', '+sm['GENE']+' ('+str(chrom)+':'+str(start)+'-'+str(end)+'), '+hotspot+', '+sm['IMPACT']+' impact ('+sm['CONSEQUENCE']+')'+second_hit+' '
+											somatic_mut_txt += CLONALITY + ', '+sm['GENE']+' ('+str(sm['CHROM'])+':'+str(sm['START'])+'-'+str(sm['END'])+'), '+hotspot+', '+sm['IMPACT']+' impact ('+sm['CONSEQUENCE']+')'+second_hit+' '
 										print("Somatic Done")
 									else:
 										print("Empty Somatic")                            
@@ -168,12 +166,11 @@ def main():
 			else:
 				print("Not found : ",sample_id)
 
-
 	df = pd.DataFrame.from_dict(profile_list, orient='columns')
 
-	alchemyEngine           = create_engine('postgresql+psycopg2://postgres:postgres@127.0.0.1:5432/curation', pool_recycle=3600)
+	alchemyEngine           = create_engine('postgresql+psycopg2://referral_writer:ProbioWriter@127.0.0.1:5432/curation', pool_recycle=3600)
 	postgreSQLConnection    = alchemyEngine.connect()
-	postgreSQLTable         = "probio_summary"
+	postgreSQLTable         = "psff_summary"
 
 	try:
 		frame = df.to_sql(postgreSQLTable, postgreSQLConnection, if_exists='fail',  index = False)
