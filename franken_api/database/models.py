@@ -66,6 +66,9 @@ class TableIgvGermline(pssql.Model):
     gnomAD = pssql.Column(pssql.String)
     BRCAEx = pssql.Column(pssql.String)
     OncoKB = pssql.Column(pssql.String)
+    purecn_probability = pssql.Column(pssql.String)
+    purecn_status = pssql.Column(pssql.String)
+    purecn_tot_copies = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -91,6 +94,9 @@ class TableIgvGermline(pssql.Model):
         self.gnomAD = row_dict.get('gnomAD', None)
         self.BRCAEx = row_dict.get('BRCAEx', None)
         self.OncoKB = row_dict.get('OncoKB', None)
+        self.purecn_probability = row_dict.get('purecn_probability', None)
+        self.purecn_status = row_dict.get('purecn_status', None)
+        self.purecn_tot_copies = row_dict.get('purecn_tot_copies', None)
 
 
     def __repr__(self):
@@ -127,6 +133,9 @@ class TableIgvSomatic(pssql.Model):
     gnomAD = pssql.Column(pssql.String)
     BRCAEx = pssql.Column(pssql.String)
     OncoKB = pssql.Column(pssql.String)
+    purecn_probability = pssql.Column(pssql.String)
+    purecn_status = pssql.Column(pssql.String)
+    purecn_tot_copies = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -155,6 +164,9 @@ class TableIgvSomatic(pssql.Model):
         self.gnomAD = row_dict.get('gnomAD', None)
         self.BRCAEx = row_dict.get('BRCAEx', None)
         self.OncoKB = row_dict.get('OncoKB', None)
+        self.purecn_probability = row_dict.get('purecn_probability', None)
+        self.purecn_status = row_dict.get('purecn_status', None)
+        self.purecn_tot_copies = row_dict.get('purecn_tot_copies', None)
 
     def __repr__(self):
         return "<TableIgvSomatic (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,
