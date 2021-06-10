@@ -912,7 +912,7 @@ def update_pureCN_txt(variant_type, df, file_path, pureCN_probability, pureCN_st
 	df_modified = df_modified.drop(['compressed', 'match'],axis=1, errors='ignore')
 	df_modified.to_csv(igv_nav_file,index = False, header=True, sep='\t')
 
-def update_pureCN_somatic_germline(project_path, sample_id, capture_id):
+def update_pureCN_somatic_germline(project_path, sample_id, capture_id, variant_type):
 
 	root_path = project_path + '/' + sample_id + '/' + capture_id 
 	
@@ -924,8 +924,11 @@ def update_pureCN_somatic_germline(project_path, sample_id, capture_id):
 		
 	try:
 		df = read_purecn_variant_txt(purecn_file_path)
-		update_pureCN_txt('somatic', df, root_path, 'max_somatic', 'somatic_PureCN_status')
-		update_pureCN_txt('germline', df, root_path, 'max_germline', 'germline_PureCN_status')
+		if(variant_type == 'somatic'):
+			update_pureCN_txt('somatic', df, root_path, 'max_somatic', 'somatic_PureCN_status')
+		elif(variant_type == 'germline'):
+			update_pureCN_txt('germline', df, root_path, 'max_germline', 'germline_PureCN_status')
+
 		return {'status': True, 'data': 'Update Successfully', 'error': ''}, 200
 	except Exception as e:
 		return {'status': True, 'data': [], 'error': str(e)}, 400

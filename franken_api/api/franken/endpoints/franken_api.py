@@ -301,5 +301,5 @@ class UpdateMaxPurecnVal(Resource):
         Get Max PureCN value for each variant and update into somatic and germline table
         """
         args = purecn_arguments.parse_args()
-        result , errocode = update_pureCN_somatic_germline(current_app.config[args['project_name']], args['sdid'], args['capture_id'])
+        result , errocode = update_pureCN_somatic_germline(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['variant_type'])
         return result, errocode
