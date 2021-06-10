@@ -385,10 +385,10 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 	header = []
 
 	if variant_type == 'germline':
-		missing_header = ['PureCN_status', 'PureCN_probability', 'ML.C']
+		missing_header = ['purecn_status', 'purecn_probability', 'purecn_tot_copies']
 		regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
 	elif variant_type == 'somatic':
-		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'PureCN_status', 'PureCN_probability', 'ML.C']
+		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
 		regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
 	else:
 		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
@@ -655,7 +655,7 @@ def get_curation_igv_germline():
 	try:
 		header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', 'CHROM', 'START', 'END',
 				  'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'GENE', 'IMPACT', 'CONSEQUENCE',
-				  'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
+				  'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
 		try:
 			return {'status': True, 'data': igv_germline_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
@@ -671,7 +671,7 @@ def get_curation_igv_somatic():
 		header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', "CHROM", 'START', 'END',
 					'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'ASSESSMENT', 'CLONALITY',  'GENE', 'IMPACT',
 				  'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF',
-				  'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
+				  'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
 		try:
 			return {'status': True, 'data': igv_somatic_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
@@ -901,13 +901,13 @@ def update_pureCN_txt(variant_type, df, file_path, pureCN_probability, pureCN_st
 	
 	for index, row in df_modified.iterrows():
 		if(row['match']):
-			df_modified.loc[index,'PureCN_probability'] = df.loc[df['compressed'] == row['compressed'], pureCN_probability].values[0]
-			df_modified.loc[index,'PureCN_status']  = df.loc[df['compressed'] == row['compressed'], pureCN_status].values[0]
-			df_modified.loc[index,'PureCN_tot_copies']  = df.loc[df['compressed'] == row['compressed'], 'ML.C'].values[0]
+			df_modified.loc[index,'purecn_probability'] = df.loc[df['compressed'] == row['compressed'], pureCN_probability].values[0]
+			df_modified.loc[index,'purecn_status']  = df.loc[df['compressed'] == row['compressed'], pureCN_status].values[0]
+			df_modified.loc[index,'purecn_tot_copies']  = df.loc[df['compressed'] == row['compressed'], 'ML.C'].values[0]
 		else:
-			df_modified.loc[index,'PureCN_probability'] = '-'
-			df_modified.loc[index,'PureCN_status']  = '-'
-			df_modified.loc[index,'PureCN_tot_copies']  = '-'
+			df_modified.loc[index,'purecn_probability'] = '-'
+			df_modified.loc[index,'purecn_status']  = '-'
+			df_modified.loc[index,'purecn_tot_copies']  = '-'
 	
 	df_modified = df_modified.drop(['compressed', 'match'],axis=1, errors='ignore')
 	df_modified.to_csv(igv_nav_file,index = False, header=True, sep='\t')

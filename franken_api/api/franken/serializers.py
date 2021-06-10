@@ -77,7 +77,10 @@ curation_germline = api.model('IGV Germline', {
         'CLIN_SIG' : fields.String(description=''),
         'gnomAD': fields.String(description=''),
         'BRCAEx' : fields.String(description=''),
-        'OncoKB' : fields.String(description='')
+        'OncoKB' : fields.String(description=''),
+        'purecn_probability' : fields.String(description=''),
+        'purecn_status' : fields.String(description=''),
+        'purecn_tot_copies' : fields.String(description='')
 })
 curation_somatic = api.model('IGV Somatic', {
         'id': fields.String(description='Project ID'),
@@ -107,7 +110,10 @@ curation_somatic = api.model('IGV Somatic', {
         'CLIN_SIG' : fields.String(description=''),
         'gnomAD': fields.String(description=''),
         'BRCAEx' : fields.String(description=''),
-        'OncoKB' : fields.String(description='')
+        'OncoKB' : fields.String(description=''),
+        'purecn_probability' : fields.String(description=''),
+        'purecn_status' : fields.String(description=''),
+        'purecn_tot_copies' : fields.String(description='')
 })
 
 curation_svs = api.model('SVS', {
