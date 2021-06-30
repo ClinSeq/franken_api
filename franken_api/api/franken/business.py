@@ -148,6 +148,19 @@ def get_static_image(project_path, sample_id, capture_id, image_name):
 	"""retrun the franken static png image"""
 
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/' + image_name
+	
+	if os.path.exists(file_path):
+		return file_path, 200
+
+	return file_path, 400
+
+def get_xml_image(project_path, sample_id, capture_id, xml):
+	"""retrun the franken static png image"""
+
+	# file_path = project_path + '/' + sample_id + '/' + capture_id + '/IGVnav/' + xml
+	file_path = "/home/karman/igv.js/examples/sessions/IGVnav/igv_session_sv.xml"
+
+	
 	if os.path.exists(file_path):
 		return file_path, 200
 

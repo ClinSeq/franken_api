@@ -25,7 +25,10 @@ search_arguments.add_argument('pname', choices=('normal', 'variant_allelic', 'pl
 ploturls_arguments = common_arguments.copy()
 
 purecn_arguments = common_arguments.copy()
-purecn_arguments.add_argument('variant_type', choices=('somatic', 'germline'), required=True,
+
+purecn_max_val_arguments = common_arguments.copy()
+
+purecn_max_val_arguments.add_argument('variant_type', choices=('somatic', 'germline'), required=True,
                               help="valid Variant Type: 'somatic', 'germline'")
 
 
