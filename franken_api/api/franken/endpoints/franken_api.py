@@ -3,10 +3,10 @@ from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
 from flask_restplus import Resource
 #from franken_api.api.franken.serializers import search_result
-from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, igv_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments
+from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, igv_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments
 from franken_api.api.restplus import api
 from flask import jsonify
-from franken_api.api.franken.business import pdfs_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline
+from franken_api.api.franken.business import pdfs_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_xml_image
 from franken_api.api.franken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
 import io
 #import  franken_api.database.models
@@ -112,6 +112,23 @@ class FrankenStaticImages(Resource):
         return send_file(result,
                       attachment_filename='frankenplot.png',
                       mimetype='image/png')
+
+@ns.route('/igvXML')
+@api.response(200, 'IGV Session XML')
+@api.response(400, 'No XML found')
+class FrankenStaticImages(Resource):
+    @api.expect(staticplot_arguments, validate=True)
+    def get(self):
+        """
+        Returns static franken plot.
+        ```
+        session XML
+        ```
+        """
+        args = staticplot_arguments.parse_args()
+        result, errorcode = get_xml_image(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['imagename'])
+        return send_file(result, mimetype='application/xml')
+
 
 @ns.route('/plot')
 @api.response(200, 'Json file to plot')
@@ -295,11 +312,11 @@ class GetPurecn(Resource):
 @api.response(200, 'Update purecn max value into somatic and germline')
 @api.response(400, 'Purecn variant file not found')
 class UpdateMaxPurecnVal(Resource):
-    @api.expect(purecn_arguments, validate=True)
+    @api.expect(purecn_max_val_arguments, validate=True)
     def get(self):
         """
         Get Max PureCN value for each variant and update into somatic and germline table
         """
-        args = purecn_arguments.parse_args()
+        args = purecn_max_val_arguments.parse_args()
         result , errocode = update_pureCN_somatic_germline(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['variant_type'])
         return result, errocode
