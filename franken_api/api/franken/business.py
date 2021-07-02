@@ -90,7 +90,7 @@ def get_sample_design_ids(project_path, sample_id):
 	if not status:
 		return {'sample_capture': [], 'status': False}, error
 
-	sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-')),
+	sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-')),
 				os.listdir(capture_dir)))
 
 	if len(sample_capture_list) < 1:
@@ -160,7 +160,6 @@ def get_xml_image(project_path, sample_id, capture_id, xml):
 	# file_path = project_path + '/' + sample_id + '/' + capture_id + '/IGVnav/' + xml
 	file_path = "/home/karman/igv.js/examples/sessions/IGVnav/igv_session_sv.xml"
 
-	
 	if os.path.exists(file_path):
 		return file_path, 200
 
@@ -877,7 +876,7 @@ def get_purecn_ctdna(project_path, sample_id, capture_id):
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/purecn/'
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
-		regex = '[-\w]+-(CFDNA)-[A-Za-z0-9-]+.csv'
+		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.csv'
 		csv_filename = file_path + list(filter(lambda x: (re.match(regex, x) ),os.listdir(file_path)))[0]
 		df = pd.read_csv(csv_filename)
 		json_data = df.to_dict(orient='records')
