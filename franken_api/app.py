@@ -23,6 +23,8 @@ def configure_app(flask_app):
     flask_app.config['AZ_RINGTRIAL'] = settings.MOUNT_POINT_AZ_RINGTRIAL
     flask_app.config['msHSPC'] = settings.MOUNT_POINT_MS_HSPC
     flask_app.config['RESBIO'] = settings.MOUNT_POINT_RESBIO
+    flask_app.config['HD_C3'] = settings.MOUNT_POINT_HD_C3
+    flask_app.config['LPC'] = settings.MOUNT_POINT_LPC
 
 
 def initialize_app(flask_app):
