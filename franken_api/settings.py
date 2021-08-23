@@ -18,10 +18,10 @@ SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 #path to franken json files
 MOUNT_POINT_PROBIO = '/nfs/PROBIO/autoseq-output'
-# MOUNT_POINT_PROBIO = '/home/karman/probio/test/PROBIO/autoseq-output'
 MOUNT_POINT_PSFF = '/nfs/PSFF/autoseq-output'
-# MOUNT_POINT_PSFF = '/nfs/CLINSEQ/PSFF/autoseq-output'
-MOUNT_POINT_LARS_DUCTAL= '/nfs/CLINSEQ/LARS_DUCTAL/autoseq-output'
-MOUNT_POINT_AZ_RINGTRIAL= '/nfs/CLINSEQ/AZ_ringtrial/autoseq-output'
-MOUNT_POINT_MS_HSPC= '/nfs/PROBIO/autoseq-output/msHSPC'
-MOUNT_POINT_RESBIO= '/nfs/RESBIO/autoseq-output'
+MOUNT_POINT_LARS_DUCTAL = '/nfs/CLINSEQ/LARS_DUCTAL/autoseq-output'
+MOUNT_POINT_AZ_RINGTRIAL = '/nfs/CLINSEQ/AZ_ringtrial/autoseq-output'
+MOUNT_POINT_MS_HSPC = '/nfs/PROBIO/autoseq-output/msHSPC'
+MOUNT_POINT_RESBIO = '/nfs/RESBIO/autoseq-output'
+MOUNT_POINT_HD_C3 = '/nfs/PROBIO2/healthy_donors_comprehensive/comprehensive_v3/autoseq-output'
+MOUNT_POINT_LPC = '/nfs/PROBIO3/LPC/autoseq-output'
