@@ -145,6 +145,8 @@ curation_svs_arguments.add_argument('CALL', type=str,  help="")
 curation_svs_arguments.add_argument('TYPE' , type=str,  help="")
 curation_svs_arguments.add_argument('SECONDHIT' , type=str,  help="")
 curation_svs_arguments.add_argument('COMMENT' , type=str,  help="")
+curation_svs_arguments.add_argument('ASSESSMENT' , type=str,  help="")
+curation_svs_arguments.add_argument('CLONALITY' , type=str,  help="")
 
 
 curation_psff_profile_arguments = reqparse.RequestParser()

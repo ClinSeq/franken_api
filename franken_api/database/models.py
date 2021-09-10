@@ -200,6 +200,8 @@ class TableSVS(pssql.Model):
     TYPE = pssql.Column(pssql.String)
     SECONDHIT = pssql.Column(pssql.String)
     COMMENT  = pssql.Column(pssql.String)
+    ASSESSMENT = pssql.Column(pssql.String)
+    CLONALITY  = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -226,6 +228,8 @@ class TableSVS(pssql.Model):
         self.TYPE = row_dict.get('TYPE', None)
         self.SECONDHIT = row_dict.get('SECONDHIT', None)
         self.COMMENT = row_dict.get('COMMENT', None)
+        self.ASSESSMENT = row_dict.get('ASSESSMENT', None)
+        self.CLONALITY = row_dict.get('CLONALITY', None)
 
     def __repr__(self):
         return "<TableSVS (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,

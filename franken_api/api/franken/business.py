@@ -256,6 +256,8 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		typ_key = 'TYPE'
 		sec_key = 'SECONDHIT'
 		com_key = 'COMMENT'
+		asst_key = 'ASSESSMENT'
+		clon_key = 'CLONALITY'
 
 		if cal_key in column_list:
 			cal_indx = column_list.index(cal_key)
@@ -276,7 +278,17 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 			com_indx = column_list.index(com_key)
 			del column_list[com_indx]
 			column_list.insert(0,com_key)
+
+		if asst_key in column_list:
+			asst_indx = column_list.index(asst_key)
+			del column_list[asst_indx]
+			column_list.insert(0,asst_key)
 		
+		if clon_key in column_list:
+			clon_indx = column_list.index(clon_key)
+			del column_list[clon_indx]
+			column_list.insert(0,clon_key)
+
 		header = list(generate_headers_ngx_table(column_list))
 		
 		#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
@@ -284,7 +296,9 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 			cal_key: {'key': cal_key, 'title': 'CALL'},
 			typ_key: {'key': typ_key, 'title': 'TYPE'},
 			sec_key :  {'key': sec_key, 'title': 'SECONDHIT'},
-			com_key :  {'key': com_key, 'title': 'COMMENT'}
+			com_key :  {'key': com_key, 'title': 'COMMENT'},
+			asst_key :  {'key': asst_key, 'title': 'ASSESSMENT'},
+			clon_key :  {'key': clon_key, 'title': 'CLONALITY'}
 		}
 
 		for idx,value in enumerate(new_keys):
@@ -694,7 +708,7 @@ def get_curation_svs():
 	try:
 		header = ['PROJECT_ID', 'CAPTURE_ID', 'SDID', 'CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B',
 				  'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SAMPLE', 'GENE_A', 'IN_DESIGN_A', 'GENE_B',
-				  'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'CALL', 'TYPE', 'SECONDHIT', 'COMMENT',]
+				  'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'CALL', 'TYPE', 'SECONDHIT', 'COMMENT', 'ASSESSMENT', 'CLONALITY']
 		try:
 			return {'status': True, 'data': svs_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
