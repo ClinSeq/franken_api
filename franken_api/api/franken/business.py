@@ -199,6 +199,8 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 													and not x.startswith('.')
 													and not x.endswith('.out'), os.listdir(file_path)))[0]
 	if os.path.exists(qc_filename):
+
+		hide_header = ["indexs",  "FOLD_80_BASE_PENALTY", "dedupped_on_bait_rate"]
 		with open(qc_filename, 'r') as f:
 			reader_ponter = csv.DictReader(f, delimiter ='\t')
 			for i, each_row in enumerate(reader_ponter):
@@ -220,7 +222,13 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 				if(not n_key):
 					header.append(new_keys[value])  
 
-			return {'header': header, 'data': data, 'filename': qc_filename, 'status': True}, 200
+			new_header = []
+			for i,value in enumerate(header):
+				key_name = value['key']
+				if(key_name not in hide_header):
+					new_header.append(value)
+
+			return {'header': new_header, 'data': data, 'filename': qc_filename, 'status': True}, 200
 
 	else:
 		return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
@@ -237,7 +245,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 							os.listdir(file_path)))[0]
 	data = []
 	if os.path.exists(file_path):
-		
+		hide_header = ["GENE_A-GENE_B-sorted", "CAPTURE_ID", "PROJECT_ID", "SDID", "indexs"]
 		df = pd.read_csv(file_path,delimiter="\t")
 	   
 		# Dataframe soted based on the below columns
@@ -246,6 +254,8 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		
 		# Add Index column in the dataframe
 		df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
+
+		df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs', 'CALL', 'COMMENT', 'ASSESSMENT', 'CLONALITY', 'PROJECT_ID', 'CAPTURE_ID']]
 
 		column_list = list(df_filter.columns)
 
@@ -306,7 +316,13 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 			if(not n_key):
 				header.insert(0, new_keys[value])
 
-		return {'header': header, 'data': data, 'filename': file_path, 'status': True}, 200
+		new_header = []
+		for i,value in enumerate(header):
+			key_name = value['key']
+			if(key_name not in hide_header):
+				new_header.append(value)
+
+		return {'header': new_header, 'data': data, 'filename': file_path, 'status': True}, 200
 		
 		#====== Start : Old code for structural variant ===========#
 		'''
@@ -417,6 +433,8 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 		return {'header': {}, 'data': [], 'status': False, 'error': 'unknown variant type: ' + variant_type}, 400
 
 	try:
+		hide_header = ["PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
+
 		igv_nav_file = list(filter(lambda x: re.match(regex, x) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
 		igv_nav_file = file_path + '/' + igv_nav_file
 		with open(igv_nav_file, 'r') as f:
@@ -455,7 +473,13 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
 		header = generate_headers_ngx_table(header)
 
-		return {'header': header, 'data': data, 'filename' : igv_nav_file, 'status': True}, 200
+		new_header = []
+		for i,value in enumerate(header):
+			key_name = value['key']
+			if(key_name not in hide_header):
+				new_header.append(value)
+
+		return {'header': new_header, 'data': data, 'filename' : igv_nav_file, 'status': True}, 200
 
 	except Exception as e:
 		return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
@@ -766,7 +790,6 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns'
 		set_save_file = '_somatic_curated.cns'
 	elif variant_type == 'germline':
-		#regex = '^(?:(?!CFDNA).)*.cns$'
 		regex = '^(?:(?!(-CFDNA|germline_curated|-T)).)*.cns$'
 		set_save_file = '_germline_curated.cns'
 	else:
@@ -789,6 +812,8 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 	if curated_file_status:
 		cnv_filename = save_to_cnv_file
 
+	hide_header = ["ABSOLUTE_COPY_NUMBER", "COMMENT", "depth", "weight", "indexs"]
+	
 	if os.path.exists(cnv_filename):
 		with open(cnv_filename, 'r') as f:
 			reader_ponter = csv.DictReader(f, delimiter ='\t')
@@ -800,7 +825,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 				[glist.append(x) for x in gene_list if x not in glist]
 				each_row['gene'] = ', '.join(glist)
 				if 'SIZE' in each_row.keys() and each_row['SIZE'].isdecimal():
-					each_row['SIZE'] = '{0:.2f} Mb'.format(int(each_row['SIZE'])/1000000)
+					each_row['SIZE'] = '{0:.4f} Mb'.format(int(each_row['SIZE'])/1000000)
 				data.append(each_row)
 
 
@@ -875,8 +900,14 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 				n_key = [item for item in header if item.get('key')==value]
 				if(not n_key):
 					header.insert(0, new_keys[value])
-					
-			return {'header': header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
+			
+			new_header = []
+			for i,value in enumerate(header):
+				key_name = value['key']
+				if(key_name not in hide_header):
+					new_header.append(value)
+
+			return {'header': new_header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
 
 	else:
 		return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid file', 'status': False}, 400
