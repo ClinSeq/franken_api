@@ -255,7 +255,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		# Add Index column in the dataframe
 		df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
 
-		df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs', 'CALL', 'COMMENT', 'ASSESSMENT', 'CLONALITY', 'PROJECT_ID', 'CAPTURE_ID']]
+		df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
 
 		column_list = list(df_filter.columns)
 
