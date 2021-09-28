@@ -255,7 +255,10 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		# Add Index column in the dataframe
 		df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
 
-		df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
+		if "IGV_COORD" in df_filter.columns:
+			df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
+		else:
+			df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
 
 		column_list = list(df_filter.columns)
 
@@ -442,6 +445,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			for i, each_row in enumerate(reader_pointer):
 				each_row = dict(each_row)
 				each_row['indexs'] = i
+				
 				gene = each_row['GENE']
 				if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
 					one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
@@ -462,7 +466,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 						del each_row[None]
 
 				data.append(dict(each_row))
-
+		
 		header = list(data[0])
 		if 'HOTSPOT' in header and variant_type == 'somatic':
 			del header[header.index('HOTSPOT')]
@@ -471,6 +475,25 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			conseq_index = header.index('CONSEQUENCE') + 1
 			header.insert(conseq_index, 'HOTSPOT')
 
+		asec_key = 'SECONDHIT'
+		ass_key = 'ASSESSMENT'
+		acl_key = 'CLONALITY'
+
+		if asec_key in header:
+			asec_indx = header.index(asec_key)
+			del header[asec_indx]
+			header.insert(0,asec_key)
+
+		if ass_key in header:
+			ass_indx = header.index(ass_key)
+			del header[ass_indx]
+			header.insert(0,ass_key)
+
+		if acl_key in header:
+			acl_indx = header.index(acl_key)
+			del header[acl_indx]
+			header.insert(0,acl_key)
+		
 		header = generate_headers_ngx_table(header)
 
 		new_header = []
