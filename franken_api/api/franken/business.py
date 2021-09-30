@@ -130,7 +130,7 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
 		for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
-			link = 'http://'+ip_addr+':'+port_no+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
+			link = 'http://'+ip_addr+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
 			temp_url_list.append(link)
 
 		if len(temp_url_list) > 0:
@@ -199,36 +199,42 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 													and not x.startswith('.')
 													and not x.endswith('.out'), os.listdir(file_path)))[0]
 	if os.path.exists(qc_filename):
-
 		hide_header = ["indexs",  "FOLD_80_BASE_PENALTY", "dedupped_on_bait_rate"]
+		has_rows = False
+		data = []
 		with open(qc_filename, 'r') as f:
 			reader_ponter = csv.DictReader(f, delimiter ='\t')
 			for i, each_row in enumerate(reader_ponter):
+				has_rows = True
 				each_row = dict(each_row)
 				each_row['indexs'] = i
 				data.append(each_row)
-			header = list(generate_headers_ngx_table(data[0].keys()))
+			
+		if(not has_rows):
+			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For QC'}, 200
 
-			new_keys = {
-				'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
-				'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
-				'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
-				'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
-				'Comment': {'key': 'Comment', 'title': 'Comment'}
-			}
+		header = list(generate_headers_ngx_table(data[0].keys()))
 
-			for idx,value in enumerate(new_keys):
-				n_key = [item for item in header if item.get('key')==value]
-				if(not n_key):
-					header.append(new_keys[value])  
+		new_keys = {
+			'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
+			'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
+			'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
+			'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
+			'Comment': {'key': 'Comment', 'title': 'Comment'}
+		}
 
-			new_header = []
-			for i,value in enumerate(header):
-				key_name = value['key']
-				if(key_name not in hide_header):
-					new_header.append(value)
+		for idx,value in enumerate(new_keys):
+			n_key = [item for item in header if item.get('key')==value]
+			if(not n_key):
+				header.append(new_keys[value])  
 
-			return {'header': new_header, 'data': data, 'filename': qc_filename, 'status': True}, 200
+		new_header = []
+		for i,value in enumerate(header):
+			key_name = value['key']
+			if(key_name not in hide_header):
+				new_header.append(value)
+
+		return {'header': new_header, 'data': data, 'filename': qc_filename, 'status': True}, 200
 
 	else:
 		return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
@@ -247,85 +253,88 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 	if os.path.exists(file_path):
 		hide_header = ["GENE_A-GENE_B-sorted", "CAPTURE_ID", "PROJECT_ID", "SDID", "indexs"]
 		df = pd.read_csv(file_path,delimiter="\t")
-	   
-		# Dataframe soted based on the below columns
-		df_sorted = df.sort_values(["GENE_A-GENE_B-sorted","CHROM_A","START_A","CHROM_B","START_B","TOOL","SUPPORT_READS"], ascending = (True,False,False,False,False,False,False))
-		df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES')]
-		
-		# Add Index column in the dataframe
-		df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
 
-		if "IGV_COORD" in df_filter.columns:
-			df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
+		if(df.empty):
+			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For Structural Variants'}, 200
 		else:
-			df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
-
-		column_list = list(df_filter.columns)
-
-		result = df_filter.to_json(orient="records")
-		data = json.loads(result)
-
-		cal_key = 'CALL'
-		typ_key = 'TYPE'
-		sec_key = 'SECONDHIT'
-		com_key = 'COMMENT'
-		asst_key = 'ASSESSMENT'
-		clon_key = 'CLONALITY'
-
-		if cal_key in column_list:
-			cal_indx = column_list.index(cal_key)
-			del column_list[cal_indx]
-			column_list.insert(0,cal_key)
-
-		if typ_key in column_list:
-			typ_indx = column_list.index(typ_key)
-			del column_list[typ_indx]
-			column_list.insert(0,typ_key)
+			# Dataframe soted based on the below columns
+			df_sorted = df.sort_values(["GENE_A-GENE_B-sorted","CHROM_A","START_A","CHROM_B","START_B","TOOL","SUPPORT_READS"], ascending = (True,False,False,False,False,False,False))
+			df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES')]
 			
-		if sec_key in column_list:
-			sec_indx = column_list.index(sec_key)
-			del column_list[sec_indx]
-			column_list.insert(0,sec_key)    
+			# Add Index column in the dataframe
+			df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
 
-		if com_key in column_list:
-			com_indx = column_list.index(com_key)
-			del column_list[com_indx]
-			column_list.insert(0,com_key)
+			if "IGV_COORD" in df_filter.columns:
+				df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
+			else:
+				df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
 
-		if asst_key in column_list:
-			asst_indx = column_list.index(asst_key)
-			del column_list[asst_indx]
-			column_list.insert(0,asst_key)
-		
-		if clon_key in column_list:
-			clon_indx = column_list.index(clon_key)
-			del column_list[clon_indx]
-			column_list.insert(0,clon_key)
+			column_list = list(df_filter.columns)
 
-		header = list(generate_headers_ngx_table(column_list))
-		
-		#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
-		new_keys = {
-			cal_key: {'key': cal_key, 'title': 'CALL'},
-			typ_key: {'key': typ_key, 'title': 'TYPE'},
-			sec_key :  {'key': sec_key, 'title': 'SECONDHIT'},
-			com_key :  {'key': com_key, 'title': 'COMMENT'},
-			asst_key :  {'key': asst_key, 'title': 'ASSESSMENT'},
-			clon_key :  {'key': clon_key, 'title': 'CLONALITY'}
-		}
+			result = df_filter.to_json(orient="records")
+			data = json.loads(result)
 
-		for idx,value in enumerate(new_keys):
-			n_key = [item for item in header if item.get('key')==value]
-			if(not n_key):
-				header.insert(0, new_keys[value])
+			cal_key = 'CALL'
+			typ_key = 'TYPE'
+			sec_key = 'SECONDHIT'
+			com_key = 'COMMENT'
+			asst_key = 'ASSESSMENT'
+			clon_key = 'CLONALITY'
 
-		new_header = []
-		for i,value in enumerate(header):
-			key_name = value['key']
-			if(key_name not in hide_header):
-				new_header.append(value)
+			if cal_key in column_list:
+				cal_indx = column_list.index(cal_key)
+				del column_list[cal_indx]
+				column_list.insert(0,cal_key)
 
-		return {'header': new_header, 'data': data, 'filename': file_path, 'status': True}, 200
+			if typ_key in column_list:
+				typ_indx = column_list.index(typ_key)
+				del column_list[typ_indx]
+				column_list.insert(0,typ_key)
+				
+			if sec_key in column_list:
+				sec_indx = column_list.index(sec_key)
+				del column_list[sec_indx]
+				column_list.insert(0,sec_key)    
+
+			if com_key in column_list:
+				com_indx = column_list.index(com_key)
+				del column_list[com_indx]
+				column_list.insert(0,com_key)
+
+			if asst_key in column_list:
+				asst_indx = column_list.index(asst_key)
+				del column_list[asst_indx]
+				column_list.insert(0,asst_key)
+			
+			if clon_key in column_list:
+				clon_indx = column_list.index(clon_key)
+				del column_list[clon_indx]
+				column_list.insert(0,clon_key)
+
+			header = list(generate_headers_ngx_table(column_list))
+			
+			#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
+			new_keys = {
+				cal_key: {'key': cal_key, 'title': 'CALL'},
+				typ_key: {'key': typ_key, 'title': 'TYPE'},
+				sec_key :  {'key': sec_key, 'title': 'SECONDHIT'},
+				com_key :  {'key': com_key, 'title': 'COMMENT'},
+				asst_key :  {'key': asst_key, 'title': 'ASSESSMENT'},
+				clon_key :  {'key': clon_key, 'title': 'CLONALITY'}
+			}
+
+			for idx,value in enumerate(new_keys):
+				n_key = [item for item in header if item.get('key')==value]
+				if(not n_key):
+					header.insert(0, new_keys[value])
+
+			new_header = []
+			for i,value in enumerate(header):
+				key_name = value['key']
+				if(key_name not in hide_header):
+					new_header.append(value)
+
+			return {'header': new_header, 'data': data, 'filename': file_path, 'status': True}, 200		
 		
 		#====== Start : Old code for structural variant ===========#
 		'''
@@ -429,23 +438,26 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 		missing_header = ['purecn_status', 'purecn_probability', 'purecn_tot_copies']
 		regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
 	elif variant_type == 'somatic':
-		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
+		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
 		regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
 	else:
-		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
+		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
 		return {'header': {}, 'data': [], 'status': False, 'error': 'unknown variant type: ' + variant_type}, 400
 
 	try:
-		hide_header = ["PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
-
+		hide_header = ["HGVSp_org", "PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
 		igv_nav_file = list(filter(lambda x: re.match(regex, x) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
 		igv_nav_file = file_path + '/' + igv_nav_file
+
+		has_rows = False
+		data = []
 		with open(igv_nav_file, 'r') as f:
 			reader_pointer = csv.DictReader(f, delimiter='\t')
 			for i, each_row in enumerate(reader_pointer):
+				has_rows = True
 				each_row = dict(each_row)
 				each_row['indexs'] = i
-				
+				each_row['HGVSp_org'] = each_row['HGVSp']
 				gene = each_row['GENE']
 				if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
 					one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
@@ -466,7 +478,10 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 						del each_row[None]
 
 				data.append(dict(each_row))
-		
+
+		if(not has_rows):
+			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For {} Variants'.format(variant_type.capitalize())}, 200
+
 		header = list(data[0])
 		if 'HOTSPOT' in header and variant_type == 'somatic':
 			del header[header.index('HOTSPOT')]
@@ -834,13 +849,15 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 
 	if curated_file_status:
 		cnv_filename = save_to_cnv_file
-
-	hide_header = ["ABSOLUTE_COPY_NUMBER", "COMMENT", "depth", "weight", "indexs"]
 	
 	if os.path.exists(cnv_filename):
+		has_rows = False
+		hide_header = ["ABSOLUTE_COPY_NUMBER", "COMMENT", "depth", "weight", "indexs"]
+		data = []
 		with open(cnv_filename, 'r') as f:
 			reader_ponter = csv.DictReader(f, delimiter ='\t')
 			for i, each_row in enumerate(reader_ponter):
+				has_rows = True
 				each_row = dict(each_row)
 				each_row['indexs'] = i
 				gene_list = each_row['gene'].split(",")
@@ -851,86 +868,88 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 					each_row['SIZE'] = '{0:.4f} Mb'.format(int(each_row['SIZE'])/1000000)
 				data.append(each_row)
 
+		if(not has_rows):
+			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For CNV {} Variants'.format(variant_type.capitalize())}, 200
 
-			header = list(data[0])
-			#compute size for cnv using start and end
-			if 'SIZE' not in header:
-				end_index = header.index('end') + 1
-				header.insert(end_index, 'SIZE')
-				for data_dict in data:
-					size = int(data_dict['end']) - int(data_dict['start']) + 1
-					data_dict['SIZE'] = '{0:.2f} Mb'.format(size/1000000)
+		header = list(data[0])
+		#compute size for cnv using start and end
+		if 'SIZE' not in header:
+			end_index = header.index('end') + 1
+			header.insert(end_index, 'SIZE')
+			for data_dict in data:
+				size = int(data_dict['end']) - int(data_dict['start']) + 1
+				data_dict['SIZE'] = '{0:.2f} Mb'.format(size/1000000)
 
-			acn_key = 'ABSOLUTE_COPY_NUMBER'
-			ass_key = 'ASSESSMENT'
-			com_key = 'COMMENT'
-			pur_key = 'PURITY'
-			plo_key = 'PLOIDY'
-			copy_nu_key = 'COPY_NUMBER'
-			plo_tp_key = 'PLOIDY_TYPE'
+		acn_key = 'ABSOLUTE_COPY_NUMBER'
+		ass_key = 'ASSESSMENT'
+		com_key = 'COMMENT'
+		pur_key = 'PURITY'
+		plo_key = 'PLOIDY'
+		copy_nu_key = 'COPY_NUMBER'
+		plo_tp_key = 'PLOIDY_TYPE'
 
 
-			if acn_key in header:
-				acn_indx = header.index(acn_key)
-				del header[acn_indx]
-				header.insert(0,acn_key)
+		if acn_key in header:
+			acn_indx = header.index(acn_key)
+			del header[acn_indx]
+			header.insert(0,acn_key)
 
-			if ass_key in header:
-				ass_indx = header.index(ass_key)
-				del header[ass_indx]
-				header.insert(0,ass_key)
+		if ass_key in header:
+			ass_indx = header.index(ass_key)
+			del header[ass_indx]
+			header.insert(0,ass_key)
 
-			if com_key in header:
-				com_indx = header.index(com_key)
-				del header[com_indx]
-				header.insert(0,com_key)
+		if com_key in header:
+			com_indx = header.index(com_key)
+			del header[com_indx]
+			header.insert(0,com_key)
 
-			if pur_key in header:
-				pur_indx = header.index(pur_key)
-				del header[pur_indx]
-				header.insert(0,pur_key)
+		if pur_key in header:
+			pur_indx = header.index(pur_key)
+			del header[pur_indx]
+			header.insert(0,pur_key)
 
-			if plo_key in header:
-				plo_indx = header.index(plo_key)
-				del header[plo_indx]
-				header.insert(0,plo_key)
+		if plo_key in header:
+			plo_indx = header.index(plo_key)
+			del header[plo_indx]
+			header.insert(0,plo_key)
 
-			if copy_nu_key in header:
-				copy_nu_indx = header.index(copy_nu_key)
-				del header[copy_nu_indx]
-				header.insert(0,copy_nu_key)
-			
-			if plo_tp_key in header:
-				plo_tp_indx = header.index(plo_tp_key)
-				del header[plo_tp_indx]
-				header.insert(0,plo_tp_key)
-			
-			del header[header.index('gene')]
-			header.append('gene')
-			header = generate_headers_ngx_table(header)
+		if copy_nu_key in header:
+			copy_nu_indx = header.index(copy_nu_key)
+			del header[copy_nu_indx]
+			header.insert(0,copy_nu_key)
+		
+		if plo_tp_key in header:
+			plo_tp_indx = header.index(plo_tp_key)
+			del header[plo_tp_indx]
+			header.insert(0,plo_tp_key)
+		
+		del header[header.index('gene')]
+		header.append('gene')
+		header = generate_headers_ngx_table(header)
 
-			new_keys = {
-			   acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
-			   ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
-			   com_key :  {'key': com_key, 'title': 'COMMENT'},
-			   pur_key :  {'key': pur_key, 'title': 'PURITY'},
-			   plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
-			   copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
-			   plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
-			}
+		new_keys = {
+			acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
+			ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
+			com_key :  {'key': com_key, 'title': 'COMMENT'},
+			pur_key :  {'key': pur_key, 'title': 'PURITY'},
+			plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
+			copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
+			plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
+		}
 
-			for idx,value in enumerate(new_keys):
-				n_key = [item for item in header if item.get('key')==value]
-				if(not n_key):
-					header.insert(0, new_keys[value])
-			
-			new_header = []
-			for i,value in enumerate(header):
-				key_name = value['key']
-				if(key_name not in hide_header):
-					new_header.append(value)
+		for idx,value in enumerate(new_keys):
+			n_key = [item for item in header if item.get('key')==value]
+			if(not n_key):
+				header.insert(0, new_keys[value])
+		
+		new_header = []
+		for i,value in enumerate(header):
+			key_name = value['key']
+			if(key_name not in hide_header):
+				new_header.append(value)
 
-			return {'header': new_header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
+		return {'header': new_header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
 
 	else:
 		return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid file', 'status': False}, 400
