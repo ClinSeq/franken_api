@@ -312,7 +312,7 @@ class TablePsffSummary(pssql.Model):
     __bind_key__ = 'curation'
     __tablename__ = "psff_summary"
 
-    id = pssql.Column(pssql.Integer, primary_key=True, nullable=False)
+    id = pssql.Column(pssql.Integer, primary_key=True, autoincrement=True)
     sample_id = pssql.Column(pssql.String)
     capture_id = pssql.Column(pssql.String)
     basic_qc = pssql.Column(pssql.String)
@@ -352,14 +352,14 @@ class TablePsffSummary(pssql.Model):
 
 
     def __repr__(self):
-        return "<TablePsffSummary (id='%s', sample_id='%s', capture_id='%s', basic_qc='%s')>" % (self.id,self.sample_id,self.capture_id, self.basic_qc)
+        return "<TablePsffSummary (id='%s', sample_id='%s', capture_id='%s')>" % (self.id,self.sample_id,self.capture_id)
 
 
 class TableProbioSummary(pssql.Model):
     __bind_key__ = 'curation'
     __tablename__ = "probio_summary"
 
-    id = pssql.Column(pssql.Integer, primary_key=True, nullable=False)
+    id = pssql.Column(pssql.Integer, primary_key=True, autoincrement=True)
     sample_id = pssql.Column(pssql.String)
     capture_id = pssql.Column(pssql.String)
     basic_qc = pssql.Column(pssql.String)
@@ -401,4 +401,4 @@ class TableProbioSummary(pssql.Model):
 
 
     def __repr__(self):
-        return "<TableProbioSummary (id='%s', sample_id='%s', capture_id='%s', basic_qc='%s')>" % (self.id,self.sample_id,self.capture_id, self.basic_qc)
+        return "<TableProbioSummary (id='%s', sample_id='%s', capture_id='%s')>" % (self.id,self.sample_id,self.capture_id)

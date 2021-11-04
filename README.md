@@ -18,7 +18,7 @@ Franken Plot  API
 - Run DB Migration script:
 
 ```
-sudo docker exec -it probiouidocker_postgress_1 bash
+sudo docker exec -it probio_ui_docker_postgress_1 bash
 su postgres
 psql
 CREATE USER referral_writer WITH ENCRYPTED PASSWORD '<password: this should match with password in flask app settings.py>';
@@ -31,4 +31,11 @@ exit
 python franken_api/migrate.py db init --multidb
 python franken_api/migrate.py db migrate
 python franken_api/migrate.py db upgrade
+```
+
+- Generate Profile Summary for Project 
+    --
+```
+    - cd franken_api/genomic_profile_lookup/
+    - python read_curation_info_store_postgresql_final.py '<nfs-autoseq-path>' '<project-name>
 ```
