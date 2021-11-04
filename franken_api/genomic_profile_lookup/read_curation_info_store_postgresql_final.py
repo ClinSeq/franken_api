@@ -120,7 +120,7 @@ def main(nfs_path, project_name):
 							if svs_res:
 								for ss in svs_res:
 									if (ss['CALL'] == True or ss['CALL'] == 'True'):
-										svs_variants_txt += ss['SVTYPE'] + ', ' + ss['IGV_COORD'] + ', sv length:' + ss['SV_LENGTH'] + ', supporting reads: ' + ss['SUPPORT_READS'] + ', tool: ' + ss['TOOL'] + ', sample: ' + ss['SAMPLE'] + ', GeneA: ' + ss['GeneA'] + ', GeneB: ' + ss['GeneB'] + '; \n';
+										svs_variants_txt += ss['SVTYPE'] + ', ' + ss['IGV_COORD'] + ', sv length:' + str(ss['SV_LENGTH']) + ', supporting reads: ' + str(ss['SUPPORT_READS']) + ', tool: ' + ss['TOOL'] + ', sample: ' + ss['SAMPLE'] + ', Gene_A: ' + str(ss['GENE_A']) + ', Gene_B: ' + str(ss['GENE_B']) + '; \n';
 								print("SVS Done")
 							else:
 								svs_variants_txt = "NA"
@@ -147,11 +147,11 @@ def main(nfs_path, project_name):
 											end = sm['Stop'] if 'Stop' in sm else sm['END']
 
 											somatic_mut_txt = sm['GENE'] + ' (chr' + str(chrom) + ':' + str(start) + '-' + str(end) + '), ' + hotspot_cont + ', ' + sm['IMPACT'] + ' impact (' + sm['CONSEQUENCE'] + ')' + '; \n ';
-
-											if(sm['CLONALITY'] not in somatic_arr):
-												somatic_arr[sm['CLONALITY']] = somatic_mut_txt;
-											else:
-												somatic_arr[sm['CLONALITY']] = somatic_arr[sm['CLONALITY']] + somatic_mut_txt;
+											if 'CLONALITY' in sm:
+												if(sm['CLONALITY'] not in somatic_arr):
+													somatic_arr[sm['CLONALITY']] = somatic_mut_txt;
+												else:
+													somatic_arr[sm['CLONALITY']] = somatic_arr[sm['CLONALITY']] + somatic_mut_txt;
 
 										print("Somatic Done")
 									else:
@@ -195,12 +195,12 @@ def main(nfs_path, project_name):
 								cnv_res = readCNVOutFile(cnv_f)
 								if cnv_res:
 									for cvs in cnv_res:
-
 										assessment = "";
 										if ("ASSESSMENT" in cvs):
-											assessment = cvs['ASSESSMENT'] +', ' if cvs['ASSESSMENT'] != 'undefined' or cvs['ASSESSMENT'] != '' else ''
-
-										cnvs_txt = assessment +cvs['PLOIDY_TYPE']+', Ploidy : '+str(cvs['PLOIDY'])+',- PURITY : '+str(cvs['PURITY'])+ ', COPY_NUMBER : ' + str(cvs['COPY_NUMBER'])+ ', genes in segment : ' + cvs['gene']+ '; \n';
+											assessment = str(cvs['ASSESSMENT']) +', ' if cvs['ASSESSMENT'] != 'undefined' or cvs['ASSESSMENT'] != '' or csv['ASSESSMENT'] != None else ''
+										ploidy = cvs['PLOIDY'] if 'PLOIDY' in cvs else ''
+										purity = cvs['PURITY'] if 'PURITY' in cvs else ''
+										cnvs_txt = assessment +cvs['PLOIDY_TYPE']+', Ploidy : '+str(ploidy)+',- PURITY : '+str(purity)+ ', COPY_NUMBER : ' + str(cvs['COPY_NUMBER'])+ ', genes in segment : ' + cvs['gene']+ '; \n';
 										cnvs_arr[cnvs_type] = cnvs_arr[cnvs_type] + cnvs_txt;
 
 									print("CNV {} Done".format(cnvs_type))
