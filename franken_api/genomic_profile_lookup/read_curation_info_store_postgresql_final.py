@@ -146,7 +146,7 @@ def main(nfs_path, project_name):
 											start = sm['Start'] if 'Start' in sm else sm['START']
 											end = sm['Stop'] if 'Stop' in sm else sm['END']
 
-											somatic_mut_txt = sm['GENE'] + ' (' + chrom + ':' + str(start) + '-' + str(end) + '), ' + hotspot_cont + ', ' + sm['IMPACT'] + ' impact (' + sm['CONSEQUENCE'] + ')' + '; \n ';
+											somatic_mut_txt = sm['GENE'] + ' (chr' + str(chrom) + ':' + str(start) + '-' + str(end) + '), ' + hotspot_cont + ', ' + sm['IMPACT'] + ' impact (' + sm['CONSEQUENCE'] + ')' + '; \n ';
 
 											if(sm['CLONALITY'] not in somatic_arr):
 												somatic_arr[sm['CLONALITY']] = somatic_mut_txt;
@@ -166,7 +166,7 @@ def main(nfs_path, project_name):
 											start = gm['Start'] if 'Start' in gm else gm['START']
 											end = gm['Stop'] if 'Stop' in gm else gm['END']
 
-											germline_mut_txt += gm['GENE'] + ' (' + chrom + ':' + str(start) + '-' + str(end) + '), ' + ', ' + gm['HGVSp'] + ', ' + gm['IMPACT'] + ' impact (' + gm['CONSEQUENCE'] + '),  VAF ' + str(gm['N_VAF']) + ', GNOMAD ' + str(gm['gnomAD']) + ',' + gm['CLIN_SIG'] + ',' + rsid + '; \n';
+											germline_mut_txt += gm['GENE'] + ' (chr' + str(chrom) + ':' + str(start) + '-' + str(end) + '), ' + ', ' + gm['HGVSp'] + ', ' + gm['IMPACT'] + ' impact (' + gm['CONSEQUENCE'] + '),  VAF ' + str(gm['N_VAF']) + ', GNOMAD ' + str(gm['gnomAD']) + ',' + gm['CLIN_SIG'] + ',' + rsid + '; \n';
 										print("Germline Done")
 									else:
 										germline_mut_txt = "NA"
