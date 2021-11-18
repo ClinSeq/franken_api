@@ -291,9 +291,10 @@ class PDFCalls(Resource):
         """
         args = pdf_arguments.parse_args()
         result, errorcode = pdfs_files(variant, current_app.config[args['project_name']], args['sdid'], args['capture_id'])
-        return send_file(result,
-                      attachment_filename=variant+'.pdf',
-                      mimetype='application/pdf')
+        if variant != 'multiqc':
+            return send_file(result, attachment_filename=variant+'.pdf', mimetype='application/pdf')
+        else:
+            return send_file(result, attachment_filename=variant+'.html', mimetype='text/html')
 
 @ns.route('/purecn')
 @api.response(200, 'CSV file to purecn')
