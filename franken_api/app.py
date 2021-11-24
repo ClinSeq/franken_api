@@ -25,6 +25,8 @@ def configure_app(flask_app):
     flask_app.config['RESBIO'] = settings.MOUNT_POINT_RESBIO
     flask_app.config['HD_C3'] = settings.MOUNT_POINT_HD_C3
     flask_app.config['LPC'] = settings.MOUNT_POINT_LPC
+    flask_app.config['CHEERS'] = settings.MOUNT_POINT_CHEERS
+
 
 
 def initialize_app(flask_app):

@@ -1,18 +1,18 @@
 from flask_restplus import reqparse
 
 project_arguments = reqparse.RequestParser()
-project_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', msHSPC', 'RESBIO', 'HD_C3', 'LPC'")
+project_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC','CHEERS'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', msHSPC', 'RESBIO', 'HD_C3', 'LPC', 'CHEERS'")
 
 capture_arguments = reqparse.RequestParser()
-capture_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC'")
+capture_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC', 'CHEERS'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC','CHEERS'")
 capture_arguments.add_argument('sdid', type=str, required=True,  help='sdid example : P-00360714')
 
 
 common_arguments = reqparse.RequestParser()
-common_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC'), required=True,
-                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC'")
+common_arguments.add_argument('project_name', choices=('PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC', 'CHEERS'), required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC','CHEERS'")
 common_arguments.add_argument('sdid', type=str, required=True,  help='sdid example : P-00360714')
 common_arguments.add_argument('capture_id', type=str, required=True,  help='capture id')
 
