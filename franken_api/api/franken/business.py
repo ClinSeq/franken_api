@@ -244,7 +244,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 	"read structural variant file from sdid_annotate_combined_SV.txt and return as json"
 	file_path = project_path + '/' + sdid + '/' + capture_id + '/svs/igv/'
 
-	file_path = file_path + list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt', x) or
+	file_path = file_path + list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt$', x) or
 									   x.endswith('_annotate_combined_SV.txt'))
 									  and not x.startswith('.')
 									  and not x.endswith('.out'),
@@ -841,7 +841,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 	data = []
 	file_path = project_path + '/' + sdid + '/' + capture_id + '/' + 'cnv/'
 	if variant_type == 'somatic':
-		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns'
+		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns$'
 		set_save_file = '_somatic_curated.cns'
 	elif variant_type == 'germline':
 		regex = '^(?:(?!(-CFDNA|germline_curated|-T)).)*.cns$'
@@ -975,7 +975,7 @@ def get_purecn_ctdna(project_path, sample_id, capture_id):
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/purecn/'
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
-		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.csv'
+		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.csv$'
 		csv_filename = file_path + list(filter(lambda x: (re.match(regex, x) ),os.listdir(file_path)))[0]
 		df = pd.read_csv(csv_filename)
 		json_data = df.to_dict(orient='records')
