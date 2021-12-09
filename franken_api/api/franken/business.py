@@ -263,11 +263,12 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 			
 			# Add Index column in the dataframe
 			df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
+			
 
-			if "IGV_COORD" in df_filter.columns:
-				df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
-			else:
-				df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
+			# if "IGV_COORD" in df_filter.columns:
+			# 	df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
+			# else:
+			# 	df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
 
 			column_list = list(df_filter.columns)
 
@@ -280,6 +281,8 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 			com_key = 'COMMENT'
 			asst_key = 'ASSESSMENT'
 			clon_key = 'CLONALITY'
+			funtp_key = 'FUNCTIONAL_TYPE'
+			consq_key = 'CONSEQUENCE'
 
 			if cal_key in column_list:
 				cal_indx = column_list.index(cal_key)
@@ -311,6 +314,16 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 				del column_list[clon_indx]
 				column_list.insert(0,clon_key)
 
+			if funtp_key in column_list:
+				funtp_indx = column_list.index(funtp_key)
+				del column_list[funtp_indx]
+				column_list.insert(0,funtp_key)
+
+			if consq_key in column_list:
+				consq_indx = column_list.index(consq_key)
+				del column_list[consq_indx]
+				column_list.insert(0,consq_key)
+
 			header = list(generate_headers_ngx_table(column_list))
 			
 			#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
@@ -320,7 +333,9 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 				sec_key :  {'key': sec_key, 'title': 'SECONDHIT'},
 				com_key :  {'key': com_key, 'title': 'COMMENT'},
 				asst_key :  {'key': asst_key, 'title': 'ASSESSMENT'},
-				clon_key :  {'key': clon_key, 'title': 'CLONALITY'}
+				clon_key :  {'key': clon_key, 'title': 'CLONALITY'},
+				funtp_key :  {'key': funtp_key, 'title': 'FUNCTIONAL TYPE'},
+				consq_key :  {'key': consq_key, 'title': 'CONSEQUENCE'}
 			}
 
 			for idx,value in enumerate(new_keys):
