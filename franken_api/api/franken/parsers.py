@@ -147,8 +147,9 @@ curation_svs_arguments.add_argument('SECONDHIT' , type=str,  help="")
 curation_svs_arguments.add_argument('COMMENT' , type=str,  help="")
 curation_svs_arguments.add_argument('ASSESSMENT' , type=str,  help="")
 curation_svs_arguments.add_argument('CLONALITY' , type=str,  help="")
-curation_svs_arguments.add_argument('FUNCTIONAL_TYPE' , type=str,  help="")
 curation_svs_arguments.add_argument('CONSEQUENCE' , type=str,  help="")
+curation_svs_arguments.add_argument('FUNCTIONAL_TYPE' , type=str,  help="")
+curation_svs_arguments.add_argument('VARIANT_STRING' , type=str,  help="")
 
 
 

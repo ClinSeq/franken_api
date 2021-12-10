@@ -171,7 +171,7 @@ class IGVTracksFiles(Resource):
 @ns.route('/table/svs')
 @api.response(200, 'All Structural Variants')
 @api.response(400, '/nfs is not mount locally no data found')
-class TableSvs(Resource):
+class TableSvsView(Resource):
     @api.expect(table_svs_arguments, validate=True)
     def get(self):
         """

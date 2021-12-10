@@ -202,8 +202,9 @@ class TableSVS(pssql.Model):
     COMMENT  = pssql.Column(pssql.String)
     ASSESSMENT = pssql.Column(pssql.String)
     CLONALITY  = pssql.Column(pssql.String)
-    FUNCTIONAL_TYPE  = pssql.Column(pssql.String)
     CONSEQUENCE  = pssql.Column(pssql.String)
+    FUNCTIONAL_TYPE  = pssql.Column(pssql.String)
+    VARIANT_STRING  = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -232,8 +233,10 @@ class TableSVS(pssql.Model):
         self.COMMENT = row_dict.get('COMMENT', None)
         self.ASSESSMENT = row_dict.get('ASSESSMENT', None)
         self.CLONALITY = row_dict.get('CLONALITY', None)
-        self.FUNCTIONAL_TYPE = row_dict.get('FUNCTIONAL_TYPE', None)
         self.CONSEQUENCE = row_dict.get('CONSEQUENCE', None)
+        self.FUNCTIONAL_TYPE = row_dict.get('FUNCTIONAL_TYPE', None)
+        self.VARIANT_STRING = row_dict.get('VARIANT_STRING', None)
+
 
     def __repr__(self):
         return "<TableSVS (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,

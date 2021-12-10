@@ -142,7 +142,10 @@ curation_svs = api.model('SVS', {
         'SECONDHIT' : fields.String(description=''),
         'COMMENT': fields.String(description=''),
         'ASSESSMENT': fields.String(description=''),
-        'CLONALITY': fields.String(description='')
+        'CLONALITY': fields.String(description=''),
+        'CONSEQUENCE': fields.String(description=''),
+        'FUNCTIONAL_TYPE': fields.String(description=''),
+        'VARIANT_STRING': fields.String(description='')
 })
 
 curation_hotspot = api.model('IGV Hotspot', {

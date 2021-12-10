@@ -281,8 +281,9 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 			com_key = 'COMMENT'
 			asst_key = 'ASSESSMENT'
 			clon_key = 'CLONALITY'
-			funtp_key = 'FUNCTIONAL_TYPE'
 			consq_key = 'CONSEQUENCE'
+			funtp_key = 'FUNCTIONAL_TYPE'
+			vatStr_key = 'VARIANT_STRING'
 
 			if cal_key in column_list:
 				cal_indx = column_list.index(cal_key)
@@ -324,6 +325,11 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 				del column_list[consq_indx]
 				column_list.insert(0,consq_key)
 
+			if vatStr_key in column_list:
+				vatStr_indx = column_list.index(vatStr_key)
+				del column_list[vatStr_indx]
+				column_list.insert(0,vatStr_key)
+
 			header = list(generate_headers_ngx_table(column_list))
 			
 			#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
@@ -334,8 +340,9 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 				com_key :  {'key': com_key, 'title': 'COMMENT'},
 				asst_key :  {'key': asst_key, 'title': 'ASSESSMENT'},
 				clon_key :  {'key': clon_key, 'title': 'CLONALITY'},
+				consq_key :  {'key': consq_key, 'title': 'CONSEQUENCE'},
 				funtp_key :  {'key': funtp_key, 'title': 'FUNCTIONAL TYPE'},
-				consq_key :  {'key': consq_key, 'title': 'CONSEQUENCE'}
+				vatStr_key :  {'key': vatStr_key, 'title': 'VARIANT STRING'}
 			}
 
 			for idx,value in enumerate(new_keys):
@@ -786,7 +793,7 @@ def get_curation_svs():
 	try:
 		header = ['PROJECT_ID', 'CAPTURE_ID', 'SDID', 'CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B',
 				  'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SAMPLE', 'GENE_A', 'IN_DESIGN_A', 'GENE_B',
-				  'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'CALL', 'TYPE', 'SECONDHIT', 'COMMENT', 'ASSESSMENT', 'CLONALITY']
+				  'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'CALL', 'TYPE', 'SECONDHIT', 'COMMENT', 'ASSESSMENT', 'CLONALITY', 'CONSEQUENCE', 'FUNCTIONAL_TYPE', 'VARIANT_STRING']
 		try:
 			return {'status': True, 'data': svs_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
