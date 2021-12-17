@@ -15,6 +15,106 @@ import pandas as pd
 import json
 import re
 import logging
+import psycopg2
+import psycopg2.extras
+from sqlalchemy import create_engine
+from configparser import ConfigParser
+import yaml
+import argparse
+import sys
+
+# ### Get the current directory path
+def path():
+	return os.path.dirname(__file__)
+
+# ### Read a DB information from yml file
+
+def readConfig(section,filename=path()+"/config.yml"):
+    with open(filename, "r") as ymlfile:
+        cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+        section = cfg[section]
+    return section
+
+
+# ### Fetch SQL Query
+
+def fetch_sql_query(section, sql):
+    conn = None
+    try:
+        params = readConfig(section)
+        conn = psycopg2.connect(**params)
+        cur = conn.cursor(cursor_factory = psycopg2.extras.RealDictCursor) # RealDictCursor, NamedTupleCursor
+        cur.execute(sql)
+        rows = cur.fetchall()
+        data = [dict(r) for r in rows]
+        cur.close()
+        return data
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(error)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+# ### Fetch the sample information from ipcm referral table
+
+def build_icpm_sample_details(cfdna):
+       
+    sql = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
+    res_data = fetch_sql_query('ipcmLeaderboard', sql)
+    return res_data
+
+
+# ### Fetch the sample information from biobank referral table
+
+def build_sample_details(cfdna):
+        
+    sample_data = {}
+    
+    sample_data["identifier"] = "NA"
+    sample_data["sample_date"] = "NA"
+    sample_data["birthdate"] = "NA"
+    sample_data["hospital"] = "NA"
+
+    sql = "SELECT pnr, datum, rid, tid from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+    res_data = fetch_sql_query('referral', sql)
+
+    if(res_data):
+        sample_data["identifier"] = res_data[0]['tid']
+        sample_data["sample_date"] = res_data[0]["datum"]
+        pnr = res_data[0]["pnr"][0:8]
+        
+        sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)
+        glb_data_1 = fetch_sql_query('leaderboard', sql)
+        if(glb_data_1):
+            sample_data["birthdate"] = glb_data_1[0]["dob"]
+            sample_data["hospital"] = glb_data_1[0]["site_name"]
+    else:
+        cfdna_rid = re.sub("^0+(?!$)", "", cfdna)
+        sql = "SELECT DISTINCT rid, subjectid from biobank_t WHERE regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}' or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}'  or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') IN ('{}') or regexp_replace(rid, '[^a-zA-Z0-9]+', '','g') IN('{}')".format(cfdna, cfdna, cfdna, cfdna_rid)
+        bio_data = fetch_sql_query('leaderboard', sql)
+        if(bio_data):
+            subject_id = bio_data[0]['subjectid'] 
+            sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', 'P-', '','g') or regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', '-', '','g')".format(subject_id, subject_id)
+            glb_data_2 = fetch_sql_query('leaderboard', sql)
+            
+            if(glb_data_2):
+                sample_data["birthdate"] = glb_data_2[0]["dob"]
+                sample_data["hospital"] = glb_data_2[0]["site_name"]
+            
+    sample_data["seq_date"] = "NA"
+    sample_data["cancer_taxonomy"] = "NA"
+    sample_data["cancer_code"] = "NA"
+    sample_data["tissue_source"] = "NA"
+    sample_data["tissue_type"] = "NA"
+    sample_data["pathology_ccf"] = "NA"
+    sample_data["bioinf_ccf"] = "NA"
+    sample_data["germline_dna"] = "NA"
+    
+    return sample_data
+
+
+# ### Build a QC Json 
 
 def build_qc(root_path):
     file_path = root_path + '/qc/'
@@ -52,6 +152,8 @@ def build_qc(root_path):
     return msi_list, qc_df_data
 
 
+# ### Fetch a Ploidy information from purecn
+
 def build_ploidy(root_path):
     file_path = root_path + '/purecn/'
     
@@ -75,6 +177,8 @@ def build_ploidy(root_path):
         
     return purity_list, ploidy_list
 
+
+# ### Build a Small variant Json (Somatic & Germline)
 
 def build_small_variants(root_path):
 
@@ -122,6 +226,8 @@ def build_small_variants(root_path):
     return smv_df.to_json(orient = 'index') # records -> get array dict format
 
 
+# ### Build a CNV Json (Somatic & Germline)
+
 def build_cnv(root_path):
     
     cnv_df = pd.DataFrame()
@@ -135,7 +241,6 @@ def build_cnv(root_path):
             
             column_list = ['chromosome', 'start', 'end', 'gene', 'ASSESSMENT', 'origin']
             column_dict = {'chromosome': 'chr', 'gene': 'genes', 'ASSESSMENT': 'type'}
-        
         
 #             if 'PLOIDY_TYPE' in cnv_df_data.columns:
 #                 cnv_df_data = cnv_df_data.loc[(cnv_df_data['PLOIDY_TYPE'] == "Diploid") | (cnv_df_data['PLOIDY_TYPE'] == "Haploid")]
@@ -159,7 +264,6 @@ def build_cnv(root_path):
                 cnv_df_data = cnv_df_data.rename(columns=column_dict)
                     
                 cnv_df_data['genes'] = cnv_df_data.genes.apply(lambda x: x.split(', '))
-
                 cnv_df = cnv_df.append(cnv_df_data)
     
     cnv_df.fillna('NA', inplace=True)
@@ -167,8 +271,13 @@ def build_cnv(root_path):
     return cnv_df.to_json(orient = 'index')
     
 
+
+# ### Build a SVS Json
+
 def build_svs(root_path):
     file_path = root_path + '/svs/igv/'
+    
+    svs_filter = pd.DataFrame()
     
     try:
         svs_filename = file_path + list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt', x) or x.endswith('_annotate_combined_SV.txt')) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))[0]
@@ -216,22 +325,34 @@ def build_svs(root_path):
     return svs_filter.to_json(orient = 'index')
 
 
-def main(root_path, file_name):
+# ## Build Json from output files
+
+def build_json(root_path, file_name, project_name, cfdna, capture_format):
     
-    print("--- MTBP Json format Started ---\n")
+    print("--- MTBP Json Format Started ---\n")
     print("Path : ", root_path, "/", file_name)
 
-        
     project_json = {}
     
     # Sample Information
-    project_json["sample"] = {"identifier": "NA",  "sample_date": "NA", "seq_date": "NA", "birthdate": "NA", "hospital": "NA", "cancer_taxonomy": "NA", "cancer_code": "NA", "tissue_source": "NA", "tissue_type": "NA", "pathology_ccf": "NA", "bioinf_ccf": "NA", "germline_dna": "NA"}
+    logging.info('--- Sample fetching started ---')
+    if(project_name == "ICPM" or capture_format == "iPCM"):
+        sample_details_json = build_icpm_sample_details(cfdna)
+    else:
+        sample_details_json = build_sample_details(cfdna)
+       
+    if(sample_details_json):
+        project_json["sample"] = sample_details_json
+    else:
+        project_json["sample"] = {"identifier": "NA",  "sample_date": "NA", "seq_date": "NA", "birthdate": "NA", "hospital": "NA", "cancer_taxonomy": "NA", "cancer_code": "NA", "tissue_source": "NA", "tissue_type": "NA", "pathology_ccf": "NA", "bioinf_ccf": "NA", "germline_dna": "NA"}
     
+    logging.info('--- Sample fetching completed ---')
+
     # Pipeline 
     project_json["pipeline"] = { "genome_reference": "hg19", "version": "1.0"}
     
     # QC
-    logging.info('--- Build QC json started ---')
+    logging.info('--- QC started ---')
     msi_val, qc_json = build_qc(root_path)
     project_json["qc"] =  "NA" if qc_json == "" else json.loads(qc_json)
     logging.info('--- QC completed ---')
@@ -244,19 +365,19 @@ def main(root_path, file_name):
     
    
     # Small Variant (Somatic & Germline)
-    logging.info('--- Build Small Variant json started ---')
+    logging.info('--- Small Variant started ---')
     small_variant_json = build_small_variants(root_path)
     project_json["small_variants"] = json.loads(small_variant_json)
     logging.info('--- Small Variant completed ---')
     
     # CNVs
-    logging.info('--- Build CNvs json started ---')
+    logging.info('--- CNVs started ---')
     cnv_json = build_cnv(root_path)
     project_json["cnas"] = json.loads(cnv_json)
     logging.info('--- CNVs completed ---')
     
     # SVS
-    logging.info('--- Build SVS json started ---')
+    logging.info('--- SVS started ---')
     svs_json = build_svs(root_path)
     project_json["svs"] = json.loads(svs_json)
     logging.info('--- SVS completed ---')
@@ -266,45 +387,65 @@ def main(root_path, file_name):
     with open(file_name, 'w') as f:
         json.dump(project_json, f, indent=4)
     
-    logging.info('--- Generated Json format successfuly ---')
+    logging.info('--- Generated Json format successfuly ---\n')
     
-    print("\n----  MTBP Json format Completed -----\n")
+    print("\n----  MTBP Json Format Completed -----\n")
 
+
+# ## Main Function
+
+def main(nfs_path, project_name, sample_id, capture_id):
+    
+    root_path = os.path.join(nfs_path,sample_id,capture_id)
+    
+    output_path = root_path+"/MTBP";
+    
+    cfdna = capture_id.split("-")[4]
+    
+    capture_format = capture_id.split("-")[0]
+       
+    file_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_CFDNA"+cfdna+".json"
+    log_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_CFDNA"+cfdna+".log"
+       
+    if(not os.path.exists(output_path)):
+        os.mkdir(output_path);
+    
+    logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, encoding='utf-8', datefmt =  "%Y-%m-%d %H:%M:%S", force=True)
+    logging.info('--- Generated Json format Started---')
+    
+    logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
+    
+    try:
+        build_json(root_path, file_name, project_name, cfdna, capture_format)
+    except Exception as e:
+        print("Exception", str(e))
+        logging.error("Failed : {}".format(str(e)))
+        logging.error('--- Generated Json format Failed ---\n')
+        raise
 
 if __name__ == "__main__":
-    
-    project_path = "/sdata/RESBIO/autoseq-output/"
-    regx_pat = '^P-.*[0-9]$'
-    regx_capture_pat = '^RB-P-.*[0-9]$'
-    
-    for root, dirs, files in os.walk(project_path):
-        for d in dirs:
-            pat_check = re.match(regx_pat, d)
-            if pat_check:
-                dir_path = os.path.join(project_path,d)
-                inner_dir_list = os.listdir(dir_path)
-                if(len(inner_dir_list) > 0):
-                    for indir in inner_dir_list:
-                        capture_check = re.match(regx_capture_pat, indir)
-                        if(capture_check):
-                            cfdna = indir.split("-")[4]
-                            root_path = os.path.join(dir_path,indir)
-                            output_path = root_path+"/MTBP";
-                            project_name = indir.split("-")[0]
-                            file_name = output_path+"/MTBP_"+project_name+"_"+d+"_CFDNA"+cfdna+".json"
-                            log_name = output_path+"/MTBP_"+project_name+"_"+d+"_CFDNA"+cfdna+".log"
-                            if(not os.path.exists(output_path)):
-                                os.mkdir(output_path);
-                            
-                            logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name,  filemode='w', datefmt =  "%Y-%m-%d %H:%M:%S")
-                            logging.info('--- Generated Json format ---')
+        
+    # Create the parser
+    profile_parser = argparse.ArgumentParser(description='Generate MTBP Json')
 
-                            logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(d,indir, file_name))
-                            try:
-                                main(root_path, file_name)
-                            except Exception as e:
-                                print("Exception", str(e))
-                                logging.error("Failed : {}".format(str(e)))
-                                logging.error('--- Generated Json format Failed ---')
-                                raise
-                                #break
+    # Add the arguments
+    profile_parser.add_argument('--path', type=str, help='Define the nfs path name',required=True)
+    profile_parser.add_argument('--project', type=str, help='Define the project name (eg: PROBIO, PSFF, IPCM )',required=True)
+    profile_parser.add_argument('--sample', type=str, help='Define the sample id (eg: P-00UZG3006 )',required=True)
+    profile_parser.add_argument('--capture', type=str, help='Define the capture id (eg: PB-P-00UZG3006-CFDNA-0328277-KH20201014-C320201014_PB-P-00UZG3006-N-0328277-KH20201014-C320201014 )',required=True)
+
+    args = profile_parser.parse_args()
+
+    project_name = args.project
+    sample_id = args.sample
+    capture_id = args.capture
+    nfs_path = args.path 
+   
+    #nfs_path = "/nfs/{}/autoseq-output".format(project_name)
+    
+    if not os.path.isdir(nfs_path):
+        print('The {}, path specified does not exist'.format(nfs_path))
+        sys.exit()
+    else:
+        main(nfs_path, project_name, sample_id, capture_id)
+    

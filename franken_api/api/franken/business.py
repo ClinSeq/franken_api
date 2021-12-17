@@ -9,8 +9,6 @@ from franken_api.database.models import TableIgvWarmspot as igv_warmspot_table
 from franken_api.database.models import TablePsffSummary as psff_profile
 from franken_api.database.models import TableProbioSummary as probio_profile
 
-
-
 from sqlalchemy import and_
 import os, io
 #from franken_api.settings import MOUNT_POINT
@@ -1050,3 +1048,30 @@ def update_pureCN_somatic_germline(project_path, sample_id, capture_id, variant_
 		return {'status': True, 'data': 'Update Successfully', 'error': ''}, 200
 	except Exception as e:
 		return {'status': True, 'data': [], 'error': str(e)}, 400
+
+
+def get_curated_json_file(project_path, project_name, sample_id, capture_id):
+	"return the json format"
+
+	file_path = project_path + '/' + sample_id + '/' + capture_id + '/MTBP/'
+	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
+	if status:
+		file_name = list(filter(lambda x: x.endswith('.json') and not x.startswith('.'), os.listdir(file_path)))[0]
+		json_file = file_path + file_name
+
+		if os.path.exists(json_file):
+			f = open(json_file)
+			data = json.load(f)
+			return {'data':data, 'file_name': file_name, 'status': True}, 200
+
+	return {'data':[], 'file_name': '', 'status': False}, 400
+
+def generate_curated_json(project_path, project_name, sample_id, capture_id):
+
+	python_cmd = "python franken_api/script/MTBP/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(project_path, project_name, sample_id, capture_id)
+	try:
+		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
+		return {'data': 'Json File Generated', 'status': True}, 200
+	except subprocess.CalledProcessError as e:
+		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+		return {'data':[], 'status': False}, 400

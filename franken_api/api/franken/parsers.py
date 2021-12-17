@@ -24,6 +24,8 @@ search_arguments.add_argument('pname', choices=('normal', 'variant_allelic', 'pl
 
 ploturls_arguments = common_arguments.copy()
 
+json_urls_arguments = common_arguments.copy()
+
 purecn_arguments = common_arguments.copy()
 
 purecn_max_val_arguments = common_arguments.copy()

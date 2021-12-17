@@ -1,19 +1,19 @@
 referral:
     host: localhost
-    user: postgres
-    password: postgres
+    user: referral_writer
+    password: ProbioWriter
     database: referrals
 
 ipcmLeaderboard:
     host: localhost
-    user: postgres
-    password: postgres
+    user: referral_writer
+    password: ProbioWriter
     database: ipcm_leaderboard
 
 leaderboard:
     host: localhost
-    user: postgres
-    password: postgres
+    user: referral_writer
+    password: ProbioWriter
     database: genomic_board
     
 tableName:

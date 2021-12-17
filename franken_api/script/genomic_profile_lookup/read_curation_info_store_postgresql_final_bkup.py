@@ -67,8 +67,6 @@ def readOutFile(file_name, condition_txt):
 
 def main(nfs_path, project_name):
 
-	#nfs_path = '/sdata/PROBIO/autoseq-output/'
-
 	ignored = {"._.DS_Store", ".DS_Store", ".nohup.log"}
 	sdid_string = [x for x in os.listdir(nfs_path) if x not in ignored]
 
