@@ -28,7 +28,6 @@ from flask import request
 import requests
 from sqlalchemy import create_engine
 
-
 # check the string contains special character or not 
 def check_special_char(seq_str):
 	result = any(not c.isalnum() for c in seq_str)
@@ -1066,9 +1065,10 @@ def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 
 	return {'data':[], 'file_name': '', 'status': False}, 400
 
-def generate_curated_json(project_path, project_name, sample_id, capture_id):
+def generate_curated_json(project_path, project_name, sample_id, capture_id, script_path):
 
-	python_cmd = "python franken_api/script/MTBP/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(project_path, project_name, sample_id, capture_id)
+	python_cmd = "python {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
 		return {'data': 'Json File Generated', 'status': True}, 200

@@ -22,6 +22,12 @@ from configparser import ConfigParser
 import yaml
 import argparse
 import sys
+import datetime
+
+
+def defaultConverter(o):
+    if isinstance(o, datetime.datetime):
+        return o.__str__()
 
 
 def readConfig(section,filename="config.yml"):
@@ -357,10 +363,10 @@ def build_json(root_path, file_name, project_name, cfdna):
     project_json["svs"] = json.loads(svs_json)
     logging.info('--- SVS completed ---')
     
-    final_json = json.dumps(project_json)
+    final_json = json.dumps(project_json, default = defaultConverter)
     
     with open(file_name, 'w') as f:
-        json.dump(project_json, f, indent=4)
+        json.dump(final_json, f, indent=4)
     
     logging.info('--- Generated Json format successfuly ---')
     

@@ -76,7 +76,7 @@ def build_sample_details(cfdna):
     sample_data["birthdate"] = "NA"
     sample_data["hospital"] = "NA"
 
-    sql = "SELECT pnr, datum, rid, tid from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+    sql = "SELECT pnr, to_date(datum::text, 'YYYYMMDD') as datum, rid, tid from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
     res_data = fetch_sql_query('referral', sql)
 
     if(res_data):

@@ -39,3 +39,10 @@ python franken_api/migrate.py db upgrade
     - cd franken_api/genomic_profile_lookup/
     - python read_curation_info_store_postgresql_final.py '<nfs-autoseq-path>' '<project-name>
 ```
+
+- Export MTBP json format 
+    --
+```
+    export MTBP_SCRIPT_PATH="<MTBP_Script_path>"
+
+```

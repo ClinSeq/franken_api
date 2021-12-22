@@ -348,5 +348,5 @@ class GenerateJsonFile(Resource):
             Generate the json format
         """
         args = json_urls_arguments.parse_args()
-        result, errorcode = generate_curated_json(current_app.config[args['project_name']], args['project_name'], args['sdid'], args['capture_id'])
+        result, errorcode = generate_curated_json(current_app.config[args['project_name']], args['project_name'], args['sdid'], args['capture_id'], current_app.config["MTBP_SCRIPT"])
         return result, errorcode
