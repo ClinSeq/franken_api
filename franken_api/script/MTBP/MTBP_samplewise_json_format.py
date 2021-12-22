@@ -410,7 +410,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
     if(not os.path.exists(output_path)):
         os.mkdir(output_path);
     
-    logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, encoding='utf-8', datefmt =  "%Y-%m-%d %H:%M:%S", force=True)
+    logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt="%Y-%m-%d %H:%M:%S")
     logging.info('--- Generated Json format Started---')
     
     logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
