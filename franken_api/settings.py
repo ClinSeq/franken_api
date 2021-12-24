@@ -25,5 +25,5 @@ MOUNT_POINT_MS_HSPC = '/nfs/PROBIO/autoseq-output/msHSPC'
 MOUNT_POINT_RESBIO = '/nfs/RESBIO/autoseq-output'
 MOUNT_POINT_HD_C3 = '/nfs/PROBIO2/healthy_donors_comprehensive/comprehensive_v3/autoseq-output'
 MOUNT_POINT_LPC = '/nfs/PROBIO3/LPC/autoseq-output'
-MOUNT_POINT_CHEERS = '/nfs/CLINSEQ/JanPieter/autoseq-output'
+MOUNT_POINT_CHEERS = '/nfs/CLINSEQ/JanPieter/CHEERS/autoseq-output'
 MTBP_SCRIPT_PATH = os.environ['MTBP_SCRIPT_PATH']
