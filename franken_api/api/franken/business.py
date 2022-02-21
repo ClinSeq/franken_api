@@ -256,7 +256,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		else:
 			# Dataframe soted based on the below columns
 			df_sorted = df.sort_values(["GENE_A-GENE_B-sorted","CHROM_A","START_A","CHROM_B","START_B","TOOL","SUPPORT_READS"], ascending = (True,False,False,False,False,False,False))
-			df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES')]
+			df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES') | (df['TOOL'] == 'svcaller')]
 			
 			# Add Index column in the dataframe
 			df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
