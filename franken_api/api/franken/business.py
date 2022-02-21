@@ -982,6 +982,7 @@ def get_purecn_ctdna(project_path, sample_id, capture_id):
 		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.csv$'
 		csv_filename = file_path + list(filter(lambda x: (re.match(regex, x) ),os.listdir(file_path)))[0]
 		df = pd.read_csv(csv_filename)
+		df.fillna('', inplace=True)
 		json_data = df.to_dict(orient='records')
 		return {'data': json_data, 'status': True}, 200
 
