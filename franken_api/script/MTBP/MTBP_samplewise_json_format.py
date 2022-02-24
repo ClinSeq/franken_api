@@ -22,6 +22,8 @@ from configparser import ConfigParser
 import yaml
 import argparse
 import sys
+from datetime import date, datetime
+
 
 # ### Get the current directory path
 def path():
@@ -55,14 +57,20 @@ def fetch_sql_query(section, sql):
         if conn is not None:
             conn.close()
 
+def json_serial(obj):
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError("Type %s not serializable" % type(obj))
+
 
 # ### Fetch the sample information from ipcm referral table
 
 def build_icpm_sample_details(cfdna):
        
-    sql = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
+    sql = "SELECT ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date,  CAST(rf.date_birth AS VARCHAR) as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
     res_data = fetch_sql_query('ipcmLeaderboard', sql)
-    return res_data
+    res_json = json.dumps(res_data, default = json_serial)
+    return json.loads(res_json)
 
 
 # ### Fetch the sample information from biobank referral table
@@ -76,7 +84,7 @@ def build_sample_details(cfdna):
     sample_data["birthdate"] = "NA"
     sample_data["hospital"] = "NA"
 
-    sql = "SELECT pnr, to_date(datum::text, 'YYYYMMDD') as datum, rid, tid from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+    sql = "SELECT pnr, CAST(datum AS VARCHAR) as datum, rid, tid from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
     res_data = fetch_sql_query('referral', sql)
 
     if(res_data):
@@ -194,9 +202,17 @@ def build_small_variants(root_path):
         
         if 'CALL' in smv_df_data.columns:
 
-            column_list = ['CHROM', 'START', 'END', 'REF', 'ALT', 'N_DP', 'N_ALT', 'N_VAF']
-            column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt', 'ALT' : 'alt', 'N_DP' : 'ref_reads',  'N_ALT' : 'alt_reads', 'N_VAF' : 'vaf'}
+            column_list = ['CHROM', 'START', 'END', 'REF', 'ALT']
+            if(re.match(regex, i)):
+                reads_column_list = ['N_DP', 'N_ALT', 'N_VAF']
+                column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt', 'N_DP' : 'ref_reads',  'N_ALT' : 'alt_reads', 'N_VAF' : 'vaf'}
+            else:
+                reads_column_list = ['T_DP', 'T_ALT', 'T_VAF']
+                column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt', 'T_DP' : 'ref_reads',  'T_ALT' : 'alt_reads', 'T_VAF' : 'vaf'}
             
+            column_list.extend(reads_column_list)
+
+            print("column_list", column_list)
             smv_df_data = smv_df_data.loc[(smv_df_data['CALL'] == "S") | (smv_df_data['CALL'] == "G")]
             
             if 'CLONALITY' in smv_df_data.columns:
@@ -212,8 +228,10 @@ def build_small_variants(root_path):
                 
             if(re.match(regex, i)):
                 smv_df_data['origin'] = "germline"
+                smv_df_data['ref_reads'] = smv_df_data['ref_reads'] - smv_df_data['alt_reads']
             else:
                 smv_df_data['origin'] = "somatic"
+                smv_df_data['ref_reads'] = smv_df_data['ref_reads'] - smv_df_data['alt_reads']
 
             smv_df_data['alt'] = smv_df_data['alt'].map(lambda x: x.lstrip('[').rstrip(']'))
 
