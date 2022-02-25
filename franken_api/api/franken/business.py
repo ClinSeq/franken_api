@@ -123,11 +123,11 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/'
 	temp_url_list = []
 	ip_addr = request.host
-	port_no = "5000"
+	port_no = '' if '5000' in ip_addr else ':5000'
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
 		for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
-			link = 'http://'+ip_addr+":"+port_no+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
+			link = 'http://'+ip_addr+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
 			temp_url_list.append(link)
 
 		if len(temp_url_list) > 0:
@@ -455,7 +455,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
 	if variant_type == 'germline':
 		missing_header = ['purecn_status', 'purecn_probability', 'purecn_tot_copies']
-		regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
+		regex = '^(?:(?!-(CFDNA|T)).).*igvnav-input.txt$'
 	elif variant_type == 'somatic':
 		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
 		regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
@@ -853,126 +853,129 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 	else:
 		return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400
 	
-	cnv_filename = file_path + list(filter(lambda x: (re.match(regex, x) )
-													 and not x.startswith('.')
-													 and not x.endswith('.out'),
-							   os.listdir(file_path)))[0]
+	file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
 
-	save_to_cnv_file  = cnv_filename.split('.cns')[0] + set_save_file
+	if file_list != []:
 
-	curated_cnv_file =  list(filter(lambda x: ( x.endswith(set_save_file))
-									  and not x.startswith('.')
-									  and not x.endswith('.out'),
-							os.listdir(file_path)))
+		cnv_filename = file_path + file_list[0]
 
-	curated_file_status = True if curated_cnv_file else False
+		save_to_cnv_file  = cnv_filename.split('.cns')[0] + set_save_file
 
-	if curated_file_status:
-		cnv_filename = save_to_cnv_file
-	
-	if os.path.exists(cnv_filename):
-		has_rows = False
-		hide_header = ["ABSOLUTE_COPY_NUMBER", "COMMENT", "depth", "weight", "indexs"]
-		data = []
-		with open(cnv_filename, 'r') as f:
-			reader_ponter = csv.DictReader(f, delimiter ='\t')
-			for i, each_row in enumerate(reader_ponter):
-				has_rows = True
-				each_row = dict(each_row)
-				each_row['indexs'] = i
-				gene_list = each_row['gene'].split(",")
-				glist = []
-				[glist.append(x) for x in gene_list if x not in glist]
-				each_row['gene'] = ', '.join(glist)
-				if 'SIZE' in each_row.keys() and each_row['SIZE'].isdecimal():
-					each_row['SIZE'] = '{0:.4f} Mb'.format(int(each_row['SIZE'])/1000000)
-				data.append(each_row)
+		curated_cnv_file =  list(filter(lambda x: ( x.endswith(set_save_file))
+										and not x.startswith('.')
+										and not x.endswith('.out'),
+								os.listdir(file_path)))
 
-		if(not has_rows):
-			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For CNV {} Variants'.format(variant_type.capitalize())}, 200
+		curated_file_status = True if curated_cnv_file else False
 
-		header = list(data[0])
-		#compute size for cnv using start and end
-		if 'SIZE' not in header:
-			end_index = header.index('end') + 1
-			header.insert(end_index, 'SIZE')
-			for data_dict in data:
-				size = int(data_dict['end']) - int(data_dict['start']) + 1
-				data_dict['SIZE'] = '{0:.2f} Mb'.format(size/1000000)
-
-		acn_key = 'ABSOLUTE_COPY_NUMBER'
-		ass_key = 'ASSESSMENT'
-		com_key = 'COMMENT'
-		pur_key = 'PURITY'
-		plo_key = 'PLOIDY'
-		copy_nu_key = 'COPY_NUMBER'
-		plo_tp_key = 'PLOIDY_TYPE'
-
-
-		if acn_key in header:
-			acn_indx = header.index(acn_key)
-			del header[acn_indx]
-			header.insert(0,acn_key)
-
-		if ass_key in header:
-			ass_indx = header.index(ass_key)
-			del header[ass_indx]
-			header.insert(0,ass_key)
-
-		if com_key in header:
-			com_indx = header.index(com_key)
-			del header[com_indx]
-			header.insert(0,com_key)
-
-		if pur_key in header:
-			pur_indx = header.index(pur_key)
-			del header[pur_indx]
-			header.insert(0,pur_key)
-
-		if plo_key in header:
-			plo_indx = header.index(plo_key)
-			del header[plo_indx]
-			header.insert(0,plo_key)
-
-		if copy_nu_key in header:
-			copy_nu_indx = header.index(copy_nu_key)
-			del header[copy_nu_indx]
-			header.insert(0,copy_nu_key)
+		if curated_file_status:
+			cnv_filename = save_to_cnv_file
 		
-		if plo_tp_key in header:
-			plo_tp_indx = header.index(plo_tp_key)
-			del header[plo_tp_indx]
-			header.insert(0,plo_tp_key)
-		
-		del header[header.index('gene')]
-		header.append('gene')
-		header = generate_headers_ngx_table(header)
+		if os.path.exists(cnv_filename):
+			has_rows = False
+			hide_header = ["ABSOLUTE_COPY_NUMBER", "COMMENT", "depth", "weight", "indexs"]
+			data = []
+			with open(cnv_filename, 'r') as f:
+				reader_ponter = csv.DictReader(f, delimiter ='\t')
+				for i, each_row in enumerate(reader_ponter):
+					has_rows = True
+					each_row = dict(each_row)
+					each_row['indexs'] = i
+					gene_list = each_row['gene'].split(",")
+					glist = []
+					[glist.append(x) for x in gene_list if x not in glist]
+					each_row['gene'] = ', '.join(glist)
+					if 'SIZE' in each_row.keys() and each_row['SIZE'].isdecimal():
+						each_row['SIZE'] = '{0:.4f} Mb'.format(int(each_row['SIZE'])/1000000)
+					data.append(each_row)
 
-		new_keys = {
-			acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
-			ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
-			com_key :  {'key': com_key, 'title': 'COMMENT'},
-			pur_key :  {'key': pur_key, 'title': 'PURITY'},
-			plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
-			copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
-			plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
-		}
+			if(not has_rows):
+				return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For CNV {} Variants'.format(variant_type.capitalize())}, 200
 
-		for idx,value in enumerate(new_keys):
-			n_key = [item for item in header if item.get('key')==value]
-			if(not n_key):
-				header.insert(0, new_keys[value])
-		
-		new_header = []
-		for i,value in enumerate(header):
-			key_name = value['key']
-			if(key_name not in hide_header):
-				new_header.append(value)
+			header = list(data[0])
+			#compute size for cnv using start and end
+			if 'SIZE' not in header:
+				end_index = header.index('end') + 1
+				header.insert(end_index, 'SIZE')
+				for data_dict in data:
+					size = int(data_dict['end']) - int(data_dict['start']) + 1
+					data_dict['SIZE'] = '{0:.2f} Mb'.format(size/1000000)
 
-		return {'header': new_header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
+			acn_key = 'ABSOLUTE_COPY_NUMBER'
+			ass_key = 'ASSESSMENT'
+			com_key = 'COMMENT'
+			pur_key = 'PURITY'
+			plo_key = 'PLOIDY'
+			copy_nu_key = 'COPY_NUMBER'
+			plo_tp_key = 'PLOIDY_TYPE'
 
+
+			if acn_key in header:
+				acn_indx = header.index(acn_key)
+				del header[acn_indx]
+				header.insert(0,acn_key)
+
+			if ass_key in header:
+				ass_indx = header.index(ass_key)
+				del header[ass_indx]
+				header.insert(0,ass_key)
+
+			if com_key in header:
+				com_indx = header.index(com_key)
+				del header[com_indx]
+				header.insert(0,com_key)
+
+			if pur_key in header:
+				pur_indx = header.index(pur_key)
+				del header[pur_indx]
+				header.insert(0,pur_key)
+
+			if plo_key in header:
+				plo_indx = header.index(plo_key)
+				del header[plo_indx]
+				header.insert(0,plo_key)
+
+			if copy_nu_key in header:
+				copy_nu_indx = header.index(copy_nu_key)
+				del header[copy_nu_indx]
+				header.insert(0,copy_nu_key)
+			
+			if plo_tp_key in header:
+				plo_tp_indx = header.index(plo_tp_key)
+				del header[plo_tp_indx]
+				header.insert(0,plo_tp_key)
+			
+			del header[header.index('gene')]
+			header.append('gene')
+			header = generate_headers_ngx_table(header)
+
+			new_keys = {
+				acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
+				ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
+				com_key :  {'key': com_key, 'title': 'COMMENT'},
+				pur_key :  {'key': pur_key, 'title': 'PURITY'},
+				plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
+				copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
+				plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
+			}
+
+			for idx,value in enumerate(new_keys):
+				n_key = [item for item in header if item.get('key')==value]
+				if(not n_key):
+					header.insert(0, new_keys[value])
+			
+			new_header = []
+			for i,value in enumerate(header):
+				key_name = value['key']
+				if(key_name not in hide_header):
+					new_header.append(value)
+
+			return {'header': new_header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
+
+		else:
+			return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid file', 'status': False}, 400
 	else:
-		return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid file', 'status': False}, 400
+		return {'header': [], 'data': [], 'filename': '', 'error': 'File not found', 'status': False}, 400
 
 
 def get_purecn_ctdna(project_path, sample_id, capture_id):
