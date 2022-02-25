@@ -455,17 +455,19 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
 	if variant_type == 'germline':
 		missing_header = ['purecn_status', 'purecn_probability', 'purecn_tot_copies']
-		regex = '^(?:(?!-(CFDNA|T)).).*igvnav-input.txt$'
+		regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
+		regex2 = '(.*)-(CFDNA|T)-(\w.*)(germline-igvnav-input).*txt$'
 	elif variant_type == 'somatic':
 		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
 		regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
+		regex2 = '(.*)-(CFDNA|T)-(\w.*)(somatic-igvnav-input).*txt$'
 	else:
 		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
 		return {'header': {}, 'data': [], 'status': False, 'error': 'unknown variant type: ' + variant_type}, 400
 
 	try:
 		hide_header = ["HGVSp_org", "PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
-		igv_nav_file = list(filter(lambda x: re.match(regex, x) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
+		igv_nav_file = list(filter(lambda x: (re.match(regex2, x) if ('-somatic-' in x or '-germline-' in x) else re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
 		igv_nav_file = file_path + '/' + igv_nav_file
 
 		has_rows = False
