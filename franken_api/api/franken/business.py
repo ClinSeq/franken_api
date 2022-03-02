@@ -448,7 +448,7 @@ def get_hotspot_update_info(gene):
 	protmut = ''
 	if(res):
 		for r in res:
-			protmut += r.varaint_arr + ','
+			protmut += r.variant_arr + ','
 	return protmut
 
 def get_hotspot_info(gene):
@@ -754,6 +754,19 @@ def post_curation(record, table_name):
 	except Exception as e :
 		return {'status': False, 'error': str(e)}, 400
 
+
+def get_curation_cancer_hotspot():
+	try:
+		header = ['id', 'gene', 'residue', 'res_type', 'variants', 'variant_arr']
+		try:
+			return {'status': True, 'data': igv_hotspot_update_table.query.filter().all(),
+					'header': generate_headers_ngx_table(header),
+					'error': ''}, 200
+		except Exception as e:
+			return {'status': True, 'data': [], 'header':  generate_headers_ngx_table(header), 'error': str(e)}, 400
+
+	except Exception as e:
+		return "Error :" + str(e), 400
 
 def get_curation_hotspot():
 	try:

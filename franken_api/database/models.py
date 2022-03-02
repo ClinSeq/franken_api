@@ -287,7 +287,7 @@ class TableIgvHotspotUpdate(pssql.Model):
     residue = pssql.Column(pssql.String)
     res_type = pssql.Column(pssql.String)
     variants = pssql.Column(pssql.String)
-    varaint_arr = pssql.Column(pssql.String)
+    variant_arr = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -296,10 +296,10 @@ class TableIgvHotspotUpdate(pssql.Model):
         self.residue = row_dict.get('residue', None)
         self.res_type = row_dict.get('res_type', None)
         self.variants = row_dict.get('variants', None)
-        self.varaint_arr = row_dict.get('varaint_arr', None)
+        self.variant_arr = row_dict.get('variant_arr', None)
 
     def __repr__(self):
-        return "<TableIgvHotspot (id='%s', gene='%s', varaint_arr='%s')>" % (self.id,self.gene, self.varaint_arr)
+        return "<TableIgvHotspot (id='%s', gene='%s', variant_arr='%s')>" % (self.id,self.gene, self.variant_arr)
 
 class TableIgvWarmspot(pssql.Model):
     __bind_key__ = 'curation'

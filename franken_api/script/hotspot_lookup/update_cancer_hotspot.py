@@ -14,7 +14,7 @@ from sqlalchemy import create_engine
 def build_hotspot(file_path):
     df = pd.read_csv(file_path, sep="\t", usecols=["Gene", "Residue", "Type", "Variants"])
     df = df.rename(columns={'Gene': 'gene', "Residue" : "residue", "Type" : "res_type", "Variants" : "variants"})
-    df["varaint_arr"] = ""
+    df["variant_arr"] = ""
     df["id"] = ""
     
     for index, row in df.iterrows():
@@ -30,9 +30,9 @@ def build_hotspot(file_path):
 
             hgsvp_str += hgsvp + ", "
         row["id"] = index + 1
-        row["varaint_arr"] = hgsvp_str.rstrip(", ")
+        row["variant_arr"] = hgsvp_str.rstrip(", ")
     
-    df = df[["id", "gene", "residue", "res_type", "variants", "varaint_arr"]]
+    df = df[["id", "gene", "residue", "res_type", "variants", "variant_arr"]]
     
     return df
 
