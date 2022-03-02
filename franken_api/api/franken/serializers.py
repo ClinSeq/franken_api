@@ -163,6 +163,15 @@ curation_hotspot = api.model('IGV Hotspot', {
         'community_notes': fields.String(description='')
 })
 
+curation_cancer_hotspot = api.model('IGV Cancer Hotspot', {
+        'id': fields.String(description=''),
+        'gene': fields.String(description=''),
+        'residue': fields.String(description=''),
+        'res_type': fields.String(description=''),
+        'variants': fields.String(description=''),
+        'variant_arr': fields.String(description='')
+})
+
 curation_warmspot = api.model('IGV Warmspot', {
         'id': fields.String(description=''),
         'gene': fields.String(description=''),
@@ -237,6 +246,11 @@ svs_data_list = api.model('Curation SVS DB Data', { 'status':fields.Boolean(requ
 
 hotspot_data_list = api.model('Curation Hotspot DB Data', { 'status':fields.Boolean(required=True),
                                                      'data': fields.List(fields.Nested(curation_hotspot)),
+                                                     'header': fields.List(fields.Nested(header_curation)),
+                                                     'error': fields.String()})
+
+cancer_hotspot_data_list = api.model('Curation Cancer Hotspot DB Data', { 'status':fields.Boolean(required=True),
+                                                     'data': fields.List(fields.Nested(curation_cancer_hotspot)),
                                                      'header': fields.List(fields.Nested(header_curation)),
                                                      'error': fields.String()})
 

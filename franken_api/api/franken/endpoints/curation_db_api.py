@@ -5,7 +5,7 @@ from flask_restplus import Resource
 from franken_api.api.franken.parsers import curation_germline_arguments, curation_somatic_arguments, curation_svs_arguments, curation_psff_profile_arguments, curation_psff_profile_id_arguments, curation_probio_profile_id_arguments, curation_probio_profile_arguments
 from franken_api.api.restplus import api
 from franken_api.api.franken.business import  get_curation_igv_germline, get_curation_igv_somatic, get_curation_svs, post_curation, get_curation_hotspot, get_curation_warmspot, get_curation_psff_profile, curation_update_profile, list_curation_psff_profile, list_curation_probio_profile, get_curation_probio_profile, get_curation_cancer_hotspot
-from franken_api.api.franken.serializers import curation_germline, germline_data_list, somatic_data_list, svs_data_list, hotspot_data_list, warmspot_data_list, psff_profile_data_list, probio_profile_data_list
+from franken_api.api.franken.serializers import curation_germline, germline_data_list, somatic_data_list, svs_data_list, hotspot_data_list, warmspot_data_list, psff_profile_data_list, probio_profile_data_list, cancer_hotspot_data_list
 
 log = logging.getLogger(__name__)
 ns3 = api.namespace('curation', description='Curation Database API')
@@ -27,7 +27,7 @@ class CurationStatus(Resource):
 @api.response(200, 'Success')
 @api.response(400, '/nfs is not mount locally no data found')
 class CurationCAncerHotspotTable(Resource):
-    @api.marshal_with(hotspot_data_list)
+    @api.marshal_with(cancer_hotspot_data_list)
     def get(self):
         """
         Fetch all cancer hotspot information
