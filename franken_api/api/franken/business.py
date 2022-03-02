@@ -4,6 +4,7 @@ from franken_api.database.models import PSFFBloodReferral as psff
 from franken_api.database.models import TableIgvGermline as igv_germline_table
 from franken_api.database.models import TableIgvSomatic as igv_somatic_table
 from franken_api.database.models import TableSVS as svs_table
+from franken_api.database.models import TableIgvHotspotUpdate as igv_hotspot_update_table
 from franken_api.database.models import TableIgvHotspot as igv_hotspot_table
 from franken_api.database.models import TableIgvWarmspot as igv_warmspot_table
 from franken_api.database.models import TablePsffSummary as psff_profile
@@ -386,6 +387,19 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
 
 
+def get_HGVSp_status_update(gene, HGVSp):
+	
+	hotspot_status = ''
+
+	hotspot_list = get_hotspot_update_info(gene)
+
+	if(hotspot_list):
+		hotspot_list =  [x.strip(' ') for x in hotspot_list.split(',')]
+		if(HGVSp in hotspot_list):
+			hotspot_status = '0'
+			
+	return hotspot_status
+
 def get_HGVSp_status(gene, HGVSp):
 	'''
 		hotspot status - '', 0, 1, 2
@@ -428,6 +442,14 @@ def get_HGVSp_status(gene, HGVSp):
 		status = '0'
 
 	return status
+
+def get_hotspot_update_info(gene):
+	res = igv_hotspot_update_table.query.filter(igv_hotspot_update_table.gene == '{}'.format(gene)).all()
+	protmut = ''
+	if(res):
+		for r in res:
+			protmut += r.varaint_arr + ','
+	return protmut
 
 def get_hotspot_info(gene):
 	res = igv_hotspot_table.query.filter(igv_hotspot_table.gene == '{}'.format(gene)).all()
@@ -486,6 +508,8 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 				
 				if variant_type == 'somatic' and each_row['HGVSp']:
 					HGVSp_status = get_HGVSp_status(gene,each_row['HGVSp'])
+					if(HGVSp_status == ''):
+						HGVSp_status = get_HGVSp_status_update(gene,each_row['HGVSp'])
 					each_row['HOTSPOT'] = HGVSp_status
 
 				consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
