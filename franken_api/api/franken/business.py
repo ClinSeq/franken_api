@@ -123,7 +123,7 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
 
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/'
 	temp_url_list = []
-	ip_addr = request.host
+	ip_addr = 'localhost' if '5000' in request.host else request.host
 	port_no = ':5000' if 'localhost' in ip_addr else ''
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
@@ -586,7 +586,7 @@ def save_igvnav_input_file(filename, data):
 
 def get_probio_blood_referrals():
 	"Fetch the all the records from probio referral database"
-	header = ['crid','pnr','rid','datum','tid','sign','countyletter','new','progression','follow_up','cf_dna1','cf_dna2','cf_dna3','kommentar','filnamn']
+	header = ['crid','pnr','rid','datum','tid','remisstyp', 'studieid', 'sign','countyletter','new','progression','follow_up','cf_dna1','cf_dna2','cf_dna3','blood','kommentar','filnamn', 'hormonkänslig', 'kastrationsresistent', 'cdk', 'endofstudy']
 	try:
 		return {'status': True, 'data': probio.query.filter().all(), 'header': generate_headers_ngx_table(header), 'error': '' }, 200
 	except Exception as e:

@@ -23,9 +23,15 @@ probio_ref_data = api.model('ProbioBloodReferral', {
     'cf_dna1': fields.String(description='proof read 1'),
     'cf_dna2': fields.String(description='proof read 2'),
     'cf_dna3': fields.String(description='proof read 3'),
+    'blod': fields.String(description='proof read 3'),
     'kommentar': fields.String(description='comments of each sample'),
     'filnamn': fields.String(description='path to sample report in pdf '),
-
+    'remisstyp': fields.String(description='Remise type'),
+    'studieid': fields.String(description='Study ID'),
+    'hormonkänslig': fields.String(description='hormonkänslig'),
+    'kastrationsresistent': fields.String(description='kastrationsresistent'),
+    'cdk': fields.String(description='cdk'),
+    'endofstudy': fields.String(description='end of study')
 })
 
 psff_ref_data = api.model('PsffBloodReferral', {
