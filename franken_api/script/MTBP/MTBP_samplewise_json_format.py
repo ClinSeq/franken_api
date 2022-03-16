@@ -212,7 +212,6 @@ def build_small_variants(root_path):
             
             column_list.extend(reads_column_list)
 
-            print("column_list", column_list)
             smv_df_data = smv_df_data.loc[(smv_df_data['CALL'] == "S") | (smv_df_data['CALL'] == "G")]
             
             if 'CLONALITY' in smv_df_data.columns:
@@ -397,7 +396,7 @@ def build_json(root_path, file_name, project_name, cfdna, capture_format):
     # SVS
     logging.info('--- SVS started ---')
     svs_json = build_svs(root_path)
-    project_json["svs"] = json.loads(svs_json)
+    project_json["gsr"] = json.loads(svs_json)
     logging.info('--- SVS completed ---')
     
     final_json = json.dumps(project_json)
