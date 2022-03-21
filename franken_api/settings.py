@@ -15,6 +15,8 @@ SQLALCHEMY_BINDS = os.environ['CURATION_DB_URL']
 
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+# MTBP Python script path 
+MTBP_SCRIPT_PATH = os.environ['MTBP_SCRIPT_PATH']
 
 #path to franken json files
 MOUNT_POINT_PROBIO = '/nfs/PROBIO/autoseq-output'
@@ -27,4 +29,5 @@ MOUNT_POINT_HD_C3 = '/nfs/PROBIO2/healthy_donors_comprehensive/comprehensive_v3/
 MOUNT_POINT_LPC = '/nfs/PROBIO3/LPC/autoseq-output'
 MOUNT_POINT_CHEERS = '/nfs/CLINSEQ/JanPieter/CHEERS/autoseq-output'
 MOUNT_POINT_ULLEN = '/nfs/ULLEN/autoseq-output'
-MTBP_SCRIPT_PATH = os.environ['MTBP_SCRIPT_PATH']
+MOUNT_POINT_CRC_REFLEX = '/nfs/CLINSEQ/CRC_REFLEX/autoseq-output'
+
