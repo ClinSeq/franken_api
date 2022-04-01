@@ -30,4 +30,4 @@ MOUNT_POINT_LPC = '/nfs/PROBIO3/LPC/autoseq-output'
 MOUNT_POINT_CHEERS = '/nfs/CLINSEQ/JanPieter/CHEERS/autoseq-output'
 MOUNT_POINT_ULLEN = '/nfs/ULLEN/autoseq-output'
 MOUNT_POINT_CRC_REFLEX = '/nfs/CLINSEQ/CRC_REFLEX/autoseq-output'
-
+MOUNT_POINT_IPCM = '/nfs/IPCM/autoseq-output'

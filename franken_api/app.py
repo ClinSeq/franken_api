@@ -29,7 +29,7 @@ def configure_app(flask_app):
     flask_app.config['ULLEN'] = settings.MOUNT_POINT_ULLEN
     flask_app.config['MTBP_SCRIPT'] = settings.MTBP_SCRIPT_PATH
     flask_app.config['CRC_REFLEX'] = settings.MOUNT_POINT_CRC_REFLEX
-
+    flask_app.config['IPCM'] = settings.MOUNT_POINT_IPCM
 
 def initialize_app(flask_app):
     configure_app(flask_app)
