@@ -1138,7 +1138,7 @@ def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 
 def generate_curated_json(project_path, project_name, sample_id, capture_id, script_path):
 
-	python_cmd = "python3 {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	python_cmd = "python {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
@@ -1230,8 +1230,7 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 
 def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
 
-	python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
-	print(python_cmd)
+	python_cmd = "python {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
 		return {'data': 'PDF File Generated', 'status': True}, 200
