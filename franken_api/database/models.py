@@ -1,4 +1,5 @@
 from franken_api.database import db as pssql
+from sqlalchemy.dialects.postgresql import JSON
 
 
 class ProbioBloodReferral(pssql.Model):
@@ -441,3 +442,51 @@ class TableProbioSummary(pssql.Model):
 
     def __repr__(self):
         return "<TableProbioSummary (id='%s', sample_id='%s', capture_id='%s')>" % (self.id,self.sample_id,self.capture_id)
+
+class TableGenomicProfileSummary(pssql.Model):
+    __bind_key__ = 'curation'
+    __tablename__ = "genomic_profile_summary"
+
+    id = pssql.Column(pssql.Integer, primary_key=True, autoincrement=True)
+    project_name = pssql.Column(pssql.String)
+    sample_id = pssql.Column(pssql.String)
+    capture_id = pssql.Column(pssql.String)
+    study_code = pssql.Column(pssql.String)
+    study_site = pssql.Column(pssql.String)
+    dob = pssql.Column(pssql.String)
+    disease = pssql.Column(pssql.String)
+    specimen_assay = pssql.Column(JSON)
+    ctdna_param = pssql.Column(pssql.String)
+    ctdna_method = pssql.Column(pssql.String)
+    genome_wide = pssql.Column(JSON)
+    somatic_mutations = pssql.Column(JSON) 
+    germline_alterations = pssql.Column(JSON)
+    structural_variants = pssql.Column(JSON)
+    cnvs = pssql.Column(JSON)
+    summary_txt = pssql.Column(pssql.String)
+
+    def __init__(self, row_dict):
+
+        self.id = row_dict.get('id', None)
+        self.project_name = row_dict.get('project_name', None)
+        self.sample_id = row_dict.get('sample_id', None)
+        self.capture_id = row_dict.get('capture_id', None)
+        self.study_code = row_dict.get('study_code', None)
+        self.study_site = row_dict.get('study_site', None)
+        self.dob = row_dict.get('dob', None)
+        self.disease = row_dict.get('disease', None)
+        self.specimen_assay = row_dict.get('specimen_assay', None)
+        self.basic_qc = row_dict.get('basic_qc', None)
+        self.franken_plot = row_dict.get('franken_plot', None)
+        self.ctdna_param = row_dict.get('ctdna_param', None)
+        self.ctdna_method = row_dict.get('ctdna_method', None)
+        self.genome_wide = row_dict.get('genome_wide', None)
+        self.somatic_mutations = row_dict.get('somatic_mutations', None)
+        self.germline_alterations = row_dict.get('germline_alterations', None)
+        self.structural_variants = row_dict.get('structural_variants', None)
+        self.cnvs = row_dict.get('cnvs', None)
+        self.summary_txt = row_dict.get('summary_txt', None)
+
+
+    def __repr__(self):
+        return "<TableGenomicProfileSummary (id='%s', project_name='%s', sample_id='%s', capture_id='%s')>" % (self.id,selg.project_name, self.sample_id,self.capture_id)

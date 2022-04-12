@@ -2,10 +2,10 @@ import logging
 from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
 from flask_restplus import Resource
-from franken_api.api.franken.parsers import curation_germline_arguments, curation_somatic_arguments, curation_svs_arguments, curation_psff_profile_arguments, curation_psff_profile_id_arguments, curation_probio_profile_id_arguments, curation_probio_profile_arguments
+from franken_api.api.franken.parsers import curation_germline_arguments, curation_somatic_arguments, curation_svs_arguments, curation_psff_profile_arguments, curation_psff_profile_id_arguments, curation_probio_profile_id_arguments, curation_probio_profile_arguments, curation_genomic_profile_arguments, curation_genomic_profile_id_arguments
 from franken_api.api.restplus import api
-from franken_api.api.franken.business import  get_curation_igv_germline, get_curation_igv_somatic, get_curation_svs, post_curation, get_curation_hotspot, get_curation_warmspot, get_curation_psff_profile, curation_update_profile, list_curation_psff_profile, list_curation_probio_profile, get_curation_probio_profile, get_curation_cancer_hotspot
-from franken_api.api.franken.serializers import curation_germline, germline_data_list, somatic_data_list, svs_data_list, hotspot_data_list, warmspot_data_list, psff_profile_data_list, probio_profile_data_list, cancer_hotspot_data_list
+from franken_api.api.franken.business import  get_curation_igv_germline, get_curation_igv_somatic, get_curation_svs, post_curation, get_curation_hotspot, get_curation_warmspot, get_curation_psff_profile, curation_update_profile, list_curation_psff_profile, list_curation_probio_profile, get_curation_probio_profile, get_curation_cancer_hotspot, list_curation_genomic_profile, get_curation_genomic_profile
+from franken_api.api.franken.serializers import curation_germline, germline_data_list, somatic_data_list, svs_data_list, hotspot_data_list, warmspot_data_list, psff_profile_data_list, probio_profile_data_list, cancer_hotspot_data_list, genomic_profile_data_list
 
 log = logging.getLogger(__name__)
 ns3 = api.namespace('curation', description='Curation Database API')
@@ -185,6 +185,23 @@ class CurationPROBIOProfile(Resource):
         result, error = get_curation_probio_profile(dict(args))
         return result, error
 
+@ns3.route('/genomic_profile')
+@api.response(200, 'Success')
+@api.response(400, '/nfs is not mount locally no data found')
+class CurationGenomicProfile(Resource):
+    @api.marshal_with(genomic_profile_data_list)
+    @api.expect(curation_genomic_profile_id_arguments, validate=True)
+    def post(self):
+        """
+         Get the Genomic Profiling for all project 
+        ```
+
+        ```
+        """
+        args = curation_genomic_profile_id_arguments.parse_args()
+        result, error = get_curation_genomic_profile(dict(args))
+        return result, error
+
 @ns3.route('/list_profile/psff')
 @api.response(200, 'Success')
 @api.response(400, '/nfs is not mount locally no data found')
@@ -215,7 +232,20 @@ class CurationPSFFProfile(Resource):
         result, error = list_curation_probio_profile()
         return result, error
 
+@ns3.route('/list_profile/genomic')
+@api.response(200, 'Success')
+@api.response(400, '/nfs is not mount locally no data found')
+class CurationListGenomicProfile(Resource):
+    @api.marshal_with(genomic_profile_data_list)
+    def get(self):
+        """
+        Fetch all Genomic Profiling
+        ```
 
+        ```
+        """
+        result, error = list_curation_genomic_profile()
+        return result, error        
 
 @ns3.route('/update_psff_profile')
 @api.response(200, 'Success')
@@ -247,4 +277,21 @@ class CurationUpdatePSFFProfile(Resource):
         """
         args = curation_probio_profile_arguments.parse_args()
         result, errorcode = curation_update_profile(dict(args), 'probio_summary')
+        return result, errorcode
+
+
+@ns3.route('/update_genomic_profile')
+@api.response(200, 'Success')
+@api.response(400, '/nfs is not mount locally no data found')
+class CurationUpdateGenomicProfile(Resource):
+    @api.expect(curation_genomic_profile_arguments, validate=True)
+    def post(self):
+        """
+         Update Genomic Profiling for project
+        ```
+
+        ```
+        """
+        args = curation_genomic_profile_arguments.parse_args()
+        result, errorcode = curation_update_profile(dict(args), 'genomic_profile_summary')
         return result, errorcode

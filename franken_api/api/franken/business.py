@@ -9,6 +9,8 @@ from franken_api.database.models import TableIgvHotspot as igv_hotspot_table
 from franken_api.database.models import TableIgvWarmspot as igv_warmspot_table
 from franken_api.database.models import TablePsffSummary as psff_profile
 from franken_api.database.models import TableProbioSummary as probio_profile
+from franken_api.database.models import TableGenomicProfileSummary as genomic_profile
+
 
 from sqlalchemy import and_
 import os, io
@@ -699,17 +701,24 @@ def check_curation_probio_profile_record(table, record):
 								   table.capture_id == record['capture_id']
 								   ).first()
 
+def check_curation_genomic_profile_record(table, record):
+	return table.query.filter(table.project_name == record['project_name'],
+								   table.sample_id == record['sample_id'],
+								   table.capture_id == record['capture_id']
+								   ).first()
+
 def curation_update_profile(record, table_name):
 	try:
 		tables_dict = {
 			'psff_summary':psff_profile,
-			'probio_summary':probio_profile
+			'probio_summary':probio_profile,
+			'genomic_profile_summary': genomic_profile
 		}
 		func_dict = {
 			'psff_summary':check_curation_psff_profile_record,
-			'probio_summary':check_curation_probio_profile_record
+			'probio_summary':check_curation_probio_profile_record,
+			'genomic_profile_summary':check_curation_genomic_profile_record
 		}
-
 		current_record = func_dict[table_name](tables_dict[table_name], record )
 		
 		if not bool(current_record):
@@ -867,6 +876,19 @@ def list_curation_probio_profile():
 	except Exception as e:
 		return "Error :" + str(e), 400
 
+def list_curation_genomic_profile():
+	try:
+		header = ['project_name', 'sample_id', 'capture_id', 'study_code', 'study_site', 'dob', 'disease', 'specimen_assay', 'ctdna_param', 'ctdna_method', 'genome_wide', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'summary_txt']
+		try:
+			return {'status': True, 'data': genomic_profile.query.filter().all(),
+					'header': generate_headers_ngx_table(header),
+					'error': ''}, 200
+		except Exception as e:
+			return {'status': True, 'data': [], 'header': header, 'error': str(e)}, 400
+
+	except Exception as e:
+		return "Error :" + str(e), 400
+
 def get_curation_psff_profile(record):
 	try:
 		return {'status': True, 'data': psff_profile.query.filter(psff_profile.sample_id == record['sample_id']).all(), 'error': ''}, 200
@@ -878,6 +900,12 @@ def get_curation_probio_profile(record):
 		return {'status': True, 'data': probio_profile.query.filter(probio_profile.sample_id == record['sample_id']).all(), 'error': ''}, 200
 	except Exception as e:
 		return {'status': True, 'data': [], 'error': str(e)}, 400
+
+def get_curation_genomic_profile(record):
+	try:
+		return {'status': True, 'data': genomic_profile.query.filter(genomic_profile.project_name == record['project_name'] and genomic_profile.sample_id == record['sdid'] and genomic_profile.capture_id == record['capture_id']).all(), 'error': ''}, 200
+	except Exception as e:
+		return {'status': True, 'data': [], 'error': str(e)}, 400		
 
 def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='true'):
 	"read qc file from qc_overview.txt and return as json"
@@ -1110,7 +1138,7 @@ def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 
 def generate_curated_json(project_path, project_name, sample_id, capture_id, script_path):
 
-	python_cmd = "python {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	python_cmd = "python3 {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
@@ -1118,3 +1146,139 @@ def generate_curated_json(project_path, project_name, sample_id, capture_id, scr
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
 		return {'data':[], 'status': False}, 400
+
+def build_icpm_sample_details(cfdna):
+	   
+	sql = "SELECT ec.study_id as identifier, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
+	res = db.session.execute(sql, bind=db.get_engine(current_app, 'ipcmLeaderboard'))
+	res_data = generate_list_to_dict(res)
+	return res_data[0]
+
+def build_sample_details(project_name, cfdna):
+		
+	sample_data = {}
+	
+	sample_data["identifier"] = ""
+	sample_data["birthdate"] = ""
+	sample_data["hospital"] = ""
+	sample_data["disease_name"] = "Prostate Adenocarcinoma" if project_name == "PROBIO" else ''
+
+	table_name = 'psff_bloodreferrals' if project_name != "PROBIO" else 'probio_bloodreferrals'
+
+	if(project_name != "PROBIO"):
+		sql = "SELECT datum, rid, tid, cdk from psff_bloodreferrals WHERE blood1 like '%{}%' OR blood2 like '%{}%' or blood3 like '%{}%' or blood4 like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+		res = db.session.execute(sql)
+		res_data = generate_list_to_dict(res)
+		if(res_data):
+			tid = res_data[0]["tid"]
+			cdk = res_data[0]["cdk"].strip()
+			sample_data["identifier"] = tid if tid != "" else cdk
+	else:
+		sql = "SELECT pnr, datum, rid, tid, cdk from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+
+		res = db.session.execute(sql)
+		res_data = generate_list_to_dict(res)
+		
+		if(res_data):
+			tid = res_data[0]["tid"]
+			cdk = res_data[0]["cdk"].strip()
+			sample_data["identifier"] = tid if tid != "" else cdk
+			pnr = res_data[0]["pnr"][0:8]
+			sample_data["birthdate"] = pnr
+			
+			sql1 = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)
+			res1 = db.session.execute(sql1, bind=db.get_engine(current_app, 'leaderboard'))
+			glb_data_1 = generate_list_to_dict(res1)
+			if(glb_data_1):
+				sample_data["hospital"] = glb_data_1[0]["site_name"]
+		else:
+			cfdna_rid = re.sub("^0+(?!$)", "", cfdna)
+			sql2 = "SELECT DISTINCT rid, subjectid from biobank_t WHERE regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}' or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}'  or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') IN ('{}') or regexp_replace(rid, '[^a-zA-Z0-9]+', '','g') IN('{}')".format(cfdna, cfdna, cfdna, cfdna_rid)
+			res2 = db.session.execute(sql2, bind=db.get_engine(current_app, 'leaderboard'))
+			bio_data = generate_list_to_dict(res2)
+			if(bio_data):
+				subject_id = bio_data[0]['subjectid'] 
+				sql3 = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', 'P-', '','g') or regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', '-', '','g')".format(subject_id, subject_id)
+				res3 = db.session.execute(sql3, bind=db.get_engine(current_app, 'leaderboard'))
+				glb_data_2 = generate_list_to_dict(res3)
+			
+				if(glb_data_2):
+					sample_data["birthdate"] = glb_data_2[0]["dob"]
+					sample_data["hospital"] = glb_data_2[0]["site_name"]
+
+	return sample_data
+
+def fetch_patient_info(project_name, sample_id, capture_id):
+
+	capture_id_arr = capture_id.split("-")
+	cfdna1 = capture_id_arr[4]
+	cfdna =  cfdna1 if cfdna1.isdigit() else capture_id_arr[10]
+
+	capture_format = capture_id.split("-")[0]
+
+	try:
+		if(project_name == "ICPM" or capture_format == "iPCM"):
+			sample_details_json = build_icpm_sample_details(cfdna)
+		else:
+			sample_details_json = build_sample_details(project_name, cfdna)
+
+		return {'status': True, 'data': sample_details_json, 'error': ''}, 200
+
+	except subprocess.CalledProcessError as e:
+		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+		return {'data':[], 'status': False}, 400
+
+def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
+
+	python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	print(python_cmd)
+	try:
+		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
+		return {'data': 'PDF File Generated', 'status': True}, 200
+	except subprocess.CalledProcessError as e:
+		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+		return {'data':[], 'status': False}, 400
+
+
+def fetch_curated_pdf(project_path, project_name, sample_id, capture_id):
+
+	file_path = project_path + '/' + sample_id + '/' + capture_id + '/pdf/'
+	temp_pdf_url_list = []
+	ip_addr = 'localhost' if '5000' in request.host else request.host
+	port_no = ':4200' if 'localhost' in ip_addr else ''
+
+	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
+	if status:
+		for each_file in filter(lambda x: x.endswith('.pdf') and not x.startswith('.'), os.listdir(file_path)):
+			link = 'http://'+ip_addr+port_no+'/'+ 'api/franken/viewPdf?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&pdf_name=' + each_file
+			temp_pdf_url_list.append(link)
+
+		if len(temp_pdf_url_list) > 0:
+			pdf_url_list = temp_pdf_url_list
+			return {'pdf_url': pdf_url_list, 'status': True}, 200
+
+	return {'pdf_url':[], 'status': False}, 400
+
+
+def get_pdf_file(project_path, sample_id, capture_id, pdf_name):
+	"""retrun the pdf file"""
+
+	file_path = project_path + '/' + sample_id + '/' + capture_id + '/pdf/' + pdf_name
+	
+	if os.path.exists(file_path):
+		return file_path, 200
+
+	return file_path, 400
+
+
+def get_pdf_file2(project_path, sample_id, capture_id):
+	"""retrun the pdf file"""
+
+	file_path = project_path + '/' + sample_id + '/' + capture_id + '/pdf'
+
+	pdf_name = list(filter(lambda x: x.endswith('.pdf') and not x.startswith('.'), os.listdir(file_path)))[0]
+	if os.path.exists(file_path):
+		file_path = file_path + '/' + pdf_name
+		return file_path, 200
+
+	return file_path, 400

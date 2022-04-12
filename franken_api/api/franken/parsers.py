@@ -195,5 +195,30 @@ curation_probio_profile_arguments.add_argument('structural_variants', type=str, 
 curation_probio_profile_arguments.add_argument('cnvs', type=str, required=True, help="")
 curation_probio_profile_arguments.add_argument('comment_info', type=str, required=True, help="")
 
+curation_genomic_profile_arguments = reqparse.RequestParser()
+curation_genomic_profile_arguments.add_argument('project_name' , type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('sample_id' , type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('capture_id' , type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('study_code', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('study_site' , type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('dob', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('disease', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('specimen_assay', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('ctdna_param', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('ctdna_method', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('genome_wide', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('somatic_mutations' , type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('germline_alterations', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('structural_variants', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('cnvs', type=str, required=True, help="")
+curation_genomic_profile_arguments.add_argument('summary_txt', type=str, required=True, help="")
+
 curation_probio_profile_id_arguments = reqparse.RequestParser()
 curation_probio_profile_id_arguments.add_argument('sample_id' , type=str, required=True, help="")
+
+curation_genomic_profile_id_arguments = common_arguments.copy()
+
+fetch_patient_info_arguments = common_arguments.copy()
+
+view_pdf_arguments = common_arguments.copy()
+view_pdf_arguments.add_argument('pdf_name' , type=str, required=True, help="")

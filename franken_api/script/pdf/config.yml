@@ -1,0 +1,29 @@
+referral:
+    host: localhost
+    user: postgres
+    password: postgres
+    database: referrals
+
+curation:
+    host: localhost
+    user: postgres
+    password: postgres
+    database: curation
+
+ipcmLeaderboard:
+    host: localhost
+    user: postgres
+    password: postgres
+    database: ipcm_leaderboard
+
+leaderboard:
+    host: localhost
+    user: postgres
+    password: postgres
+    database: genomic_board
+    
+tableName:
+    IPCM : ipcm_referral_t
+    PROBIO: probio_bloodreferrals
+    PSFF: psff_bloodreferrals
+    sample_status: sample_status_t

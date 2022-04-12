@@ -11,12 +11,14 @@ RESTPLUS_ERROR_404_HELP = False
 
 # SQLAlchemy settings
 SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']  #'mysql+pymysql://username@host/database_name'
-SQLALCHEMY_BINDS = os.environ['CURATION_DB_URL']
+SQLALCHEMY_BINDS = { "curation": os.environ['CURATION_DB_URL'], "leaderboard" : os.environ['LEADERBOARD_DB_URL'] , "ipcmLeaderboard": os.environ['IPCM_DB_URL']}
 
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # MTBP Python script path 
 MTBP_SCRIPT_PATH = os.environ['MTBP_SCRIPT_PATH']
+PDF_SCRIPT_PATH = os.environ['PDF_SCRIPT_PATH']
+
 
 #path to franken json files
 MOUNT_POINT_PROBIO = '/nfs/PROBIO/autoseq-output'

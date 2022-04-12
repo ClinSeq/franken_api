@@ -3,10 +3,10 @@ from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
 from flask_restplus import Resource
 #from franken_api.api.franken.serializers import search_result
-from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, igv_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments
+from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, igv_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments
 from franken_api.api.restplus import api
 from flask import jsonify
-from franken_api.api.franken.business import pdfs_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_xml_image, get_curated_json_file, generate_curated_json
+from franken_api.api.franken.business import pdfs_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_xml_image, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2
 from franken_api.api.franken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
 import io
 #import  franken_api.database.models
@@ -350,3 +350,75 @@ class GenerateJsonFile(Resource):
         args = json_urls_arguments.parse_args()
         result, errorcode = generate_curated_json(current_app.config[args['project_name']], args['project_name'], args['sdid'], args['capture_id'], current_app.config["MTBP_SCRIPT"])
         return result, errorcode
+
+@ns.route('/patient_info')
+@api.response(200, 'Fetch the patient information')
+@api.response(400, 'Json file not found')
+class FetchPatientInformation(Resource):
+    @api.expect(fetch_patient_info_arguments, validate=True)
+    def post(self):
+        """
+           Fetch the patient information
+        """
+        args = fetch_patient_info_arguments.parse_args()
+        result, errorcode = fetch_patient_info(args['project_name'], args['sdid'], args['capture_id'])
+        return result, errorcode
+
+@ns.route('/generate_pdf')
+@api.response(200, 'Generate the PDF format')
+@api.response(400, 'Pdf file not found')
+class GeneratePdfFile(Resource):
+    @api.expect(json_urls_arguments, validate=True)
+    def get(self):
+        """
+            Generate the pdf
+        """
+        args = json_urls_arguments.parse_args()
+        result, errorcode = generate_curated_pdf(current_app.config[args['project_name']], args['project_name'], args['sdid'], args['capture_id'], current_app.config["PDF_SCRIPT"])
+        return result, errorcode
+
+
+@ns.route('/report_pdf')
+@api.response(200, 'Fetch the PDF format')
+@api.response(400, 'Pdf file not found')
+class FetchPdfFile(Resource):
+    @api.expect(json_urls_arguments, validate=True)
+    def get(self):
+        """
+            Fetch the pdf
+        """
+        args = json_urls_arguments.parse_args()
+        project_name = args['project_name']
+        project_path = current_app.config[project_name] 
+        sample_id = args['sdid']
+        capture_id = args['capture_id']
+        result, errorcode = fetch_curated_pdf(project_path, project_name, sample_id, capture_id)
+        return result, errorcode
+
+@ns.route('/viewPdf')
+@api.response(200, 'view Pdf')
+@api.response(400, 'No Static plots found')
+class ReportViewPDF(Resource):
+    @api.representation('application/pdf')
+    @api.expect(view_pdf_arguments, validate=True)
+    def get(self):
+        """
+        View PDF
+        """
+        args = view_pdf_arguments.parse_args()
+        result, errorcode = get_pdf_file(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['pdf_name'])
+        return send_file(result, attachment_filename='report.png', mimetype='application/pdf')
+
+@ns.route('/fetch_pdf')
+@api.response(200, 'view Pdf')
+@api.response(400, 'No Static plots found')
+class ReportViewPDF(Resource):
+    @api.representation('application/pdf')
+    @api.expect(pdf_arguments, validate=True)
+    def get(self):
+        """
+        View PDF
+        """
+        args = pdf_arguments.parse_args()
+        result, errorcode = get_pdf_file2(current_app.config[args['project_name']], args['sdid'], args['capture_id'])
+        return send_file(result, attachment_filename=args['sdid']+'_report.pdf', mimetype='application/pdf', cache_timeout=app.config['FILE_DOWNLOAD_CACHE_TIMEOUT']) 

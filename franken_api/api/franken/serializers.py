@@ -212,7 +212,7 @@ curation_psff_profile = api.model('PSFF Profile', {
         'comment_info': fields.String(description=''),
 })
 
-curation_probio_profile = api.model('PSFF Profile', {
+curation_probio_profile = api.model('PROBIO Profile', {
         'id': fields.String(description=''),
         'sample_id': fields.String(description=''),
         'capture_id': fields.String(description=''),
@@ -231,6 +231,27 @@ curation_probio_profile = api.model('PSFF Profile', {
         'cnvs': fields.String(description=''),
         'comment_info': fields.String(description=''),
 })
+
+curation_genomic_profile = api.model('Genomic Profile Summary', {
+        'id': fields.String(description=''),
+        'project_name': fields.String(description=''),
+        'sample_id': fields.String(description=''),
+        'capture_id': fields.String(description=''),
+        'study_code': fields.String(description=''),
+        'study_site': fields.String(description=''),
+        'dob': fields.String(description=''),
+        'disease': fields.String(description=''),
+        'specimen_assay': fields.String(description=''),
+        'ctdna_param': fields.String(description=''),
+        'ctdna_method': fields.String(description=''),
+        'genome_wide': fields.String(description=''),
+        'somatic_mutations': fields.String(description=''), 
+        'germline_alterations': fields.String(description=''),
+        'structural_variants': fields.String(description=''),
+        'cnvs': fields.String(description=''),
+        'summary_txt': fields.String(description='')
+})
+
 
 header_curation = api.model('Curation Header', {'key':fields.String(description='Column name') ,
                                         'title': fields.String(description='Column display name')})
@@ -270,7 +291,12 @@ psff_profile_data_list = api.model('Curation PSFF Profile DB Data', { 'status':f
                                                      'header': fields.List(fields.Nested(header_curation)),
                                                      'error': fields.String()})                                                     
 
-probio_profile_data_list = api.model('Curation PSFF Profile DB Data', { 'status':fields.Boolean(required=True),
+probio_profile_data_list = api.model('Curation PROBIO Profile DB Data', { 'status':fields.Boolean(required=True),
                                                      'data': fields.List(fields.Nested(curation_probio_profile)),
                                                      'header': fields.List(fields.Nested(header_curation)),
-                                                     'error': fields.String()})                                                        
+                                                     'error': fields.String()})
+
+genomic_profile_data_list = api.model('Curation Genomic Profile DB Data', { 'status':fields.Boolean(required=True),
+                                                     'data': fields.List(fields.Nested(curation_genomic_profile)),
+                                                     'header': fields.List(fields.Nested(header_curation)),
+                                                     'error': fields.String()})                                                     

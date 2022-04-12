@@ -11,7 +11,7 @@ from franken_api.database import db
 
 def configure_app(flask_app):
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
-    flask_app.config['SQLALCHEMY_BINDS'] = {'curation': settings.SQLALCHEMY_BINDS}
+    flask_app.config['SQLALCHEMY_BINDS'] = settings.SQLALCHEMY_BINDS
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
     flask_app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.RESTPLUS_SWAGGER_UI_DOC_EXPANSION
     flask_app.config['RESTPLUS_VALIDATE'] = settings.RESTPLUS_VALIDATE
@@ -29,6 +29,8 @@ def configure_app(flask_app):
     flask_app.config['ULLEN'] = settings.MOUNT_POINT_ULLEN
     flask_app.config['MTBP_SCRIPT'] = settings.MTBP_SCRIPT_PATH
     flask_app.config['CRC_REFLEX'] = settings.MOUNT_POINT_CRC_REFLEX
+    flask_app.config['PDF_SCRIPT'] = settings.PDF_SCRIPT_PATH
+
 
 
 def initialize_app(flask_app):
@@ -50,3 +52,6 @@ def main(port):
     initialize_app(app)
     logging.info('>>>>> Starting development server at http://{}/api/ <<<<<'.format('localhost'))
     app.run(debug=settings.FLASK_DEBUG, port=port, host='0.0.0.0')
+
+if __name__ == '__main__':
+    app.run(debug=True)
