@@ -1244,7 +1244,7 @@ def fetch_curated_pdf(project_path, project_name, sample_id, capture_id):
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/pdf/'
 	temp_pdf_url_list = []
 	ip_addr = 'localhost' if '5000' in request.host else request.host
-	port_no = ':4200' if 'localhost' in ip_addr else ''
+	port_no = ':5000' if 'localhost' in ip_addr else ''
 
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
