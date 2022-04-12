@@ -903,7 +903,7 @@ def get_curation_probio_profile(record):
 
 def get_curation_genomic_profile(record):
 	try:
-		return {'status': True, 'data': genomic_profile.query.filter(genomic_profile.project_name == record['project_name'] and genomic_profile.sample_id == record['sdid'] and genomic_profile.capture_id == record['capture_id']).all(), 'error': ''}, 200
+		return {'status': True, 'data': genomic_profile.query.filter(genomic_profile.project_name == record['project_name'], genomic_profile.sample_id == record['sdid'], genomic_profile.capture_id == record['capture_id']), 'error': ''}, 200
 	except Exception as e:
 		return {'status': True, 'data': [], 'error': str(e)}, 400		
 

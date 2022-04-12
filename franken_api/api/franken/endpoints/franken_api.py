@@ -421,4 +421,4 @@ class ReportViewPDF(Resource):
         """
         args = pdf_arguments.parse_args()
         result, errorcode = get_pdf_file2(current_app.config[args['project_name']], args['sdid'], args['capture_id'])
-        return send_file(result, attachment_filename=args['sdid']+'_report.pdf', mimetype='application/pdf', cache_timeout=app.config['FILE_DOWNLOAD_CACHE_TIMEOUT']) 
+        return send_file(result, attachment_filename=args['sdid']+'_report.pdf', mimetype='application/pdf') 
