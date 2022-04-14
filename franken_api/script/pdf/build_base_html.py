@@ -68,7 +68,9 @@ def fetch_sql_query(section, sql):
 def build_icpm_sample_details(cfdna):
     sql = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
     res_data = fetch_sql_query('ipcmLeaderboard', sql)
-    return res_data[0]
+    if res_data:
+       res_data = res_data[0] 
+    return res_data
 
 
 # ### Fetch the sample information from biobank referral table
@@ -147,7 +149,7 @@ def build_basic_html(sample_id, capture_id):
             specimen_assay_html += '<td>'+specimen_assay_json[i]["analyte"]+'</td>'
             specimen_assay_html += '<td>'+specimen_assay_json[i]["assay"]+'</td>'
             specimen_assay_html += '<td>'+specimen_assay_json[i]["quality"]+'</td>'
-            specimen_assay_html += '</tr>';
+            specimen_assay_html += '</tr>'
 
         genome_wide = res_data[0]['genome_wide'].replace("\'", "\"")
 
@@ -163,7 +165,7 @@ def build_basic_html(sample_id, capture_id):
                 genome_wide_html += '<td>'+genome_wide_json[j]["categories"]+'</td>'
             else:
                 genome_wide_html += '<td>'+genome_wide_json[j]["comment"]+'</td>'
-            genome_wide_html += '</tr>';
+            genome_wide_html += '</tr>'
     
     return patient_info_html, specimen_assay_html, genome_wide_html
 
@@ -271,8 +273,6 @@ def build_cnv(root_path):
                                    
                 cnv_df_data.fillna('-', inplace=True)
 
-                print("cnv_df_data", cnv_df_data, "\n")
-                
                 for index, row in cnv_df_data.iterrows():
 
                     variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+"-"+str(row['end'])
@@ -364,21 +364,21 @@ def build_html(root_path, file_name, project_name, cfdna, capture_format, base_h
     logging.info('--- Small Variant started ---')
     small_variant_html = build_small_variants(root_path)
     if(small_variant_html == ""):
-        small_variant_html = '<tr><td class="text-center" colspan="8">Data Not found</td></tr>'
+        small_variant_html = '<tr><td class="text-center" colspan="8">No Data Found </td></tr>'
     logging.info('--- Small Variant completed ---')
     
     # SVS
     logging.info('--- SVS started ---')
     svs_html = build_svs(root_path)
     if(svs_html == ""):
-        svs_html = '<tr><td class="text-center" colspan="6">Data Not found</td></tr>'
+        svs_html = '<tr><td class="text-center" colspan="6">No Data Found </td></tr>'
     logging.info('--- SVS completed ---')
     
     # CNVs
     logging.info('--- CNVs started ---')
     cnv_html = build_cnv(root_path)
     if(cnv_html == ""):
-        cnv_html = '<tr><td class="text-center" colspan="5">Data Not found</td></tr>'
+        cnv_html = '<tr><td class="text-center" colspan="5">No Data Found </td></tr>'
     logging.info('--- CNVs completed ---')
     
     
@@ -468,7 +468,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
      
     root_path = os.path.join(nfs_path,sample_id,capture_id)
     
-    output_path = root_path+"/pdf";
+    output_path = root_path+"/pdf"
     
     cfdna = capture_id.split("-")[4]
     
@@ -481,7 +481,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
     log_name = output_path+"/log_"+project_name+"_"+sample_id+"_"+cfdna+".log"
     
     if(not os.path.exists(output_path)):
-        os.mkdir(output_path);
+        os.mkdir(output_path)
     
     capture_arr = capture_id.split("_")
     specimen =  'cfDNA' if 'CFDNA' in capture_arr[0] else ( 'FFPE' if 'T' in capture_arr[0] else '')
@@ -491,19 +491,22 @@ def main(nfs_path, project_name, sample_id, capture_id):
         sample_details_json = build_icpm_sample_details(cfdna)
     else:
         sample_details_json = build_sample_details(cfdna)
-        
-    sample_date = sample_details_json["sample_date"]
     
-    if(sample_date == ""):
-        #KN_value = capture_id.split("-")[5]
-        #sample_date = re.findall('\d+', KN_value)[0]
-        sample_date = 'TBD'
+    sample_date = '-'
+    
+    if(sample_details_json):
+        sample_date = sample_details_json["sample_date"]
+    
+        # if(sample_date == ""):
+        #     #KN_value = capture_id.split("-")[5]
+        #     #sample_date = re.findall('\d+', KN_value)[0]
+        #     sample_date = '-'
         
     ## Change the logo based on the project  
     change_header_logo(tml_header_page, project_name, header_page, specimen, sample_date)
     change_header_logo(tml_appendix_header_page, project_name, appendix_header_page, specimen, sample_date)
        
-    logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt =  "%Y-%m-%d %H:%M:%S", force=True)
+    logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt =  "%Y-%m-%d %H:%M:%S")
     logging.info('--- Generated Json format Started---')
     
     logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
@@ -512,12 +515,12 @@ def main(nfs_path, project_name, sample_id, capture_id):
         html_result = build_html(root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id)
         if html_result:
             
-            cmd = 'wkhtmltopdf {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_page, appendix_header_page, footer_page, pdf_file_name)
+            cmd = 'wkhtmltopdf --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_page, appendix_header_page, footer_page, pdf_file_name)
             subprocess_cmd(cmd)
             logging.info("PDF Generated")
 
     except Exception as e:
-        print("Exception", str(e))
+        print("Exception", str(e))  
         logging.error("Failed : {}".format(str(e)))
         logging.error('--- Generated Json format Failed ---\n')
         raise
