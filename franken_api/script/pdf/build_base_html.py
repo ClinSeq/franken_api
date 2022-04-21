@@ -23,9 +23,7 @@ import subprocess
 from datetime import date, datetime
 
 
-# ### Get the current directory path
-def path():
-	return os.path.dirname(__file__)
+# ### Run command using subprocess
 
 def subprocess_cmd(command):
     process = subprocess.Popen(command,stdout=subprocess.PIPE, shell=True)
@@ -36,7 +34,8 @@ def subprocess_cmd(command):
 
 # ### Read a DB information from yml file
 
-def readConfig(section,filename=path()+"/config.yml"):
+def readConfig(section):
+    filename = os.getcwd()+"/config.yml"
     with open(filename, "r") as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
         section = cfg[section]
@@ -69,7 +68,7 @@ def build_icpm_sample_details(cfdna):
     sql = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
     res_data = fetch_sql_query('ipcmLeaderboard', sql)
     if res_data:
-       res_data = res_data[0] 
+        res_data = res_data[0] 
     return res_data
 
 
@@ -122,7 +121,7 @@ def build_basic_html(sample_id, capture_id):
     specimen_assay_html = ''
     genome_wide_html = ''
     
-    sql = "SELECT study_code, study_site, dob, disease, specimen_assay, genome_wide  from genomic_profile_summary WHERE sample_id='{}' and capture_id='{}'".format(sample_id, capture_id)
+    sql = "SELECT study_code, study_site, dob, disease, specimen_assay, genome_wide, summary_txt from genomic_profile_summary WHERE sample_id='{}' and capture_id='{}'".format(sample_id, capture_id)
     res_data = fetch_sql_query('curation', sql)
     
     if(res_data):
@@ -131,6 +130,10 @@ def build_basic_html(sample_id, capture_id):
         study_site = res_data[0]['study_site']
         dob = res_data[0]['dob']
         disease = res_data[0]['disease']
+
+        # summary_txt = '<tr><td>'+res_data[0]['summary_txt']+'</td></tr>'
+        summary_txt = res_data[0]['summary_txt']
+
 
         patient_info_html += '<tr><th>STUDY ID</th><td>{}</td></tr>'.format(study_code)
         patient_info_html += '<tr><th>DATE OF BIRTH</th><td>{}</td></tr>'.format(dob)
@@ -154,20 +157,24 @@ def build_basic_html(sample_id, capture_id):
         genome_wide = res_data[0]['genome_wide'].replace("\'", "\"")
 
         genome_wide_json = json.loads(genome_wide)
-
+        
         for j in genome_wide_json: 
-
+            
+            assessment = 'Yes' if genome_wide_json[j]["assessment"] == 'Possible' else ( 'No' if genome_wide_json[j]["assessment"] == 'Not possible' else '')
             genome_wide_html += '<tr>'
             genome_wide_html += '<td>'+genome_wide_json[j]["title"]+'</td>'
             genome_wide_html += '<td>'+genome_wide_json[j]["result"]+'</td>'
-            genome_wide_html += '<td>'+genome_wide_json[j]["assessment"]+'</td>'
-            if genome_wide_json[j]["assessment"] == 'Possible' and genome_wide_json[j]["result"] == 'Yes':
+            genome_wide_html += '<td>'+assessment+'</td>'
+
+
+            if genome_wide_json[j]["title"] == 'OTHER GENOMIC PHENOTYPE' and genome_wide_json[j]["assessment"] == 'Possible' and genome_wide_json[j]["result"] == 'Yes':
                 genome_wide_html += '<td>'+genome_wide_json[j]["categories"]+'</td>'
             else:
                 genome_wide_html += '<td>'+genome_wide_json[j]["comment"]+'</td>'
             genome_wide_html += '</tr>'
     
-    return patient_info_html, specimen_assay_html, genome_wide_html
+    return patient_info_html, specimen_assay_html, genome_wide_html, summary_txt
+
 
 # ### Build a Small variant Json (Somatic & Germline)
 
@@ -189,7 +196,7 @@ def build_small_variants(root_path):
 
             column_list = ['CHROM', 'START', 'END', 'REF', 'ALT', 'GENE', 'CONSEQUENCE', 'HGVSp']
             column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt'}
-                       
+            
             if 'CLONALITY' in smv_df_call_filter.columns:
                 column_list.append('CLONALITY')
                 column_dict['CLONALITY'] = 'clonality'
@@ -201,6 +208,14 @@ def build_small_variants(root_path):
             if 'HGVSp_org' in smv_df_call_filter.columns:
                 column_list.append('HGVSp_org')
                 column_dict['HGVSp_org'] = 'HGVSp_org'
+
+            if 'TRANSCRIPT' in smv_df_call_filter.columns:
+                column_list.append('TRANSCRIPT')
+                column_dict['TRANSCRIPT'] = 'TRANSCRIPT'
+            
+            if 'ASSESSMENT' in smv_df_call_filter.columns:
+                column_list.append('ASSESSMENT')
+                column_dict['ASSESSMENT'] = 'ASSESSMENT'
                 
             smv_df_call_filter = smv_df_call_filter[column_list]
             smv_df_filter_data = smv_df_call_filter.rename(columns=column_dict)
@@ -218,7 +233,9 @@ def build_small_variants(root_path):
 
                 variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+', '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
                 clonality = row['clonality'] if 'clonality' in row else '-'
-                
+                transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
+                assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
+
                 smt_variant_html += '<tr>'
                 smt_variant_html +='<td>'+row['GENE']+'</td>'
                 smt_variant_html +='<td>'+source_type+'</td>'
@@ -226,8 +243,9 @@ def build_small_variants(root_path):
                 smt_variant_html +='<td>'+row['CONSEQUENCE']+'</td>'
                 smt_variant_html +='<td>'+clonality+'</td>'
                 smt_variant_html +='<td>'+str(row['second_hit'])+'</td>'
+                smt_variant_html +='<td>'+assessment+'</td>'
+                smt_variant_html +='<td>'+transcript+'</td>'
                 smt_variant_html +='<td>'+row['HGVSp_org']+'</td>'
-                smt_variant_html +='<td>'+row['HGVSp']+'</td>'
                 smt_variant_html += '</tr>'
                 
     return smt_variant_html
@@ -289,7 +307,6 @@ def build_cnv(root_path):
                     
 
     return cnv_html
-    
 
 
 # ### Build a SVS Json
@@ -347,9 +364,74 @@ def build_svs(root_path):
     return svs_html
 
 
+# ### Build a Technical Info from QC
+
+def build_tech_val_QC(root_path):
+    file_path = root_path + '/qc/'
+    
+    tech_html = ''
+    
+    try:
+        
+        regex = '^(?:(?!-(CFDNA|T)).)*$'
+        
+        tech_html += '<tr>'
+        tech_html +='<th>LIBRARY PREP KIT</th>'
+        tech_html +='<td>Kapa Hyperprep</td>'
+        tech_html +='<td>Kapa Hyperprep</td>'
+        tech_html +='</tr>'
+#         tech_html +='<tr>'
+#         tech_html +='<th>INPUT DNA (ng)</th>'
+#         tech_html +='<td>100</td>'
+#         tech_html +='<td>100</td>'
+#         tech_html +='</tr>'
+        tech_html +='<tr>'
+        tech_html +='<th>HYBRIDISATION CAPTURE</th>'
+        tech_html +='<td>ProBio (v1.0; 1.5 Mb)</td>'
+        tech_html +='<td>ProBio (v1.0; 1.5 Mb)</td>'
+        tech_html +='</tr>'
+        
+        qc_filename = file_path + list(filter(lambda x: x.endswith('.qc_overview.txt') and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
+
+        if len(qc_filename) > 0:
+            qc_df_data = pd.read_csv(qc_filename, delimiter = "\t")
+
+            column_list = ['SAMP', 'MEAN_TARGET_COVERAGE', 'READ_PAIRS_EXAMINED', 'PERCENT_DUPLICATION']
+            column_dict = {'SAMP': 'sample', 'MEAN_TARGET_COVERAGE': 'coverage', 'READ_PAIRS_EXAMINED': 'read_pair', 'PERCENT_DUPLICATION':'duplication'}
+
+            qc_df_data = qc_df_data[column_list]
+            qc_df_data = qc_df_data.rename(columns=column_dict)
+
+            qc_df_data.fillna('-', inplace=True)
+            
+            qc_df_json = qc_df_data.to_dict()
+                        
+            tech_html += '<tr>'
+            tech_html +='<th>TOTAL NUMBER OF READS PAIRS</th>'
+            tech_html +='<td>'+str(qc_df_json["read_pair"][0])+'</td>'
+            tech_html +='<td>'+str(qc_df_json["read_pair"][1])+'</td>'
+            tech_html +='</tr>'
+            tech_html +='<tr>'
+            tech_html +='<th>MEAN TARGET COVERAGE</th>'
+            tech_html +='<td>'+str(qc_df_json["coverage"][0])+'</td>'
+            tech_html +='<td>'+str(qc_df_json["coverage"][1])+'</td>'
+            tech_html +='</tr>'
+            tech_html +='<tr>'
+            tech_html +='<th>FRACTION DUPLICATES</th>'
+            tech_html +='<td>'+str(qc_df_json["duplication"][1])+'</td>'
+            tech_html +='<td>'+str(qc_df_json["duplication"][1])+'</td>'
+            tech_html +='</tr>'
+    
+    except Exception as e:
+        print("Exception", str(e))
+
+
+    return tech_html
+
+
 # ### Build HTML from output files
 
-def build_html(root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id):
+def build_html(root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name):
     
     print("--- MTBP Json Format Started ---\n")
     print("Path : ", root_path, "/", file_name)
@@ -358,30 +440,38 @@ def build_html(root_path, file_name, project_name, cfdna, capture_format, base_h
         
     # Patient, Specimen & assay and genome wide information 
     logging.info('--- Patient, Specimen & assay and genome wide information started ---')
-    pat_html, specimen_html, genome_wide_html = build_basic_html(sample_id,capture_id)
-    
+    pat_html, specimen_html, genome_wide_html, summary_txt = build_basic_html(sample_id,capture_id)
+
+   
     # Small Variant (Somatic & Germline)
     logging.info('--- Small Variant started ---')
     small_variant_html = build_small_variants(root_path)
     if(small_variant_html == ""):
-        small_variant_html = '<tr><td class="text-center" colspan="8">No Data Found </td></tr>'
+        small_variant_html = '<tr><td class="text-center" colspan="9">No relevant variants detected</td></tr>'
     logging.info('--- Small Variant completed ---')
     
     # SVS
     logging.info('--- SVS started ---')
     svs_html = build_svs(root_path)
     if(svs_html == ""):
-        svs_html = '<tr><td class="text-center" colspan="6">No Data Found </td></tr>'
+        svs_html = '<tr><td class="text-center" colspan="6">No relevant variants detected</td></tr>'
     logging.info('--- SVS completed ---')
     
     # CNVs
     logging.info('--- CNVs started ---')
     cnv_html = build_cnv(root_path)
     if(cnv_html == ""):
-        cnv_html = '<tr><td class="text-center" colspan="5">No Data Found </td></tr>'
+        cnv_html = '<tr><td class="text-center" colspan="5">No relevant variants detected</td></tr>'
     logging.info('--- CNVs completed ---')
     
+    ## Get Technical Validation for QC
+    logging.info('--- Technical Validation started ---')
+    tech_valid_html = build_tech_val_QC(root_path)
+    if(tech_valid_html == ""):
+        tech_valid_html = '<tr><td class="text-center" colspan="3">No relevant variants detected</td></tr>'
+    logging.info('--- Technical Validation completed ---')
     
+
     # Read a base html and replace the curated text based on ids
     with open(base_html_path, 'r') as f:
         contents = f.read()
@@ -404,24 +494,39 @@ def build_html(root_path, file_name, project_name, cfdna, capture_format, base_h
             
         for tag in soup.find_all(id='cnv_table_data'):
             tag.string.replace_with(cnv_html)
+
+        for tag in soup.find_all(id='summary_notes_data'):
+            tag.string.replace_with(summary_txt)            
             
         new_text = soup.prettify(formatter=None)
-    
+          
     # Create a new html based on the base template
     with open(file_name, "w", encoding = 'utf-8') as file:
         file.write(str(new_text))
     
+    with open(appendix_page, 'r') as f:
+        contents = f.read()
+        soup1 = BeautifulSoup(contents, "html.parser")
+        
+        for tag in soup1.find_all(id='tech_val_table_data'):
+            tag.string.replace_with(tech_valid_html)
+        
+        appendix_text = soup1.prettify(formatter=None)
+          
+    # Create a new appendix html based on the appendix template
+    with open(appendix_name, "w", encoding = 'utf-8') as file1:
+        file1.write(str(appendix_text))
+    
     return 1
 
 
-# Change the header value
+# ### Change the header value
 
 def change_header_logo(header_html, project_name, output_header, specimen, sample_date):
     
     report_date = date.today().strftime('%Y-%m-%d')
     #sample_date = datetime.datetime.strptime(sample_date, '%Y%m%d').date()
 
-            
     with open(header_html, 'r') as f:
         contents = f.read()
         soup = BeautifulSoup(contents, "html.parser")
@@ -440,10 +545,11 @@ def change_header_logo(header_html, project_name, output_header, specimen, sampl
         
         for images in soup.find_all('img'):
             
-            if 'ICPM' in project_name or 'iPCM' in project_name:
-                img_path = '/nfs/IPCM/script/pdf/static/img/iPCM.png'
-            else:
+#             if 'IPCM' in project_name or 'iPCM' in project_name:
+            if 'PROBIO' in project_name:
                 img_path = '/nfs/IPCM/script/pdf/static/img/probio.png'
+            else:
+                img_path = '/nfs/IPCM/script/pdf/static/img/iPCM.png'
                 
             images['src'] = images['src'].replace("", img_path)
 
@@ -451,7 +557,6 @@ def change_header_logo(header_html, project_name, output_header, specimen, sampl
                 
     with open(output_header, "w") as f_output:
         f_output.write(str(new_text))
-    
 
 
 # ### Main Function
@@ -461,20 +566,31 @@ def main(nfs_path, project_name, sample_id, capture_id):
    
     ## PDF Tempalte Path 
     base_html_path = '/nfs/IPCM/script/pdf/base.html'
+    # base_html_path = '/home/karthick/project/code/curator/pdf/base.html'
     tml_header_page = '/nfs/IPCM/script/pdf/layout/header.html' 
     footer_page = '/nfs/IPCM/script/pdf/layout/footer.html'
-    appendix_page = '/nfs/IPCM/script/pdf/appendix.html'
+    appendix_page = '/nfs/IPCM/script/pdf/appendix_c4.html'
+    # appendix_page = '/home/karthick/project/code/curator/pdf/appendix_c4.html'
+
     tml_appendix_header_page = '/nfs/IPCM/script/pdf/layout/appendix_header.html' 
      
     root_path = os.path.join(nfs_path,sample_id,capture_id)
     
     output_path = root_path+"/pdf"
     
+    ## Check the sample is 'PN' and 'C4' design
+    KN_value = capture_id.split("-")[6]
+    
+    if "PN" in KN_value:
+        # appendix_page = '/home/karthick/project/code/curator/pdf/appendix_pn.html'
+        appendix_page = '/nfs/IPCM/script/pdf/appendix_pn.html'
+    
     cfdna = capture_id.split("-")[4]
     
     capture_format = capture_id.split("-")[0]
        
-    file_name = output_path+"/base_"+project_name+"_"+sample_id+"_"+cfdna+".html"    
+    file_name = output_path+"/base_"+project_name+"_"+sample_id+"_"+cfdna+".html"
+    appendix_name = output_path+"/appendix_"+project_name+"_"+sample_id+"_"+cfdna+".html" 
     header_page = output_path+"/header_"+project_name+"_"+sample_id+"_"+cfdna+".html"
     appendix_header_page = output_path+"/append_header_"+project_name+"_"+sample_id+"_"+cfdna+".html"
     pdf_file_name = output_path+"/pdf_"+project_name+"_"+sample_id+"_"+cfdna+".pdf"
@@ -485,7 +601,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
     
     capture_arr = capture_id.split("_")
     specimen =  'cfDNA' if 'CFDNA' in capture_arr[0] else ( 'FFPE' if 'T' in capture_arr[0] else '')
-    
+        
     # Sample Information
     if(project_name == "ICPM" or capture_format == "iPCM"):
         sample_details_json = build_icpm_sample_details(cfdna)
@@ -496,11 +612,6 @@ def main(nfs_path, project_name, sample_id, capture_id):
     
     if(sample_details_json):
         sample_date = sample_details_json["sample_date"]
-    
-        # if(sample_date == ""):
-        #     #KN_value = capture_id.split("-")[5]
-        #     #sample_date = re.findall('\d+', KN_value)[0]
-        #     sample_date = '-'
         
     ## Change the logo based on the project  
     change_header_logo(tml_header_page, project_name, header_page, specimen, sample_date)
@@ -512,10 +623,10 @@ def main(nfs_path, project_name, sample_id, capture_id):
     logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
         
     try:
-        html_result = build_html(root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id)
+        html_result = build_html(root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name)
         if html_result:
             
-            cmd = 'wkhtmltopdf --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_page, appendix_header_page, footer_page, pdf_file_name)
+            cmd = 'wkhtmltopdf --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_name, appendix_header_page, footer_page, pdf_file_name)
             subprocess_cmd(cmd)
             logging.info("PDF Generated")
 
@@ -524,7 +635,6 @@ def main(nfs_path, project_name, sample_id, capture_id):
         logging.error("Failed : {}".format(str(e)))
         logging.error('--- Generated Json format Failed ---\n')
         raise
- 
 
 
 if __name__ == "__main__":
@@ -544,6 +654,8 @@ if __name__ == "__main__":
     sample_id = args.sample
     capture_id = args.capture
     nfs_path = args.path 
+        
+    nfs_path = "/sdata/{}/autoseq-output".format(project_name)
     
     if not os.path.isdir(nfs_path):
         print('The {}, path specified does not exist'.format(nfs_path))
@@ -551,4 +663,3 @@ if __name__ == "__main__":
     else:
         main(nfs_path, project_name, sample_id, capture_id)
     
-

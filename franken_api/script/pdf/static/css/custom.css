@@ -1,0 +1,67 @@
+body html {
+    font-family: 'Roboto', sans-serif;
+    font-size: 12px;
+}
+
+table {
+    font-size: medium;
+}
+
+.container{
+    padding: 50px;
+}
+
+.logo-img {
+    width: 80px;
+}
+
+.table.borderless {
+    border-bottom: 10px solid #4472c4;
+    border-top: 10px solid #4472c4;
+}
+
+.table.borderless td, .table.borderless th {
+    border: none;
+}
+
+.header-sub-title {
+    font-size: small;
+    color:#4472c4
+}
+
+.header-about {
+    font-size: small;
+    color: #595959;
+}
+
+.header-span {
+    font-size: smaller;
+    color: #595959;
+}
+
+.patient-summary h4, .genome-summary h4{
+    font-size: medium;
+    font-weight: bold;
+}
+
+/* .patient-summary table thead tr , .patient-summary tbody tr, .genome-summary table thead tr , .genome-summary tbody tr {
+    color: #595959;
+    font-size: small;
+} */
+
+table thead tr, table tbody tr {
+    color: #595959;
+    font-size: small; 
+}
+
+.table > :not(:first-child) {
+    border-top: none;
+}
+
+.table-bordered {
+    border: 1px solid #595959;
+}
+
+.btn-row {
+    float: right;
+}

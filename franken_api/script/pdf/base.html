@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta name="pdfkit-page-size" content="Legal"/>
+    <meta name="pdfkit-orientation" content="Landscape"/>
+	<link rel="stylesheet" href="/nfs/IPCM/script/pdf/static/css/bootstrap.min.css" >
+	<style>
+		*{
+			/* font-family: 'Roboto', sans-serif; */
+			font-family: 'Roboto Serif', serif;
+			font-size: 10px;
+		}
+
+		section {
+			padding: 10px 0px 5px 10px;
+			/* page-break-inside:avoid; */
+		}
+
+		table { page-break-after:auto }
+		tr    { page-break-inside:avoid; page-break-after:auto }
+		td    { page-break-inside:avoid; page-break-after:auto }
+		/* thead { display: table-row-group; }
+		tfoot { display:table-footer-group } */
+
+		.table-borderless > tbody > tr > td,
+		.table-borderless > tbody > tr > th,
+		.table-borderless > tfoot > tr > td,
+		.table-borderless > tfoot > tr > th,
+		.table-borderless > thead > tr > td,
+		.table-borderless > thead > tr > th {
+			border: none !important;
+			padding: 0px 10px 0px 0px;
+		}
+
+		
+		.patient-block .patient-td {
+			width: 40%;
+		}
+
+		.patient-block .patient-specimen {
+			width: 60%;
+		}
+
+		.summary-block {
+			page-break-inside:avoid; 
+			page-break-after:auto;
+		}
+
+		.patient-block h5,  .genome-wide-block h5, .point-mut-block h5, .svs-block h5, .copy-number-block h5, .summary-block h5{
+			font-weight: bold;
+			padding-bottom: 5px;
+			color: #B43218;
+		}
+
+		 table thead tr th {
+			background-color: #1DA1F2;
+			text-align: center;
+			color: #ffffff;
+		}
+
+	</style>
+</head>
+<body>
+	<section class="patient-block">
+		<table class="table table-borderless">
+			<tr>
+				<td>
+					<h5 >PATIENT</h5>
+				</td>
+				<td>
+					<h5 >SPECIMEN AND ASSAY</h5>
+				</td>
+			</tr>
+			<tr>
+				<td class="patient-td">
+					<table class="table table-bordered">
+						<tbody id="patient_info_table_data">
+
+						</tbody>
+					</table>
+				</td>
+				<td class="patient-specimen">
+					<table class="table table-bordered">
+						<thead>
+							<tr>
+								<th>SPECIMEN</th>
+								<th>ANALYTE</th>
+								<th>ASSAY</th>
+								<th>QUALITY</th>
+							</tr>
+						</thead>
+						<tbody id="specimen_assay_table_data">
+
+						</tbody>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</section>
+
+	<section class="genome-wide-block">
+		<h5 >GENOME-WIDE FINDINGS</h5>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th width="30%">CATEGORY</th>
+					<th width="10%">RESULT</th>
+					<th width="15%">ASSESSMENT POSSIBLE</th>
+					<th width="45%">COMMENT</th>
+				</tr>
+			</thead>
+			<tbody id="genome_wide_table_data">
+
+			</tbody>
+		</table>
+	</section>
+
+	<section class="point-mut-block">
+		<h5>SMALL VARIANTS</h5>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>GENE</th>
+					<th>SOURCE</th>
+					<th>VARIANT DETAILS</th>
+					<th>CONSEQUENCE</th>
+					<th>CLONALITY</th>
+					<th>SECONDHIT</th>
+					<th>IMPACT</th>
+					<th>TRANSCRIPT ID</th>
+					<th>HGVSP</th>
+				</tr>
+			</thead>
+			<tbody id="point_table_data">
+
+			</tbody>
+		</table>
+	</section>
+	<section class="svs-block">
+		<h5 >STRUCTURAL REARRANGEMENTS</h5>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>GENE</th>
+					<th>SOURCE</th>
+					<th>VARIANT DETAILS</th>
+					<th>CONSEQUENCE</th>
+					<th>CLONALITY</th>
+					<th>SECONDHIT</th>
+				</tr>
+			</thead>
+			<tbody id="svs_table_data">
+				
+			</tbody>
+		</table>
+	</section>
+	
+	<section class="copy-number-block">
+		<h5 >COPY NUMBER ALTERATIONS</h5>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th width="55%">GENE</th>
+					<th>SOURCE</th>
+					<th>VARIANT DETAILS</th>
+					<th>CONSEQUENCE</th>
+					<th>COPY-NUMBER</th>
+				</tr>
+			</thead>
+			<tbody id="cnv_table_data">
+
+			</tbody>
+		</table>
+	</section>
+	<section class="summary-block">
+		<h5>ADDITIONAL NOTES</h5>
+		<textarea id="summary_notes_data" rows="10" cols="150">
+		</textarea>
+	</section>
+</body>
+</html>
