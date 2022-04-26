@@ -23,6 +23,9 @@ import subprocess
 from datetime import date, datetime
 
 
+def path():
+	return os.path.dirname(os.path.realpath(__file__))
+
 # ### Run command using subprocess
 
 def subprocess_cmd(command):
@@ -35,7 +38,7 @@ def subprocess_cmd(command):
 # ### Read a DB information from yml file
 
 def readConfig(section):
-    filename = os.getcwd()+"/config.yml"
+    filename = path()+"/config.yml"
     with open(filename, "r") as ymlfile:
         cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
         section = cfg[section]
@@ -120,6 +123,7 @@ def build_basic_html(sample_id, capture_id):
     patient_info_html = ''
     specimen_assay_html = ''
     genome_wide_html = ''
+    summary_txt = ''
     
     sql = "SELECT study_code, study_site, dob, disease, specimen_assay, genome_wide, summary_txt from genomic_profile_summary WHERE sample_id='{}' and capture_id='{}'".format(sample_id, capture_id)
     res_data = fetch_sql_query('curation', sql)
@@ -654,9 +658,7 @@ if __name__ == "__main__":
     sample_id = args.sample
     capture_id = args.capture
     nfs_path = args.path 
-        
-    nfs_path = "/sdata/{}/autoseq-output".format(project_name)
-    
+          
     if not os.path.isdir(nfs_path):
         print('The {}, path specified does not exist'.format(nfs_path))
         sys.exit()
