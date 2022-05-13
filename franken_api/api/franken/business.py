@@ -1020,7 +1020,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 				acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
 				ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
 				com_key :  {'key': com_key, 'title': 'COMMENT'},
-				pur_key :  {'key': pur_key, 'title': 'PURITY'},
+				pur_key :  {'key': pur_key, 'title': 'CANCER CELL FRACTION'},
 				plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
 				copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
 				plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
@@ -1034,9 +1034,12 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 			new_header = []
 			for i,value in enumerate(header):
 				key_name = value['key']
+				title_name = value['title']
 				if(key_name not in hide_header):
+					if(title_name in 'PURITY'):
+						value['title'] = "CANCER CELL FRACTION"
 					new_header.append(value)
-
+			
 			return {'header': new_header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
 
 		else:
