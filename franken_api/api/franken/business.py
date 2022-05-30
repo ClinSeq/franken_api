@@ -479,7 +479,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
 	if variant_type == 'germline':
 		missing_header = ['purecn_status', 'purecn_probability', 'purecn_tot_copies']
-		regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
+		regex = '^(?:(?!-(CFDNA|T)-).)*igvnav-input.txt$'
 		regex2 = '(.*)-(CFDNA|T)-(\w.*)(germline-igvnav-input).*txt$'
 	elif variant_type == 'somatic':
 		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
@@ -915,7 +915,8 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns$'
 		set_save_file = '_somatic_curated.cns'
 	elif variant_type == 'germline':
-		regex = '^(?:(?!(-CFDNA|germline_curated|-T)).)*.cns$'
+		regex = '^(?:(?!-(CFDNA|germline_curated|T)-).)*.cns$'
+		#regex = '[-\w]+-(N)-([A-Za-z0-9-]|_germline_curated)+.cns$'
 		set_save_file = '_germline_curated.cns'
 	else:
 		return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400

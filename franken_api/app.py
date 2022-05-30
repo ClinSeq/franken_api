@@ -31,6 +31,7 @@ def configure_app(flask_app):
     flask_app.config['IPCM'] = settings.MOUNT_POINT_IPCM
     flask_app.config['MTBP_SCRIPT'] = settings.MTBP_SCRIPT_PATH
     flask_app.config['PDF_SCRIPT'] = settings.PDF_SCRIPT_PATH
+    flask_app.config['EVAL_SAMPLES'] = settings.MOUNT_POINT_EVAL_SAMPLES
 
 def initialize_app(flask_app):
     configure_app(flask_app)
