@@ -67,18 +67,54 @@ def json_serial(obj):
 
 def build_icpm_sample_details(cfdna):
        
-    sql = "SELECT ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date,  CAST(rf.date_birth AS VARCHAR) as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
+    #sql = "SELECT ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date,  CAST(rf.date_birth AS VARCHAR) as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
+    sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
     res_data = fetch_sql_query('ipcmLeaderboard', sql)
     res_json = json.dumps(res_data, default = json_serial)
     return json.loads(res_json)
 
+def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_format):
+
+    hospital_lookup = { "Karolinska Sjukhuset": "KS", "Södersjukhuset": "SO", "St Göran": "ST" }
+
+    sql = "SELECT study_code, study_site, dob, disease FROM genomic_profile_summary where project_name='{}' and sample_id='{}' and capture_id='{}'".format(project_name, sample_id, capture_id)
+    res_data = fetch_sql_query('curation', sql)
+    res_json = json.dumps(res_data, default = json_serial)
+
+    sample_data = {}
+
+    sample_data["identifier"] = "NA"
+    sample_data["sample_date"] = "NA"
+    sample_data["birthdate"] = "NA"
+    sample_data["hospital"] = "NA"
+
+    for key, val in enumerate(res_data):
+        sample_data["identifier"] = "MTBP_"+project_name+"_"+res_data[key]["study_code"]+"_CFDNA"+cfdna
+        sample_data["birthdate"] = res_data[key]["dob"]
+        sample_data["hospital"] = hospital_lookup[res_data[key]["study_site"]]
+
+
+    sample_data["sample_date"] = "NA"
+    sample_data["seq_date"] = "NA"
+    sample_data["cancer_taxonomy"] = "NA"
+    sample_data["cancer_code"] = "NA"
+    sample_data["tissue_source"] = "NA"
+    sample_data["tissue_type"] = "NA"
+    sample_data["pathology_ccf"] = "NA"
+    sample_data["bioinf_ccf"] = "NA"
+    sample_data["germline_dna"] = "NA"
+
+    return sample_data
+
 
 # ### Fetch the sample information from biobank referral table
 
-def build_sample_details(cfdna):
+def build_sample_details(project_name, cfdna):
         
     sample_data = {}
     
+    identifier_status = False
+
     sample_data["identifier"] = "NA"
     sample_data["sample_date"] = "NA"
     sample_data["birthdate"] = "NA"
@@ -88,9 +124,11 @@ def build_sample_details(cfdna):
     res_data = fetch_sql_query('referral', sql)
 
     if(res_data):
-        sample_data["identifier"] = res_data[0]['tid']
+        sample_data["identifier"] = "MTBP_"+project_name+"_"+res_data[0]['tid']+"_CFDNA"+cfdna
         sample_data["sample_date"] = res_data[0]["datum"]
         pnr = res_data[0]["pnr"][0:8]
+        sample_data["birthdate"] =  datetime.strptime(pnr, "%Y%m%d").date().strftime("%Y-%m-%d")
+        identifier_status = True
         
         sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)
         glb_data_1 = fetch_sql_query('leaderboard', sql)
@@ -119,7 +157,7 @@ def build_sample_details(cfdna):
     sample_data["bioinf_ccf"] = "NA"
     sample_data["germline_dna"] = "NA"
     
-    return sample_data
+    return sample_data, identifier_status
 
 
 # ### Build a QC Json 
@@ -284,9 +322,9 @@ def build_cnv(root_path):
                     
                 cnv_df_data = cnv_df_data[column_list]
                 cnv_df_data = cnv_df_data.rename(columns=column_dict)
-
-                cnv_df_data['copy_number'] = cnv_df_data['copy_number'].fillna(0).astype(int)
-                cnv_df_data['copy_number'] = cnv_df_data['copy_number'].round(0).astype(int)
+                
+                #cnv_df_data['copy_number'] = cnv_df_data['copy_number'].fillna('').astype(int)
+                cnv_df_data['copy_number'] = cnv_df_data['copy_number'].round(0).astype(int,  errors='ignore')
                     
                 cnv_df_data['genes'] = cnv_df_data.genes.apply(lambda x: x.split(', '))
                 cnv_df = cnv_df.append(cnv_df_data)
@@ -354,7 +392,7 @@ def build_svs(root_path):
 
 # ## Build Json from output files
 
-def build_json(root_path, file_name, project_name, cfdna, capture_format):
+def build_json(root_path, file_name, project_name, cfdna, sample_id, capture_format):
     
     print("--- MTBP Json Format Started ---\n")
     print("Path : ", root_path, "/", file_name)
@@ -363,15 +401,18 @@ def build_json(root_path, file_name, project_name, cfdna, capture_format):
     
     # Sample Information
     logging.info('--- Sample fetching started ---')
+    itendifiter_status = True
     if(project_name == "ICPM" or capture_format == "iPCM"):
         sample_details_json = build_icpm_sample_details(cfdna)
     else:
-        sample_details_json = build_sample_details(cfdna)
+        sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna)
        
-    if(sample_details_json):
+    if(sample_details_json and itendifiter_status):
         project_json["sample"] = sample_details_json
     else:
-        project_json["sample"] = {"identifier": "NA",  "sample_date": "NA", "seq_date": "NA", "birthdate": "NA", "hospital": "NA", "cancer_taxonomy": "NA", "cancer_code": "NA", "tissue_source": "NA", "tissue_type": "NA", "pathology_ccf": "NA", "bioinf_ccf": "NA", "germline_dna": "NA"}
+        sample_details_json = build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_format)
+
+        #project_json["sample"] = {"identifier": "NA",  "sample_date": "NA", "seq_date": "NA", "birthdate": "NA", "hospital": "NA", "cancer_taxonomy": "NA", "cancer_code": "NA", "tissue_source": "NA", "tissue_type": "NA", "pathology_ccf": "NA", "bioinf_ccf": "NA", "germline_dna": "NA"}
     
     logging.info('--- Sample fetching completed ---')
 
@@ -443,7 +484,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
     logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
     
     try:
-        build_json(root_path, file_name, project_name, cfdna, capture_format)
+        build_json(root_path, file_name, project_name, cfdna, sample_id, capture_format)
     except Exception as e:
         print("Exception", str(e))
         logging.error("Failed : {}".format(str(e)))
