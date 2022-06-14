@@ -23,7 +23,7 @@ import yaml
 import argparse
 import sys
 from datetime import date, datetime
-
+import math
 
 # ### Get the current directory path
 def path():
@@ -150,6 +150,10 @@ def build_qc(root_path):
             qc_df_data = qc_df_data[column_list]
             qc_df_data = qc_df_data.rename(columns=column_dict)
 
+            qc_df_data["contamination"] = qc_df_data["contamination"] / 100
+
+            qc_df_data["coverage"] = qc_df_data["coverage"].round(0).astype(int)
+
             qc_df_data.fillna('NA', inplace=True)
             return msi_list, qc_df_data.to_json(orient = 'index')
     
@@ -226,11 +230,12 @@ def build_small_variants(root_path):
             smv_df_data = smv_df_data.rename(columns=column_dict)
                 
             if(re.match(regex, i)):
-                smv_df_data['origin'] = "germline"
+                smv_df_data['origin'] = "Germline"
                 smv_df_data['ref_reads'] = smv_df_data['ref_reads'] - smv_df_data['alt_reads']
             else:
-                smv_df_data['origin'] = "somatic"
+                smv_df_data['origin'] = "Somatic"
                 smv_df_data['ref_reads'] = smv_df_data['ref_reads'] - smv_df_data['alt_reads']
+                smv_df_data["clonality"] = smv_df_data["clonality"].apply(lambda x: x.capitalize())
 
             smv_df_data['alt'] = smv_df_data['alt'].map(lambda x: x.lstrip('[').rstrip(']'))
 
@@ -266,9 +271,9 @@ def build_cnv(root_path):
                 cnv_df_data = cnv_df_data.loc[(cnv_df_data['ASSESSMENT'].notnull())]
 
                 if(re.match(regex, i)):
-                    cnv_df_data['origin'] = "germline"
+                    cnv_df_data['origin'] = "Germline"
                 else:
-                    cnv_df_data['origin'] = "somatic"
+                    cnv_df_data['origin'] = "Somatic"
                 
                 if 'COPY_NUMBER' in cnv_df_data.columns:
                     column_list.append('COPY_NUMBER')
@@ -279,6 +284,9 @@ def build_cnv(root_path):
                     
                 cnv_df_data = cnv_df_data[column_list]
                 cnv_df_data = cnv_df_data.rename(columns=column_dict)
+
+                cnv_df_data['copy_number'] = cnv_df_data['copy_number'].fillna(0).astype(int)
+                cnv_df_data['copy_number'] = cnv_df_data['copy_number'].round(0).astype(int)
                     
                 cnv_df_data['genes'] = cnv_df_data.genes.apply(lambda x: x.split(', '))
                 cnv_df = cnv_df.append(cnv_df_data)
@@ -298,8 +306,8 @@ def build_svs(root_path):
     
     try:
         svs_filename = file_path + list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt', x) or x.endswith('_annotate_combined_SV.txt')) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))[0]
-
-        sample_list = ['germline', 'somatic']
+        
+        sample_list = ['germline', 'somatic', 'tumor', 'cfdna']
         svs_filter = pd.read_csv(svs_filename, delimiter = "\t")
         
         column_list = ['SAMPLE', 'SVTYPE', 'strand', 'variant', 'vaf', 'GENE_A', 'GENE_B', 'CLONALITY', 'SECONDHIT', 'consequence', 'variant_string']
@@ -332,6 +340,8 @@ def build_svs(root_path):
                 svs_filter = svs_filter[column_list]
                 svs_filter = svs_filter.rename(columns=column_dict)
                 svs_filter.fillna('NA', inplace=True)
+                svs_filter["origin"] = svs_filter["origin"].apply(lambda x: x.capitalize())
+                svs_filter["clonality"] = svs_filter["clonality"].apply(lambda x: x.capitalize())
         else:
             svs_filter = pd.DataFrame()
 
@@ -378,7 +388,7 @@ def build_json(root_path, file_name, project_name, cfdna, capture_format):
     purity_val, ploidy_val = build_ploidy(root_path)
     
     # Phenotype
-    project_json["phenotypes"] = {"purity" : purity_val ,"ploidy": ploidy_val, "msi": "LOW",  "hrrd":"NA",  "tmb": "NA"}
+    project_json["phenotypes"] = {"purity" : purity_val ,"ploidy": ploidy_val, "msi": "Low",  "hrrd":"NA",  "tmb": "NA"}
     
    
     # Small Variant (Somatic & Germline)
@@ -415,7 +425,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
     
     root_path = os.path.join(nfs_path,sample_id,capture_id)
     
-    output_path = root_path+"/MTBP";
+    output_path = root_path+"/MTBP"
     
     cfdna = capture_id.split("-")[4]
     
@@ -425,7 +435,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
     log_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_CFDNA"+cfdna+".log"
        
     if(not os.path.exists(output_path)):
-        os.mkdir(output_path);
+        os.mkdir(output_path)
     
     logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt="%Y-%m-%d %H:%M:%S")
     logging.info('--- Generated Json format Started---')
