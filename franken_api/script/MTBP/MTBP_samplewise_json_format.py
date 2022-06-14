@@ -354,17 +354,20 @@ def build_svs(root_path):
         sample_list = ['germline', 'somatic', 'tumor', 'cfdna']
         svs_filter = pd.read_csv(svs_filename, delimiter = "\t")
         
-        column_list = ['SAMPLE', 'SVTYPE', 'strand', 'variant', 'vaf', 'GENE_A', 'GENE_B', 'CLONALITY', 'SECONDHIT', 'consequence', 'variant_string']
-        column_dict = {'SAMPLE': 'origin', 'SVTYPE': 'sv_type', 'GENE_A': 'gene_A' , 'GENE_B' : 'gene_B', 'CLONALITY': 'clonality', 'SECONDHIT' : 'secondhit'}
+        column_list = ['SAMPLE', 'SVTYPE', 'strand', 'vaf', 'GENE_A', 'IGV_COORD', 'GENE_B', 'CLONALITY', 'SECONDHIT', 'consequence', 'variant_string']
+        column_dict = {'SAMPLE': 'origin', 'SVTYPE': 'sv_type', 'GENE_A': 'gene_A' , 'IGV_COORD' : 'variant', 'GENE_B' : 'gene_B', 'CLONALITY': 'clonality', 'SECONDHIT' : 'secondhit'}
         
         if 'CALL' in svs_filter.columns:
             svs_filter = svs_filter.loc[(svs_filter['CALL'] == True ) | (svs_filter['CALL'] == 'true')]
                       
             if not svs_filter.empty:
-                svs_filter["variant"] = svs_filter.apply(lambda x:'%s:%s_%s' % (x['CHROM_A'],x['START_A'],x['END_A']),axis=1)
-                svs_filter = svs_filter[['SAMPLE', 'SVTYPE', 'variant', 'GENE_A', 'GENE_B','SECONDHIT', 'CLONALITY']]
+                svs_filter = svs_filter[['SAMPLE', 'SVTYPE', 'IGV_COORD', 'GENE_A', 'GENE_B','SECONDHIT', 'CLONALITY']]
 
                 svs_filter = svs_filter[svs_filter['SAMPLE'].isin(sample_list)]
+
+                svs_filter['IGV_COORD'] = svs_filter['IGV_COORD'].str.strip()
+
+                svs_filter['IGV_COORD'] = svs_filter['IGV_COORD'].str.split(' ')
 
                 svs_filter["strand"] = '+'
                 svs_filter["vaf"] = ''
@@ -383,6 +386,7 @@ def build_svs(root_path):
                 
                 svs_filter = svs_filter[column_list]
                 svs_filter = svs_filter.rename(columns=column_dict)
+
                 svs_filter.fillna('NA', inplace=True)
                 svs_filter["origin"] = svs_filter["origin"].apply(lambda x: x.capitalize())
                 svs_filter["clonality"] = svs_filter["clonality"].apply(lambda x: x.capitalize())
