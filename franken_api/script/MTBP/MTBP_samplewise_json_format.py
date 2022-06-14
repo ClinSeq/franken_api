@@ -66,16 +66,19 @@ def json_serial(obj):
 # ### Fetch the sample information from ipcm referral table
 
 def build_icpm_sample_details(cfdna):
-       
-    #sql = "SELECT ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date,  CAST(rf.date_birth AS VARCHAR) as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
-    sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
-    res_data = fetch_sql_query('ipcmLeaderboard', sql)
-    res_json = json.dumps(res_data, default = json_serial)
-    return json.loads(res_json)
+    try:   
+        #sql = "SELECT ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date,  CAST(rf.date_birth AS VARCHAR) as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
+        sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+        res_data = fetch_sql_query('ipcmLeaderboard', sql)
+        res_json = json.dumps(res_data, default = json_serial)
+        return json.loads(res_json)
+    except Exception as e:
+        print("Exception", str(e))
+        return []
 
 def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_format):
 
-    hospital_lookup = { "Karolinska Sjukhuset": "KS", "Södersjukhuset": "SO", "St Göran": "ST" }
+    hospital_lookup = { "Karolinska": "KS", "Karolinska Sjukhuset": "KS", "Södersjukhuset": "SO", "St Göran": "ST" }
 
     sql = "SELECT study_code, study_site, dob, disease FROM genomic_profile_summary where project_name='{}' and sample_id='{}' and capture_id='{}'".format(project_name, sample_id, capture_id)
     res_data = fetch_sql_query('curation', sql)
@@ -88,10 +91,14 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
     sample_data["birthdate"] = "NA"
     sample_data["hospital"] = "NA"
 
-    for key, val in enumerate(res_data):
-        sample_data["identifier"] = "MTBP_"+project_name+"_"+res_data[key]["study_code"]+"_CFDNA"+cfdna
-        sample_data["birthdate"] = res_data[key]["dob"]
-        sample_data["hospital"] = hospital_lookup[res_data[key]["study_site"]]
+    if(res_data):
+        for key, val in enumerate(res_data):
+            if(res_data[key]["study_code"]):
+                sample_data["identifier"] = "MTBP_"+project_name+"_"+res_data[key]["study_code"]+"_CFDNA"+cfdna
+            if(res_data[key]["dob"]):
+                sample_data["birthdate"] = res_data[key]["dob"]
+            if(res_data[key]["study_site"]):
+                sample_data["hospital"] = hospital_lookup[res_data[key]["study_site"]]
 
 
     sample_data["sample_date"] = "NA"
@@ -198,7 +205,6 @@ def build_qc(root_path):
     except Exception as e:
         print("Exception", str(e))
 
-        
     return msi_list, qc_df_data
 
 
@@ -406,11 +412,12 @@ def build_json(root_path, file_name, project_name, cfdna, sample_id, capture_for
         sample_details_json = build_icpm_sample_details(cfdna)
     else:
         sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna)
-       
+    
     if(sample_details_json and itendifiter_status):
         project_json["sample"] = sample_details_json
     else:
         sample_details_json = build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_format)
+        project_json["sample"] = sample_details_json
 
         #project_json["sample"] = {"identifier": "NA",  "sample_date": "NA", "seq_date": "NA", "birthdate": "NA", "hospital": "NA", "cancer_taxonomy": "NA", "cancer_code": "NA", "tissue_source": "NA", "tissue_type": "NA", "pathology_ccf": "NA", "bioinf_ccf": "NA", "germline_dna": "NA"}
     
