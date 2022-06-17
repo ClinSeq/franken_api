@@ -354,14 +354,14 @@ def build_svs(root_path):
         sample_list = ['germline', 'somatic', 'tumor', 'cfdna']
         svs_filter = pd.read_csv(svs_filename, delimiter = "\t")
         
-        column_list = ['SAMPLE', 'SVTYPE', 'strand', 'vaf', 'GENE_A', 'IGV_COORD', 'GENE_B', 'CLONALITY', 'SECONDHIT', 'consequence', 'variant_string']
+        column_list = ['SAMPLE', 'SVTYPE', 'strand', 'vaf', 'GENE_A', 'IGV_COORD', 'GENE_B', 'CLONALITY', 'SECONDHIT']
         column_dict = {'SAMPLE': 'origin', 'SVTYPE': 'sv_type', 'GENE_A': 'gene_A' , 'IGV_COORD' : 'variant', 'GENE_B' : 'gene_B', 'CLONALITY': 'clonality', 'SECONDHIT' : 'secondhit'}
         
         if 'CALL' in svs_filter.columns:
             svs_filter = svs_filter.loc[(svs_filter['CALL'] == True ) | (svs_filter['CALL'] == 'true')]
                       
             if not svs_filter.empty:
-                svs_filter = svs_filter[['SAMPLE', 'SVTYPE', 'IGV_COORD', 'GENE_A', 'GENE_B','SECONDHIT', 'CLONALITY']]
+                svs_filter = svs_filter[['SAMPLE', 'SVTYPE', 'IGV_COORD', 'GENE_A', 'GENE_B','SECONDHIT', 'CLONALITY', 'CONSEQUENCE', 'VARIANT_STRING']]
 
                 svs_filter = svs_filter[svs_filter['SAMPLE'].isin(sample_list)]
 
@@ -390,6 +390,7 @@ def build_svs(root_path):
                 svs_filter.fillna('NA', inplace=True)
                 svs_filter["origin"] = svs_filter["origin"].apply(lambda x: x.capitalize())
                 svs_filter["clonality"] = svs_filter["clonality"].apply(lambda x: x.capitalize())
+                svs_filter["consequence"] = svs_filter["consequence"].apply(lambda x: x.capitalize())
         else:
             svs_filter = pd.DataFrame()
 
@@ -412,8 +413,9 @@ def build_json(root_path, file_name, project_name, cfdna, sample_id, capture_for
     # Sample Information
     logging.info('--- Sample fetching started ---')
     itendifiter_status = True
-    if(project_name == "ICPM" or capture_format == "iPCM"):
+    if(project_name == "IPCM" or capture_format == "iPCM"):
         sample_details_json = build_icpm_sample_details(cfdna)
+        project_name = capture_format
     else:
         sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna)
     
