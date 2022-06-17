@@ -66,15 +66,18 @@ def json_serial(obj):
 # ### Fetch the sample information from ipcm referral table
 
 def build_icpm_sample_details(cfdna):
+
+    identifier_status = False
     try:   
         #sql = "SELECT ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date,  CAST(rf.date_birth AS VARCHAR) as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
         sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
         res_data = fetch_sql_query('ipcmLeaderboard', sql)
         res_json = json.dumps(res_data, default = json_serial)
-        return json.loads(res_json)
+        identifier_status = True
+        return json.loads(res_json), identifier_status
     except Exception as e:
         print("Exception", str(e))
-        return []
+        return [], identifier_status
 
 def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_format):
 
@@ -94,9 +97,10 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
     if(res_data):
         for key, val in enumerate(res_data):
             if(res_data[key]["study_code"]):
-                sample_data["identifier"] = "MTBP_"+project_name+"_"+res_data[key]["study_code"]+"_CFDNA"+cfdna
+                identifier_name =  "MTBP_"+capture_format+"_"+res_data[key]["study_code"]+"_CFDNA"+cfdna
+                sample_data["identifier"] = identifier_name
             if(res_data[key]["dob"]):
-                sample_data["birthdate"] = res_data[key]["dob"]
+                sample_data["birthdate"] = datetime.strptime(res_data[key]["dob"], "%Y%m%d").date().strftime("%Y-%m-%d")
             if(res_data[key]["study_site"]):
                 sample_data["hospital"] = hospital_lookup[res_data[key]["study_site"]]
 
@@ -403,10 +407,9 @@ def build_svs(root_path):
 
 # ## Build Json from output files
 
-def build_json(root_path, file_name, project_name, cfdna, sample_id, capture_format):
+def build_json(root_path, output_path, project_name, cfdna, sample_id, capture_format):
     
     print("--- MTBP Json Format Started ---\n")
-    print("Path : ", root_path, "/", file_name)
 
     project_json = {}
     
@@ -414,8 +417,7 @@ def build_json(root_path, file_name, project_name, cfdna, sample_id, capture_for
     logging.info('--- Sample fetching started ---')
     itendifiter_status = True
     if(project_name == "IPCM" or capture_format == "iPCM"):
-        sample_details_json = build_icpm_sample_details(cfdna)
-        project_name = capture_format
+        sample_details_json, itendifiter_status = build_icpm_sample_details(cfdna)
     else:
         sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna)
     
@@ -427,6 +429,10 @@ def build_json(root_path, file_name, project_name, cfdna, sample_id, capture_for
 
         #project_json["sample"] = {"identifier": "NA",  "sample_date": "NA", "seq_date": "NA", "birthdate": "NA", "hospital": "NA", "cancer_taxonomy": "NA", "cancer_code": "NA", "tissue_source": "NA", "tissue_type": "NA", "pathology_ccf": "NA", "bioinf_ccf": "NA", "germline_dna": "NA"}
     
+    identifier_study_id = sample_details_json["identifier"].split("_")[2]
+    if identifier_study_id == "NA" : 
+        identifier_study_id = sample_id
+
     logging.info('--- Sample fetching completed ---')
 
     # Pipeline 
@@ -464,7 +470,11 @@ def build_json(root_path, file_name, project_name, cfdna, sample_id, capture_for
     logging.info('--- SVS completed ---')
     
     final_json = json.dumps(project_json)
-    
+
+    file_name = output_path+"/MTBP_"+capture_format+"_"+identifier_study_id+"_CFDNA"+cfdna+".json"
+
+    print("Path : ", root_path, "/", file_name)
+
     with open(file_name, 'w') as f:
         json.dump(project_json, f, indent=4)
     
@@ -485,7 +495,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
     
     capture_format = capture_id.split("-")[0]
        
-    file_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_CFDNA"+cfdna+".json"
+    #file_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_CFDNA"+cfdna+".json"
     log_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_CFDNA"+cfdna+".log"
        
     if(not os.path.exists(output_path)):
@@ -494,10 +504,10 @@ def main(nfs_path, project_name, sample_id, capture_id):
     logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt="%Y-%m-%d %H:%M:%S")
     logging.info('--- Generated Json format Started---')
     
-    logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
+    logging.info("Sample Id : {} || Capture Id : {} ".format(sample_id,capture_id))
     
     try:
-        build_json(root_path, file_name, project_name, cfdna, sample_id, capture_format)
+        build_json(root_path, output_path, project_name, cfdna, sample_id, capture_format)
     except Exception as e:
         print("Exception", str(e))
         logging.error("Failed : {}".format(str(e)))
