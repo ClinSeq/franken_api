@@ -479,19 +479,19 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 	header = []
 
 	if variant_type == 'germline':
-		missing_header = ['purecn_status', 'purecn_probability', 'purecn_tot_copies']
+		missing_header = ['HGVSp_org', 'purecn_status', 'purecn_probability', 'purecn_tot_copies']
 		regex = '^(?:(?!-(CFDNA|T)-).)*igvnav-input.txt$'
 		regex2 = '(.*)-(CFDNA|T)-(\w.*)(germline-igvnav-input).*txt$'
 	elif variant_type == 'somatic':
-		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
+		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'RSID', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
 		regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
 		regex2 = '(.*)-(CFDNA|T)-(\w.*)(somatic-igvnav-input).*txt$'
 	else:
-		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
+		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'RSID', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
 		return {'header': {}, 'data': [], 'status': False, 'error': 'unknown variant type: ' + variant_type}, 400
 
 	try:
-		hide_header = ["HGVSp_org", "PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
+		hide_header = ["PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
 		igv_nav_file = list(filter(lambda x: (re.match(regex2, x) if ('-somatic-' in x or '-germline-' in x) else re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
 		igv_nav_file = file_path + '/' + igv_nav_file
 
@@ -500,10 +500,15 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 		with open(igv_nav_file, 'r') as f:
 			reader_pointer = csv.DictReader(f, delimiter='\t')
 			for i, each_row in enumerate(reader_pointer):
+				
 				has_rows = True
 				each_row = dict(each_row)
 				each_row['indexs'] = i
-				each_row['HGVSp_org'] = each_row['HGVSp']
+				if 'HGVSp_org' in each_row:
+					each_row['HGVSp_org'] = each_row['HGVSp_org']
+				else:
+					each_row['HGVSp_org'] = each_row['HGVSp']
+
 				gene = each_row['GENE']
 				if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
 					one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
@@ -556,6 +561,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			acl_indx = header.index(acl_key)
 			del header[acl_indx]
 			header.insert(0,acl_key)
+		
 		
 		header = generate_headers_ngx_table(header)
 
@@ -954,7 +960,6 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 					
 					if 'COPY_NUMBER' in each_row.keys() and each_row["COPY_NUMBER"] != '':
 						copy_number = each_row["COPY_NUMBER"]
-						print("if", copy_number, type(copy_number))
 						each_row["COPY_NUMBER"] = math.ceil(float(copy_number))
 						
 					glist = []

@@ -21,7 +21,7 @@ import sys
 from bs4 import BeautifulSoup
 import subprocess
 from datetime import date, datetime
-
+import math
 
 def path():
 	return os.path.dirname(os.path.realpath(__file__))
@@ -243,8 +243,6 @@ def build_small_variants(root_path):
 				HGVSp_org = HGVSp_org_rx.split("p.")[1] if 'p.' in HGVSp_org_rx else HGVSp_org_rx
 				second_hit = str(row['second_hit']) if 'second_hit' in row else '-'
 
-				print(HGVSp_org)
-
 				smt_variant_html += '<tr>'
 				smt_variant_html +='<td>'+row['GENE']+'</td>'
 				smt_variant_html +='<td>'+source_type+'</td>'
@@ -354,7 +352,12 @@ def build_svs(root_path):
 				
 				for index, row in svs_filter.iterrows():
 
-					variant_det = "chr"+str(row['CHROM_A'])+":"+str(int(row['START_A']))+"-"+str(int(row['END_A']))+','+"chr"+str(row['CHROM_B'])+":"+str(int(row['START_B']))+"-"+str(int(row['END_B']))
+
+					chr_b = int(row['CHROM_B']) if row['CHROM_B'] != '-' else row['CHROM_B']
+					start_b = int(row['START_B']) if row['START_B'] != '-' else row['START_B']
+					end_b = int(row['END_B']) if row['END_B'] != '-' else row['END_B']
+
+					variant_det = "chr"+str(row['CHROM_A'])+":"+str(int(row['START_A']))+"-"+str(int(row['END_A']))+','+"chr"+str(chr_b)+":"+str(start_b)+"-"+str(end_b)
 					
 					gene_det = row['GENE_A']+","+ row['GENE_B']
 					
@@ -447,18 +450,18 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 			tech_html +='</tr>'
 			tech_html +='<tr>'
 			tech_html +='<th>MEAN TARGET COVERAGE</th>'
-			tech_html +='<td>'+str(qc_df_json["coverage"][0])+'</td>'
+			tech_html +='<td>'+str(math.ceil(int(qc_df_json["coverage"][0])))+'</td>'
 			if(df_len > 1):
-				tech_html +='<td>'+str(qc_df_json["coverage"][1])+'</td>'
+				tech_html +='<td>'+str(math.ceil(int(qc_df_json["coverage"][1])))+'</td>'
 			else:
 				tech_html +='<td>-</td>'
 				
 			tech_html +='</tr>'
 			tech_html +='<tr>'
 			tech_html +='<th>FRACTION DUPLICATES</th>'
-			tech_html +='<td>'+str(qc_df_json["duplication"][0])+'</td>'
+			tech_html +='<td>'+str(math.ceil(int(qc_df_json["duplication"][0])))+'</td>'
 			if(df_len > 1):
-				tech_html +='<td>'+str(qc_df_json["duplication"][1])+'</td>'
+				tech_html +='<td>'+str(math.ceil(int(qc_df_json["duplication"][1])))+'</td>'
 			else:
 				tech_html +='<td>-</td>'
 			tech_html +='</tr>'
