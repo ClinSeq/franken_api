@@ -507,6 +507,11 @@ def main(nfs_path, project_name, sample_id, capture_id):
        
     if(not os.path.exists(output_path)):
         os.mkdir(output_path)
+    else:
+        for f in os.listdir(output_path):
+            print("f",f)
+            os.remove(os.path.join(output_path, f))
+
     
     logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt="%Y-%m-%d %H:%M:%S")
     logging.info('--- Generated Json format Started---')
