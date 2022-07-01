@@ -12,6 +12,7 @@
 
 import os
 import pandas as pd
+import numpy as np
 import json
 import re
 import logging
@@ -359,7 +360,7 @@ def build_svs(root_path):
         svs_filter = pd.read_csv(svs_filename, delimiter = "\t")
         
         column_list = ['SAMPLE', 'SVTYPE', 'strand', 'vaf', 'GENE_A', 'IGV_COORD', 'GENE_B', 'CLONALITY', 'SECONDHIT']
-        column_dict = {'SAMPLE': 'origin', 'SVTYPE': 'sv_type', 'GENE_A': 'gene_A' , 'IGV_COORD' : 'variant', 'GENE_B' : 'gene_B', 'CLONALITY': 'clonality', 'SECONDHIT' : 'secondhit'}
+        column_dict = {'SAMPLE': 'origin', 'SVTYPE': 'sv_type', 'GENE_A': 'gene_a' , 'IGV_COORD' : 'variant', 'GENE_B' : 'gene_b', 'CLONALITY': 'clonality', 'SECONDHIT' : 'secondhit'}
         
         if 'CALL' in svs_filter.columns:
             svs_filter = svs_filter.loc[(svs_filter['CALL'] == True ) | (svs_filter['CALL'] == 'true')]
@@ -368,6 +369,10 @@ def build_svs(root_path):
                 svs_filter = svs_filter[['SAMPLE', 'SVTYPE', 'IGV_COORD', 'GENE_A', 'GENE_B','SECONDHIT', 'CLONALITY', 'CONSEQUENCE', 'VARIANT_STRING']]
 
                 svs_filter = svs_filter[svs_filter['SAMPLE'].isin(sample_list)]
+
+                #svs_filter.loc[svs_filter["SAMPLE"] != "germline", "SAMPLE"] = "somatic"
+
+                svs_filter["SAMPLE"] = np.where(svs_filter["SAMPLE"] == "germline", 'germline', 'somatic')
 
                 svs_filter['IGV_COORD'] = svs_filter['IGV_COORD'].str.strip()
 
@@ -395,6 +400,7 @@ def build_svs(root_path):
                 svs_filter["origin"] = svs_filter["origin"].apply(lambda x: x.capitalize())
                 svs_filter["clonality"] = svs_filter["clonality"].apply(lambda x: x.capitalize())
                 svs_filter["consequence"] = svs_filter["consequence"].apply(lambda x: x.capitalize())
+
         else:
             svs_filter = pd.DataFrame()
 
@@ -428,10 +434,11 @@ def build_json(root_path, output_path, project_name, cfdna, sample_id, capture_f
         project_json["sample"] = sample_details_json
 
         #project_json["sample"] = {"identifier": "NA",  "sample_date": "NA", "seq_date": "NA", "birthdate": "NA", "hospital": "NA", "cancer_taxonomy": "NA", "cancer_code": "NA", "tissue_source": "NA", "tissue_type": "NA", "pathology_ccf": "NA", "bioinf_ccf": "NA", "germline_dna": "NA"}
-    
-    identifier_study_id = sample_details_json["identifier"].split("_")[2]
-    if identifier_study_id == "NA" : 
+
+    if sample_details_json["identifier"] == "NA" : 
         identifier_study_id = sample_id
+    else:
+        identifier_study_id = sample_details_json["identifier"].split("_")[2]
 
     logging.info('--- Sample fetching completed ---')
 

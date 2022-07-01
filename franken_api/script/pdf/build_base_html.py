@@ -149,7 +149,6 @@ def build_basic_html(sample_id, capture_id):
 
 		specimen_assay_json = json.loads(specimen_assay)
 
-
 		for i in specimen_assay_json:
 
 			specimen_assay_html += '<tr>'
@@ -165,14 +164,16 @@ def build_basic_html(sample_id, capture_id):
 		
 		for j in genome_wide_json: 
 			
+			result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] else ''
+
 			assessment = 'Yes' if genome_wide_json[j]["assessment"] == 'Possible' else ( 'No' if genome_wide_json[j]["assessment"] == 'Not possible' else '')
 			genome_wide_html += '<tr>'
 			genome_wide_html += '<td>'+genome_wide_json[j]["title"]+'</td>'
-			genome_wide_html += '<td>'+genome_wide_json[j]["result"]+'</td>'
+			genome_wide_html += '<td>'+result_data+'</td>'
 			genome_wide_html += '<td>'+assessment+'</td>'
 
 
-			if genome_wide_json[j]["title"] == 'OTHER GENOMIC PHENOTYPE' and genome_wide_json[j]["assessment"] == 'Possible' and genome_wide_json[j]["result"] == 'Yes':
+			if genome_wide_json[j]["title"] == 'OTHER GENOMIC PHENOTYPE' and genome_wide_json[j]["assessment"] == 'Possible' and result_data == 'Yes':
 				genome_wide_html += '<td>'+genome_wide_json[j]["categories"]+'</td>'
 			else:
 				genome_wide_html += '<td>'+genome_wide_json[j]["comment"]+'</td>'
