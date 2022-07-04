@@ -202,9 +202,13 @@ def build_small_variants(root_path):
 			column_list = ['CHROM', 'START', 'END', 'REF', 'ALT', 'GENE', 'CONSEQUENCE', 'HGVSp']
 			column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt'}
 			
+			clonality_boolean = False
+
 			if 'CLONALITY' in smv_df_call_filter.columns:
 				column_list.append('CLONALITY')
 				column_dict['CLONALITY'] = 'clonality'
+				clonality_boolean = True
+
 
 			if 'SECONDHIT' in smv_df_call_filter.columns:
 				column_list.append('SECONDHIT')
@@ -224,6 +228,13 @@ def build_small_variants(root_path):
 				
 			smv_df_call_filter = smv_df_call_filter[column_list]
 			smv_df_filter_data = smv_df_call_filter.rename(columns=column_dict)
+
+			sort_arr = ["GENE"]
+
+			if clonality_boolean : 
+				sort_arr = ["clonality", "GENE"]
+			
+			smv_df_filter_data = smv_df_filter_data.sort_values(sort_arr, ascending = True)
 			
 			smv_df_filter_data.fillna('-', inplace=True)
 			
