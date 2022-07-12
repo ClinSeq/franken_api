@@ -471,9 +471,9 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 			tech_html +='</tr>'
 			tech_html +='<tr>'
 			tech_html +='<th>FRACTION DUPLICATES</th>'
-			tech_html +='<td>'+str(math.ceil(qc_df_json["duplication"][0]))+'</td>'
+			tech_html +='<td>'+str(round(qc_df_json["duplication"][0],2))+'</td>'
 			if(df_len > 1):
-				tech_html +='<td>'+str(math.ceil(qc_df_json["duplication"][1]))+'</td>'
+				tech_html +='<td>'+str(round(qc_df_json["duplication"][1],2))+'</td>'
 			else:
 				tech_html +='<td>-</td>'
 			tech_html +='</tr>'
