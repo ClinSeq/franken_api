@@ -8,32 +8,75 @@
 	<style>
 		*{
 			font-family: 'Roboto Serif', serif;
-			font-size: 9px;
+			font-size: 14px;
 		}
 
 		section {
-			padding: 10px 0px 5px 10px;
+			padding: 10px 0px 0px 10px;
 		}
 
 		table { page-break-after:auto }
 		tr    { page-break-inside:avoid; page-break-after:auto }
 		td    { page-break-inside:avoid; page-break-after:auto }
 
+		.table-bordered tr th, .table-bordered tr td {
+			border: 1px solid #000;
+		}
+
+		/* .hz-line {
+			height:1px;
+			border-width:0;
+			color:#868B8E;
+			background-color:#868B8E;
+			width: 50%;
+		} */
+
+		h5 {
+			font-weight: bold;
+			padding-bottom: 5px;
+			color: #B43218;
+			font-size: 16px;
+		}
+
+		.technical-validation{
+			width: 100%;
+		}
+
+		.technical-validation table tr th{
+			font-size: 14px;
+		}
+
+		.technical-validation thead tr th{
+			background-color: #d3d3d3;
+			text-align: center;
+			color: #000000;
+		}
+
+
+		.technical-validation table tr td{
+			font-size: 12px;
+		}
+
 		.genomic-alteration {
 			width: 100%;
 		}
+
 		.genomic-alteration h5, .gene-panel h5 {
 			padding-bottom: 10px;
 			text-transform: uppercase;
 		}
 
-		.genomic-alteration table th {
+		.genomic-alteration table tr th {
 			background-color: #d3d3d3;
 			color: #000000;
+			font-size: 14px;
+			text-transform: uppercase;
 		}
 
-		.genomic-alteration table td {
+		.genomic-alteration table tr td {
 			font-weight: 500;
+			font-size: 13px;
+			text-transform:capitalize;
 		}
 
 		.genomic-alteration table td.tot-title {
@@ -42,10 +85,9 @@
 			text-transform: uppercase;
 		}
 
-		/* .gene-panel {
-			padding-bottom: 10px;
-			padding-top:10px;
-		} */
+		.gene-panel {
+			font-size: 14px;
+		}
 
 		.gene-panel ul {
 			list-style: none;
@@ -54,27 +96,21 @@
 		
 		.gene-panel ul li {
 			display: inline-block;
-			height: 20px;
-			width: 55px;
-    		line-height: 25px;
+			height: 25px;
+			width: 110px;
+			line-height: 30px;
 			margin: 5px;
 			background: #657786;
 			color: #ffffff;
-			font-size: 8px;
+			font-size: 12px;
 			text-align: center;
 			font-weight: 600;
-		}
-
-		h5 {
-			font-weight: bold;
-			padding-bottom: 5px;
-			color: #B43218;
 		}
 
 	</style>
 </head>
 <body>
-	<section>
+	<section class="technical-validation">
 		<h5 class="font-weight-bold">TECHNICAL VALIDATION</h5>
 		<table class="table table-bordered">
 			<thead id="tech_val_table_header">
@@ -241,12 +277,13 @@
 			<li>PIK3R1</li>
 		</ul>
 	</section>
+	<hr class="hz-line">
 	<section class="gene-panel">
 		<h5 class="font-weight-bold">Intronic and intergenic regions sequenced to increase sensitivity to detect copy-number alterations</h5>
 		<ul>
 			<li>AR</li>
 			<li>AKT1</li>
-			<li>AR enhancer</li>
+			<li>AR_ENHANCER</li>
 			<li>ATM</li>
 			<li>BRCA2</li>
 			<li>CCND1</li>
@@ -269,6 +306,7 @@
 			<li>ZBTB16</li>
 		</ul>
 	</section>
+	<hr class="hz-line">
 	<section class="gene-panel">
 		<h5 class="font-weight-bold">Intronic regions sequenced to detect fusions and structural rearrangements</h5>
 		<ul>
@@ -281,6 +319,7 @@
 			<li>TMPRSS2</li>
 		</ul>
 	</section>
+	<hr class="hz-line">
 	<section class="gene-panel">
 		<h5 class="font-weight-bold">Pharmacogenomic SNPs analysed</h5>
 		<ul>

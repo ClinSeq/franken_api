@@ -1,62 +1,86 @@
   <!DOCTYPE html>
   <html>
-      <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-        <meta name="pdfkit-page-size" content="Legal"/>
-        <meta name="pdfkit-orientation" content="Landscape"/>        
-        <style>
-            .footer-page{
-                font-size: 10px;
-                padding-top: 5px;
-                font-weight:600;
-            }
-            .footer-page .page-no span{
-                font-weight:bolder;
-                color: #000000;
-            }
-            .footer-page .company-title{
-                font-style: italic;
-                padding-left: 180px;
-                color: #808080;
-            }
+	  <head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<meta name="pdfkit-page-size" content="Legal"/>
+		<meta name="pdfkit-orientation" content="Landscape"/>        
+		<style>
 
-        </style>             
-    </head>
-    <body onload="subst()">
-        <section>
-            <table class="footer-page">
-                <tr>
-                    <td class="page-no">
-                        Page <span class="page"></span> of <span class="topage"></span>
-                    </td>
-                    <td class="company-title">
-                        Department of Medical Epidemiology and Biostatistics | Karolinska Institutet | S-171 77 Stockholm | Nobels väg 12 A | Sweden
-                    </td>
-                </tr>
-                <tr>
-            </table>
-        </section>
+			* {
+				font-family: 'Roboto Serif', serif;
+				font-size: 14px;
+			}
 
-        <script>
-                function subst() {
-                    var vars = {};
-                    var query_strings_from_url = document.location.search.substring(1).split('&');
-                    for (var query_string in query_strings_from_url) {
-                        if (query_strings_from_url.hasOwnProperty(query_string)) {
-                            var temp_var = query_strings_from_url[query_string].split('=', 2);
-                            vars[temp_var[0]] = decodeURI(temp_var[1]);
-                        }
-                    }
-                    var css_selector_classes = ['page', 'frompage', 'topage', 'webpage', 'section', 'subsection', 'date', 'isodate', 'time', 'title', 'doctitle', 'sitepage', 'sitepages'];
-                    for (var css_class in css_selector_classes) {
-                        if (css_selector_classes.hasOwnProperty(css_class)) {
-                            var element = document.getElementsByClassName(css_selector_classes[css_class]);
-                            for (var j = 0; j < element.length; ++j) {
-                                element[j].textContent = vars[css_selector_classes[css_class]];
-                            }
-                        }
-                    }
-                }
-        </script>
-    </body>
+			table { 
+				page-break-after:auto ;
+				width: 100%; 
+			}
+			
+			tr    { page-break-inside:avoid; page-break-after:auto }
+			td    { page-break-inside:avoid; page-break-after:auto }
+
+			.footer-page {
+				padding-top: 5px;
+				font-weight:600;
+			}
+
+			
+			.footer-page .page-no {
+				font-size: 13px;
+			}
+
+			.footer-page .page-no span{
+				font-size: 13px;
+				font-weight:bolder;
+				color: #000000;
+			}
+
+			.footer-page .company-title p{ 
+				font-size: 13px;
+				font-style: italic;
+				/* padding-left: 20px; */
+				color: #808080;
+			}
+
+		</style>             
+	</head>
+	<body onload="subst()">
+		<section>
+			<table class="footer-page">
+				<col style="width:10%">
+				<col style="width:90%">
+				<tr>
+					<td class="page-no">
+						Page <span class="page"></span> of <span class="topage"></span>
+					</td>
+					<td class="company-title">
+						<p>Department of Medical Epidemiology and Biostatistics | Karolinska Institutet | S-171 77 Stockholm | Nobels väg 12 A | Sweden</p>
+					</td>
+				</tr>
+				<tr>
+			</table>
+		</section>
+
+		<script>
+				function subst() {
+					var vars = {};
+					var query_strings_from_url = document.location.search.substring(1).split('&');
+					for (var query_string in query_strings_from_url) {
+						if (query_strings_from_url.hasOwnProperty(query_string)) {
+							var temp_var = query_strings_from_url[query_string].split('=', 2);
+							vars[temp_var[0]] = decodeURI(temp_var[1]);
+						}
+					}
+					var css_selector_classes = ['page', 'frompage', 'topage', 'webpage', 'section', 'subsection', 'date', 'isodate', 'time', 'title', 'doctitle', 'sitepage', 'sitepages'];
+					for (var css_class in css_selector_classes) {
+						if (css_selector_classes.hasOwnProperty(css_class)) {
+							var element = document.getElementsByClassName(css_selector_classes[css_class]);
+							for (var j = 0; j < element.length; ++j) {
+								element[j].textContent = vars[css_selector_classes[css_class]];
+							}
+						}
+					}
+				}
+		</script>
+	</body>
 </html>

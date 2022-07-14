@@ -7,9 +7,8 @@
 	<link rel="stylesheet" href="/nfs/IPCM/script/pdf/static/css/bootstrap.min.css" >
 	<style>
 		*{
-			/* font-family: 'Roboto', sans-serif; */
 			font-family: 'Roboto Serif', serif;
-			font-size: 10px;
+			font-size: 14px;
 		}
 
 		section {
@@ -29,11 +28,33 @@
 		.table-borderless > tfoot > tr > th,
 		.table-borderless > thead > tr > td,
 		.table-borderless > thead > tr > th {
-			border: none !important;
+			border: 1px !important;
 			padding: 0px 10px 0px 0px;
 		}
 
+		/* .table-bordered tr th, .table-bordered tr td {
+			border: 1px solid #464033;
+		}
+		 */
+
+		table thead tr th {
+			font-size: 16px;
+			background-color: #1DA1F2;
+			text-align: center;
+			color: #ffffff;
+		}
 		
+		table tbody tr td {
+			font-size: 15px;
+			color :#000000;
+		}
+
+		table > tbody > tr > th {
+			font-size: 16px;
+			font-weight: 800;
+			color :#000000;
+		}
+
 		.patient-block .patient-td {
 			width: 40%;
 		}
@@ -51,12 +72,7 @@
 			font-weight: bold;
 			padding-bottom: 5px;
 			color: #B43218;
-		}
-
-		 table thead tr th {
-			background-color: #1DA1F2;
-			text-align: center;
-			color: #ffffff;
+			font-size: 20px;
 		}
 
 	</style>
@@ -104,10 +120,10 @@
 		<table class="table table-bordered">
 			<thead>
 				<tr>
-					<th width="30%">CATEGORY</th>
-					<th width="10%">RESULT</th>
-					<th width="15%">ASSESSMENT POSSIBLE</th>
-					<th width="45%">COMMENT</th>
+					<th width="25%">CATEGORY</th>
+					<th width="8%">RESULT</th>
+					<th width="20%">ASSESSMENT POSSIBLE</th>
+					<th width="52%">COMMENT</th>
 				</tr>
 			</thead>
 			<tbody id="genome_wide_table_data">

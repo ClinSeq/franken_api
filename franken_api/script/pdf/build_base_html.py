@@ -152,7 +152,7 @@ def build_basic_html(sample_id, capture_id):
 		for i in specimen_assay_json:
 
 			specimen_assay_html += '<tr>'
-			specimen_assay_html += '<td>'+specimen_assay_json[i]["specimen"]+'</td>'
+			specimen_assay_html += '<th>'+specimen_assay_json[i]["specimen"]+'</th>'
 			specimen_assay_html += '<td>'+specimen_assay_json[i]["analyte"]+'</td>'
 			specimen_assay_html += '<td>'+specimen_assay_json[i]["assay"]+'</td>'
 			specimen_assay_html += '<td>'+specimen_assay_json[i]["quality"]+'</td>'
@@ -168,7 +168,7 @@ def build_basic_html(sample_id, capture_id):
 
 			assessment = 'Yes' if genome_wide_json[j]["assessment"] == 'Possible' else ( 'No' if genome_wide_json[j]["assessment"] == 'Not possible' else '')
 			genome_wide_html += '<tr>'
-			genome_wide_html += '<td>'+genome_wide_json[j]["title"]+'</td>'
+			genome_wide_html += '<th>'+genome_wide_json[j]["title"]+'</th>'
 			genome_wide_html += '<td>'+result_data+'</td>'
 			genome_wide_html += '<td>'+assessment+'</td>'
 
@@ -490,7 +490,6 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 
 def build_html(root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name):
 	
-	print(capture_format)
 	print("--- MTBP Json Format Started ---\n")
 	print("Path : ", root_path, "/", file_name)
 	
