@@ -6,13 +6,13 @@
     <meta name="pdfkit-orientation" content="Landscape"/>
 	<link rel="stylesheet" href="/nfs/IPCM/script/pdf/static/css/bootstrap.min.css" >
 	<style>
-		*{
-			font-family: 'Roboto Serif', serif;
-			font-size: 14px;
+		* {
+			font-family: 'Roboto', serif;
+			font-size: 25px;
 		}
 
 		section {
-			padding: 10px 0px 5px 10px;
+			padding: 10px 0px 10px 10px;
 			/* page-break-inside:avoid; */
 		}
 
@@ -32,25 +32,26 @@
 			padding: 0px 10px 0px 0px;
 		}
 
-		/* .table-bordered tr th, .table-bordered tr td {
-			border: 1px solid #464033;
+		.table-bordered tr th, .table-bordered tr td {
+			border: 1px solid #D9E4EC;
 		}
-		 */
 
-		table thead tr th {
-			font-size: 16px;
+		table > thead > tr > th {
+			font-size: 17px;
 			background-color: #1DA1F2;
 			text-align: center;
 			color: #ffffff;
 		}
 		
-		table tbody tr td {
-			font-size: 15px;
-			color :#000000;
+		table > tbody > tr > td {
+			word-spacing: 3px;
+            font-size: 16px;
+			color :#6b6b6b;
+            font-weight:800;
 		}
 
 		table > tbody > tr > th {
-			font-size: 16px;
+			font-size: 17px;
 			font-weight: 800;
 			color :#000000;
 		}
@@ -67,6 +68,19 @@
 			page-break-inside:avoid; 
 			page-break-after:auto;
 		}
+
+        .summary-block .boxed {
+            border: 1px solid #000000;
+            height: 250px;
+            padding: 20px 5px 10px 20px;   
+        }
+
+        .summary-block .boxed p {
+            word-spacing: 3px;
+            font-size: 16px;
+            color :#6b6b6b;
+            font-weight:800;
+        }
 
 		.patient-block h5,  .genome-wide-block h5, .point-mut-block h5, .svs-block h5, .copy-number-block h5, .summary-block h5{
 			font-weight: bold;
@@ -178,7 +192,7 @@
 		<table class="table table-bordered">
 			<thead>
 				<tr>
-					<th width="55%">GENE</th>
+					<th width="40%">GENE</th>
 					<th>SOURCE</th>
 					<th>VARIANT DETAILS</th>
 					<th>CONSEQUENCE</th>
@@ -192,8 +206,9 @@
 	</section>
 	<section class="summary-block">
 		<h5>ADDITIONAL NOTES</h5>
-		<textarea id="summary_notes_data" rows="10" cols="150">
-		</textarea>
+        <div class="boxed">
+            <p id="summary_notes_data"> </p> 
+        </div>
 	</section>
 </body>
 </html>
