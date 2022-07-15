@@ -25,6 +25,9 @@ CREATE TABLE cur_projects_t (
     prefix_name VARCHAR(150), 
     nfs_path Text, 
     proj_status proj_status  default '0',
+    mtbp_json proj_status NOT NULL DEFAULT '0',
+    pdf_report proj_status NOT NULL DEFAULT '0';
+    sort_order integer NOT NULL DEFAULT 0,
     created_on timestamptz
 );
 
