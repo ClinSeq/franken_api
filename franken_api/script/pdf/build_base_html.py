@@ -77,7 +77,7 @@ def build_icpm_sample_details(cfdna):
 	if res_data:
     	pnr = res_data[0]['pnr']
 
-		sql2 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.referral_name='iPCM_blod_inklusion' and rf.pnr='{}'".format(pnr)
+		sql2 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.referral_name='iPCM_blod_inklusion' and rf.pnr='{}'".format(pnr)
 		res_data2 = fetch_sql_query('ipcmLeaderboard', sql2)
 		if res_data2:
 			result = res_data2[0]
@@ -94,6 +94,7 @@ def build_sample_details(cfdna):
 	sample_data["sample_date"] = ""
 	sample_data["birthdate"] = ""
 	sample_data["hospital"] = ""
+	sample_data["disease_name"] = ""
 
 	sql = "SELECT pnr, datum, rid, tid from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
 	res_data = fetch_sql_query('referral', sql)
