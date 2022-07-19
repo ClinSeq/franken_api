@@ -214,9 +214,19 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 		if(not has_rows):
 			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For QC'}, 200
 
-		header = list(generate_headers_ngx_table(data[0].keys()))
+		column_list = list(data[0].keys())
+
+		var_inc_key = 'variant_included'
+
+		if var_inc_key in column_list:
+			var_inc_indx = column_list.index(var_inc_key)
+			del column_list[var_inc_indx]
+			column_list.insert(0,var_inc_key)
+
+		header = list(generate_headers_ngx_table(column_list))
 
 		new_keys = {
+			'variant_included': {'key': 'variant_included', 'title': 'VARIANT INCLUDED'},
 			'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
 			'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
 			'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
@@ -226,9 +236,13 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 
 		for idx,value in enumerate(new_keys):
 			n_key = [item for item in header if item.get('key')==value]
-			if(not n_key):
-				header.append(new_keys[value])  
+			
+			if n_key == 'variant_included':
+				header.insert(0, new_keys[value])
 
+			if(not n_key and n_key != 'variant_included'):
+				header.append(new_keys[value])
+			
 		new_header = []
 		for i,value in enumerate(header):
 			key_name = value['key']
@@ -276,6 +290,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 			result = df_filter.to_json(orient="records")
 			data = json.loads(result)
 
+			svs_var_inc_key = 'variant_included'
 			cal_key = 'CALL'
 			typ_key = 'TYPE'
 			sec_key = 'SECONDHIT'
@@ -331,10 +346,16 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 				del column_list[vatStr_indx]
 				column_list.insert(0,vatStr_key)
 
+			if svs_var_inc_key in column_list:
+				svs_var_inc_indx = column_list.index(svs_var_inc_key)
+				del column_list[svs_var_inc_indx]
+				column_list.insert(0,svs_var_inc_key)
+
 			header = list(generate_headers_ngx_table(column_list))
 			
 			#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
 			new_keys = {
+				svs_var_inc_key: {'key': svs_var_inc_key, 'title': 'VARIANT INCLUDED'},
 				cal_key: {'key': cal_key, 'title': 'CALL'},
 				typ_key: {'key': typ_key, 'title': 'TYPE'},
 				sec_key :  {'key': sec_key, 'title': 'SECONDHIT'},
@@ -479,15 +500,15 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 	header = []
 
 	if variant_type == 'germline':
-		missing_header = ['HGVSp_org', 'purecn_status', 'purecn_probability', 'purecn_tot_copies']
+		missing_header = ['HGVSp_org', 'purecn_status', 'purecn_probability', 'purecn_tot_copies', 'variant_included']
 		regex = '^(?:(?!-(CFDNA|T)-).)*igvnav-input.txt$'
 		regex2 = '(.*)-(CFDNA|T)-(\w.*)(germline-igvnav-input).*txt$'
 	elif variant_type == 'somatic':
-		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'RSID', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
+		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'RSID', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'variant_included']
 		regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
 		regex2 = '(.*)-(CFDNA|T)-(\w.*)(somatic-igvnav-input).*txt$'
 	else:
-		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'RSID', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB']
+		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'RSID', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'variant_included']
 		return {'header': {}, 'data': [], 'status': False, 'error': 'unknown variant type: ' + variant_type}, 400
 
 	try:
@@ -536,6 +557,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For {} Variants'.format(variant_type.capitalize())}, 200
 
 		header = list(data[0])
+
 		if 'HOTSPOT' in header and variant_type == 'somatic':
 			del header[header.index('HOTSPOT')]
 
@@ -543,6 +565,10 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			conseq_index = header.index('CONSEQUENCE') + 1
 			header.insert(conseq_index, 'HOTSPOT')
 
+		if 'variant_included' not in header:
+			header.insert(0, 'variant_included')
+
+		igv_var_inc_key = 'variant_included'
 		asec_key = 'SECONDHIT'
 		ass_key = 'ASSESSMENT'
 		acl_key = 'CLONALITY'
@@ -561,7 +587,11 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			acl_indx = header.index(acl_key)
 			del header[acl_indx]
 			header.insert(0,acl_key)
-		
+
+		if igv_var_inc_key in header:
+			igv_var_inc_indx = header.index(igv_var_inc_key)
+			del header[igv_var_inc_indx]
+			header.insert(0,igv_var_inc_key)
 		
 		header = generate_headers_ngx_table(header)
 
@@ -814,7 +844,7 @@ def get_curation_igv_germline():
 	try:
 		header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', 'CHROM', 'START', 'END',
 				  'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'GENE', 'IMPACT', 'CONSEQUENCE',
-				  'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
+				  'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'variant_included']
 		try:
 			return {'status': True, 'data': igv_germline_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
@@ -830,7 +860,7 @@ def get_curation_igv_somatic():
 		header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', "CHROM", 'START', 'END',
 					'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'ASSESSMENT', 'CLONALITY',  'GENE', 'IMPACT',
 				  'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF',
-				  'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies']
+				  'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'variant_included']
 		try:
 			return {'status': True, 'data': igv_somatic_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
@@ -845,7 +875,7 @@ def get_curation_svs():
 	try:
 		header = ['PROJECT_ID', 'CAPTURE_ID', 'SDID', 'CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B',
 				  'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SAMPLE', 'GENE_A', 'IN_DESIGN_A', 'GENE_B',
-				  'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'CALL', 'TYPE', 'SECONDHIT', 'COMMENT', 'ASSESSMENT', 'CLONALITY', 'CONSEQUENCE', 'FUNCTIONAL_TYPE', 'VARIANT_STRING']
+				  'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'CALL', 'TYPE', 'SECONDHIT', 'COMMENT', 'ASSESSMENT', 'CLONALITY', 'CONSEQUENCE', 'FUNCTIONAL_TYPE', 'VARIANT_STRING', 'variant_included']
 		try:
 			return {'status': True, 'data': svs_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
@@ -988,6 +1018,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 			plo_key = 'PLOIDY'
 			copy_nu_key = 'COPY_NUMBER'
 			plo_tp_key = 'PLOIDY_TYPE'
+			cnv_var_inc_key = 'variant_included'
 
 
 			if acn_key in header:
@@ -1024,6 +1055,11 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 				plo_tp_indx = header.index(plo_tp_key)
 				del header[plo_tp_indx]
 				header.insert(0,plo_tp_key)
+
+			if cnv_var_inc_key in header:
+				cnv_var_inc_indx = header.index(cnv_var_inc_key)
+				del header[cnv_var_inc_indx]
+				header.insert(0,cnv_var_inc_key)
 			
 			del header[header.index('gene')]
 			header.append('gene')
@@ -1036,7 +1072,8 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='t
 				pur_key :  {'key': pur_key, 'title': 'CANCER CELL FRACTION'},
 				plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
 				copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
-				plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'}
+				plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'},
+				cnv_var_inc_key :  {'key': cnv_var_inc_key, 'title': 'VARIANT INCLUDED'}
 			}
 
 			for idx,value in enumerate(new_keys):
