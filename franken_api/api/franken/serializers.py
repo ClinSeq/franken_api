@@ -173,13 +173,23 @@ curation_hotspot = api.model('IGV Hotspot', {
 })
 
 curation_cancer_hotspot = api.model('IGV Cancer Hotspot', {
-        'id': fields.String(description=''),
+        'hs_id': fields.String(description=''),
         'gene': fields.String(description=''),
-        'residue': fields.String(description=''),
-        'res_type': fields.String(description=''),
-        'variants': fields.String(description=''),
-        'variant_arr': fields.String(description='')
+        'hgvsp': fields.String(description=''),
+        'protein_position': fields.String(description=''),
+        'start_aa': fields.String(description=''),
+        'end_aa': fields.String(description='')
 })
+
+# curation_cancer_hotspot = api.model('IGV Cancer Hotspot', {
+#         'id': fields.String(description=''),
+#         'gene': fields.String(description=''),
+#         'residue': fields.String(description=''),
+#         'res_type': fields.String(description=''),        
+#         'variants': fields.String(description=''),
+#         'variant_arr': fields.String(description='')
+# })
+
 
 curation_warmspot = api.model('IGV Warmspot', {
         'id': fields.String(description=''),

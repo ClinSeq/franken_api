@@ -5,6 +5,7 @@ from franken_api.database.models import TableIgvGermline as igv_germline_table
 from franken_api.database.models import TableIgvSomatic as igv_somatic_table
 from franken_api.database.models import TableSVS as svs_table
 from franken_api.database.models import TableIgvHotspotUpdate as igv_hotspot_update_table
+from franken_api.database.models import TableIgvCancerHotspot as igv_cancer_hotspot_table
 from franken_api.database.models import TableIgvHotspot as igv_hotspot_table
 from franken_api.database.models import TableIgvWarmspot as igv_warmspot_table
 from franken_api.database.models import TablePsffSummary as psff_profile
@@ -411,6 +412,46 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
 
 
+def check_hotspot_status(gene, HGVSp, consequence):
+
+	'''
+		hotspot status - '', 0, 1
+			'' - empty
+			0 - hotspot
+			1 - warmspot
+	'''
+
+	hs_status = ''
+	HGVSp_arr = re.findall(r'\d+', HGVSp)
+	pos_st = ''
+	pos_end = ''
+	hgvsp_str = ''
+
+	if(consequence == 'inframe_deletion'):
+		res = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(HGVSp)).count()
+		if res:
+			hs_status = '0'
+		else:
+			pos_st = HGVSp_arr[0]
+			pos_end = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
+			res1 = igv_cancer_hotspot_table.query.filter(
+				igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(pos_st), igv_cancer_hotspot_table.end_aa >= '{}'.format(pos_end))
+			).count()
+			if res1: 
+				hs_status = '0'
+	else:
+		hgvsp_str = HGVSp
+
+		ter_match = re.search('Ter$', HGVSp)
+		if ter_match:
+			hgvsp_str = HGVSp.replace('Ter','*')
+
+		resElse1 = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(hgvsp_str)).count()
+		if resElse1: 
+			hs_status = '0'
+
+	return hs_status
+
 def get_HGVSp_status_update(gene, HGVSp):
 	
 	hotspot_status = ''
@@ -488,7 +529,6 @@ def get_warmspot_info(gene):
 	protmut = ''
 	if(res):
 		for r in res:
-			# protmut.append(r.protmut)
 			protmut += r.protmut + ','
 	return protmut.rstrip(',')
 
@@ -535,14 +575,17 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 					one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
 					each_row['HGVSp'] = one_amino_code
 				
-				if variant_type == 'somatic' and each_row['HGVSp']:
-					HGVSp_status = get_HGVSp_status(gene,each_row['HGVSp'])
-					if(HGVSp_status == ''):
-						HGVSp_status = get_HGVSp_status_update(gene,each_row['HGVSp'])
-					each_row['HOTSPOT'] = HGVSp_status
-
+				consequence = ''
 				consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
-				each_row['CONSEQUENCE'] = consequence              
+				each_row['CONSEQUENCE'] = consequence   
+
+				HGVSp_status = '' 
+				if variant_type == 'somatic' and each_row['HGVSp']:
+					HGVSp_status = check_hotspot_status(gene,each_row['HGVSp'], consequence)
+					# HGVSp_status = get_HGVSp_status(gene,each_row['HGVSp'])
+					# if(HGVSp_status == ''):
+					# 	HGVSp_status = get_HGVSp_status_update(gene,each_row['HGVSp'])
+				each_row['HOTSPOT'] = HGVSp_status
 
 				if None in each_row:
 					if isinstance(each_row[None], list):
@@ -803,9 +846,9 @@ def post_curation(record, table_name):
 
 def get_curation_cancer_hotspot():
 	try:
-		header = ['id', 'gene', 'residue', 'res_type', 'variants', 'variant_arr']
+		header = ['hs_id', 'gene', 'hgvsp', 'protein_position', 'start_aa', 'end_aa']
 		try:
-			return {'status': True, 'data': igv_hotspot_update_table.query.filter().all(),
+			return {'status': True, 'data': igv_cancer_hotspot_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
 					'error': ''}, 200
 		except Exception as e:

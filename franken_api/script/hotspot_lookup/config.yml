@@ -1,0 +1,2 @@
+DB:
+    curation : postgresql+psycopg2://referral_writer:ProbioWriter@127.0.0.1:5432/curation
