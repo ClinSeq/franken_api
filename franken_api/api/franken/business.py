@@ -1278,19 +1278,18 @@ def build_sample_details(project_name, cfdna):
 		if(res_data):
 			tid = res_data[0]["tid"]
 			cdk = res_data[0]["cdk"].strip()
-			sample_data["identifier"] = tid if tid != "" else cdk
+			sample_data["identifier"] = cdk if cdk != "" else cdk
 	else:
 		sql = "SELECT pnr, datum, rid, tid, cdk from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
 
 		res = db.session.execute(sql)
 		res_data = generate_list_to_dict(res)
-		
 		if(res_data):
 			tid = res_data[0]["tid"]
 			cdk = res_data[0]["cdk"].strip()
-			sample_data["identifier"] = tid if tid != "" else cdk
+			sample_data["identifier"] = cdk if cdk != "" else cdk
 			pnr = res_data[0]["pnr"][0:8]
-			sample_data["birthdate"] = pnr
+			sample_data["birthdate"] = datetime.strptime(pnr, '%Y%m%d').date().strftime('%Y-%m-%d')
 			
 			sql1 = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)
 			res1 = db.session.execute(sql1, bind=db.get_engine(current_app, 'leaderboard'))
