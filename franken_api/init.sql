@@ -68,7 +68,7 @@ CREATE TABLE table_svs (
     "CONSEQUENCE" character varying,
     "FUNCTIONAL_TYPE" character varying,
     "VARIANT_STRING" text,
-    variant_included character varying(150)
+    include_variant_report_pdf character varying(150)
 );
 
 ALTER SEQUENCE table_svs_id_seq OWNED BY table_svs.id;
@@ -115,7 +115,7 @@ CREATE TABLE public.table_igv_somatic (
     purecn_probability character varying,
     purecn_status character varying,
     purecn_tot_copies character varying,
-    variant_included character varying(150)
+    include_variant_report_pdf character varying(150)
 );
 
 
@@ -153,7 +153,7 @@ CREATE TABLE table_igv_germline (
     purecn_probability character varying,
     purecn_status character varying,
     purecn_tot_copies character varying,
-    variant_included character varying(150)
+    include_variant_report_pdf character varying(150)
 );
 
 ALTER SEQUENCE table_igv_germline_id_seq OWNED BY table_igv_germline.id;

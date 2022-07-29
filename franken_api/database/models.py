@@ -78,7 +78,7 @@ class TableIgvGermline(pssql.Model):
     purecn_probability = pssql.Column(pssql.String)
     purecn_status = pssql.Column(pssql.String)
     purecn_tot_copies = pssql.Column(pssql.String)
-    variant_included = pssql.Column(pssql.String)
+    include_variant_report_pdf = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -107,7 +107,7 @@ class TableIgvGermline(pssql.Model):
         self.purecn_probability = row_dict.get('purecn_probability', None)
         self.purecn_status = row_dict.get('purecn_status', None)
         self.purecn_tot_copies = row_dict.get('purecn_tot_copies', None)
-        self.variant_included = row_dict.get('variant_included', None)
+        self.include_variant_report_pdf = row_dict.get('include_variant_report_pdf', None)
 
     def __repr__(self):
         return "<TableIgvGermline (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,
@@ -146,7 +146,7 @@ class TableIgvSomatic(pssql.Model):
     purecn_probability = pssql.Column(pssql.String)
     purecn_status = pssql.Column(pssql.String)
     purecn_tot_copies = pssql.Column(pssql.String)
-    variant_included = pssql.Column(pssql.String)
+    include_variant_report_pdf = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -178,7 +178,7 @@ class TableIgvSomatic(pssql.Model):
         self.purecn_probability = row_dict.get('purecn_probability', None)
         self.purecn_status = row_dict.get('purecn_status', None)
         self.purecn_tot_copies = row_dict.get('purecn_tot_copies', None)
-        self.variant_included = row_dict.get('variant_included', None)
+        self.include_variant_report_pdf = row_dict.get('include_variant_report_pdf', None)
 
     def __repr__(self):
         return "<TableIgvSomatic (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,
@@ -217,7 +217,7 @@ class TableSVS(pssql.Model):
     CONSEQUENCE  = pssql.Column(pssql.String)
     FUNCTIONAL_TYPE  = pssql.Column(pssql.String)
     VARIANT_STRING  = pssql.Column(pssql.String)
-    variant_included = pssql.Column(pssql.String)
+    include_variant_report_pdf = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -249,7 +249,7 @@ class TableSVS(pssql.Model):
         self.CONSEQUENCE = row_dict.get('CONSEQUENCE', None)
         self.FUNCTIONAL_TYPE = row_dict.get('FUNCTIONAL_TYPE', None)
         self.VARIANT_STRING = row_dict.get('VARIANT_STRING', None)
-        self.variant_included = row_dict.get('variant_included', None)
+        self.include_variant_report_pdf = row_dict.get('include_variant_report_pdf', None)
 
 
     def __repr__(self):

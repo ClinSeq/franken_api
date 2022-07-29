@@ -87,7 +87,7 @@ curation_germline = api.model('IGV Germline', {
         'purecn_probability' : fields.String(description=''),
         'purecn_status' : fields.String(description=''),
         'purecn_tot_copies' : fields.String(description=''),
-        'variant_included' : fields.String(description='')
+        'include_variant_report_pdf' : fields.String(description='')
 })
 curation_somatic = api.model('IGV Somatic', {
         'id': fields.String(description='Project ID'),
@@ -121,7 +121,7 @@ curation_somatic = api.model('IGV Somatic', {
         'purecn_probability' : fields.String(description=''),
         'purecn_status' : fields.String(description=''),
         'purecn_tot_copies' : fields.String(description=''),
-        'variant_included' : fields.String(description='')
+        'include_variant_report_pdf' : fields.String(description='')
 })
 
 curation_svs = api.model('SVS', {
@@ -154,7 +154,7 @@ curation_svs = api.model('SVS', {
         'CONSEQUENCE': fields.String(description=''),
         'FUNCTIONAL_TYPE': fields.String(description=''),
         'VARIANT_STRING': fields.String(description=''),
-        'variant_included' : fields.String(description='')
+        'include_variant_report_pdf' : fields.String(description='')
 })
 
 curation_hotspot = api.model('IGV Hotspot', {
