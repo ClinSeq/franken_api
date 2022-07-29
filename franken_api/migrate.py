@@ -3,6 +3,7 @@ import click
 from flask import Flask, Blueprint
 
 from franken_api import settings
+from franken_api.api.franken.endpoints.authentication_db_api import au as auth_namespace
 from franken_api.api.franken.endpoints.franken_api import ns as franken_namespace
 from franken_api.api.franken.endpoints.referral_db_api import ns2 as referral_namespace
 from franken_api.api.franken.endpoints.curation_db_api import ns3 as curation_namespace
@@ -26,6 +27,7 @@ def initialize_app(flask_app):
     configure_app(flask_app)
     blueprint = Blueprint('api', __name__, url_prefix='/api')
     api.init_app(blueprint)
+    api.add_namespace(auth_namespace)
     api.add_namespace(franken_namespace)
     api.add_namespace(referral_namespace)
     api.add_namespace(curation_namespace)

@@ -227,3 +227,18 @@ fetch_patient_info_arguments = common_arguments.copy()
 
 view_pdf_arguments = common_arguments.copy()
 view_pdf_arguments.add_argument('pdf_name' , type=str, required=True, help="")
+
+
+auth_login_arguments = reqparse.RequestParser()
+auth_login_arguments.add_argument('email_id' , type=str, required=True, help="")
+auth_login_arguments.add_argument('passwd' , type=str, required=True, help="")
+
+auth_register_arguments = reqparse.RequestParser()
+auth_register_arguments.add_argument('first_name', type=str, required=True, help="Please provide the first name")
+auth_register_arguments.add_argument('last_name', type=str, required=True,  help='Please provide the last name')
+auth_register_arguments.add_argument('email_id', type=str, required=True,  help='Enter valid email id format')
+auth_register_arguments.add_argument('passwd', type=str, required=True,  help='Password contains atleast 6 letters with alpha-numeric and special characters')
+auth_register_arguments.add_argument('proj_ids', type=str, required=True,  help='Please provide project ids eg: 1,2')
+
+project_list_arguments = reqparse.RequestParser()
+project_list_arguments.add_argument('project_ids' , type=str, required=True, help="")

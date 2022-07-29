@@ -32,6 +32,7 @@ from flask import request
 import requests
 from sqlalchemy import create_engine
 import math
+import hashlib
 
 # check the string contains special character or not 
 def check_special_char(seq_str):
@@ -1392,3 +1393,120 @@ def get_pdf_file2(project_path, sample_id, capture_id):
 		return file_path, 200
 
 	return file_path, 400
+
+### Authentication 
+
+def get_project_names(project_ids):
+
+	arr_ids = "','".join(project_ids.split(","))
+	sql = "SELECT string_agg(project_name, ',') as proj_names FROM cur_projects_t WHERE p_id IN ('{}') and proj_status = '1' ORDER BY 1 ASC ".format(arr_ids)
+	res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+	res_data = generate_list_to_dict(res)
+	proj_names = res_data[0]["proj_names"]
+
+	return proj_names
+
+def login_validate(email_id, passwd):
+	try:
+		hash_pwd = hashlib.md5(passwd.encode())
+		sql = "SELECT u_id, concat(first_name,  ' ', last_name) as user_name, user_status, role_id, project_access FROM cur_users_t WHERE email_id='{}' and pwd ='{}' limit 1 ".format(email_id, hash_pwd.hexdigest())
+		res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+		res_data = generate_list_to_dict(res)
+		if(res_data):
+			status = res_data[0]['user_status']
+			if(status == '0'):
+				return {'status': True, 'message': 'Account is not activated, please contact the admin', 'data': [], 'error': '' }, 200
+			elif(status == '1'):
+				return {'status': True, 'message': 'Successfully ', 'data': res_data, 'error': '' }, 200
+			elif(status == '2'):
+				return {'status': True, 'message': 'Account was suspended for this email_id, please contact admin', 'data': [], 'error': '' }, 200
+			elif(status == '-1'):
+				return {'status': True, 'message': 'Account was deleted temporary, please contact admin', 'data': [], 'error': '' }, 200
+		else:
+			return {'status': True, 'message': 'Invalid Email-id and password', 'data': [], 'error': ''}, 200
+
+	except Exception as e:
+		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+
+def form_registation(first_name, last_name, email_id, pwd, project_access):
+
+	hash_pwd = hashlib.md5(pwd.encode())
+	sql = "SELECT count(*) as count from cur_users_t WHERE email_id ='{}' limit 1".format(email_id)
+	res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))		
+	row = generate_list_to_dict(res)
+
+	if(int(row[0]['count']) == 0):
+		try:        
+			sql = "INSERT into cur_users_t(first_name, last_name, email_id, pwd, user_status, role_id, project_access, created_on) values('{}', '{}', '{}','{}', '0', '0', '{}', NOW());".format(first_name, last_name, email_id, hash_pwd.hexdigest(), project_access)
+			db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+			db.session.commit()
+			return {'status': True, 'message': 'Register Successfully' , 'error': '' }, 200
+		except Exception as e:
+			return {'status': False, 'data': [], 'error': str(e) }, 400
+	else:
+		return {'status': False, 'message': 'Email-id already exits' , 'error': '' }, 200
+
+def fetch_all_project_list():
+	try:
+
+		sql = "SELECT p_id as index, project_name FROM cur_projects_t WHERE proj_status = '1' ORDER BY index ASC "
+		res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+		res_data = generate_list_to_dict(res)
+		if(res_data):
+			return {'status': True, 'data': res_data, 'error': '' }, 200
+		else:
+			return {'status': True, 'data': [], 'error': 'No Project list Found'}, 200
+
+	except Exception as e:
+		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+
+def fetch_project_list(project_ids):
+	try:
+		arr_ids = "','".join(project_ids.split(","))
+		sql = "SELECT p_id as index, project_name, nfs_path, CASE WHEN mtbp_json = '1' THEN true ELSE false end as mtbp_status, CASE WHEN pdf_report = '1' THEN true ELSE false end as pdf_status  FROM cur_projects_t WHERE p_id IN ('{}') and proj_status = '1' ORDER BY sort_order ASC ".format(arr_ids)
+		res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+		res_data = generate_list_to_dict(res)
+		if(res_data):
+			return {'status': True, 'data': res_data, 'error': '' }, 200
+		else:
+			return {'status': True, 'data': [], 'error': 'No Project list Found'}, 200
+
+	except Exception as e:
+		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+
+
+def fetch_nfs_path(project_name):
+	try:
+		nfs_out_path = ''
+		sql = "SELECT nfs_path FROM cur_projects_t WHERE project_name = '{}' and proj_status = '1' ORDER BY sort_order ASC ".format(project_name)
+		res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+		res_data = generate_list_to_dict(res)
+
+		if(res_data):
+			nfs_out_path = res_data[0]["nfs_path"]
+			return nfs_out_path
+		else:
+			return {'status': True, 'data': [], 'error': 'nfs Path not found'}, 200
+	except Exception as e:
+		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+
+
+# def fetch_genomic_profile(project_ids):
+
+# 	project_names = get_project_names(project_ids)
+# 	arr_proj_names = "','".join(project_names.split(","))
+
+# 	header = ['project_name', 'sample_id', 'capture_id', 'study_code', 'study_site', 'dob', 'disease', 'specimen_assay', 'ctdna_param', 'ctdna_method', 'genome_wide', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'summary_txt']
+
+# 	try:
+# 		sql1 = "SELECT * FROM genomic_profile_summary WHERE project_name IN ('{}') order by id ASC".format(arr_proj_names)
+# 		res1 = db.session.execute(sql1, bind=db.get_engine(current_app, 'curation'))
+# 		res_data1 = generate_list_to_dict(res1)
+
+# 		if(res_data1):
+# 			return {'status': True, 'data': res_data1, 'header': generate_headers_ngx_table(header), 'error': '' }, 200
+# 		else:
+# 			return {'status': True, 'data': [], 'header': header, 'error': str(e)}, 400
+
+# 	except Exception as e:
+# 		return {'status': True, 'data': [], 'header': header, 'error': str(e)}, 400
