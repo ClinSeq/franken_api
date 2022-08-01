@@ -1394,6 +1394,42 @@ def get_pdf_file2(project_path, sample_id, capture_id):
 
 	return file_path, 400
 
+
+def fetch_cancer_hotsport_info(gene, HGVSp, consequence):
+
+	header = ['hs_id', 'gene', 'hgvsp', 'protein_position', 'start_aa', 'end_aa']
+	pos_st = ''
+	pos_end = ''
+	hgvsp_str = ''
+
+	try:
+		if consequence == 'inframe_deletion':
+			if HGVSp :
+				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.hgvsp == '{}'.format(HGVSp)).all() 
+				if hotspot_data == []:
+					HGVSp_arr = re.findall(r'\d+', HGVSp)
+					pos_st = HGVSp_arr[0]
+					pos_end = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
+					hotspot_data = igv_cancer_hotspot_table.query.filter(
+						igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(pos_st), igv_cancer_hotspot_table.end_aa >= '{}'.format(pos_end))
+					).all()
+			else:
+				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene)).all() 
+		else:
+			if HGVSp:
+				hgvsp_str = HGVSp
+				ter_match = re.search('Ter$', HGVSp)
+				if ter_match:
+					hgvsp_str = HGVSp.replace('Ter','*')
+				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.hgvsp == '{}'.format(hgvsp_str)).all() 
+			else:
+				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene)).all() 
+		return {'status': True, 'data': hotspot_data, 'header': generate_headers_ngx_table(header), 'error': ''}, 200
+
+	except subprocess.CalledProcessError as e:
+		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+		return {'data':[], 'status': False}, 400
+
 ### Authentication 
 
 def get_project_names(project_ids):

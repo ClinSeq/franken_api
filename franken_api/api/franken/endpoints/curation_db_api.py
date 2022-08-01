@@ -2,9 +2,9 @@ import logging
 from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
 from flask_restplus import Resource
-from franken_api.api.franken.parsers import curation_germline_arguments, curation_somatic_arguments, curation_svs_arguments, curation_psff_profile_arguments, curation_psff_profile_id_arguments, curation_probio_profile_id_arguments, curation_probio_profile_arguments, curation_genomic_profile_arguments, curation_genomic_profile_id_arguments, project_list_arguments
+from franken_api.api.franken.parsers import curation_germline_arguments, curation_somatic_arguments, curation_svs_arguments, curation_psff_profile_arguments, curation_psff_profile_id_arguments, curation_probio_profile_id_arguments, curation_probio_profile_arguments, curation_genomic_profile_arguments, curation_genomic_profile_id_arguments, project_list_arguments, cancer_hotspot_arguments
 from franken_api.api.restplus import api
-from franken_api.api.franken.business import  get_curation_igv_germline, get_curation_igv_somatic, get_curation_svs, post_curation, get_curation_hotspot, get_curation_warmspot, get_curation_psff_profile, curation_update_profile, list_curation_psff_profile, list_curation_probio_profile, get_curation_probio_profile, get_curation_cancer_hotspot, list_curation_genomic_profile, get_curation_genomic_profile
+from franken_api.api.franken.business import  get_curation_igv_germline, get_curation_igv_somatic, get_curation_svs, post_curation, get_curation_hotspot, get_curation_warmspot, get_curation_psff_profile, curation_update_profile, list_curation_psff_profile, list_curation_probio_profile, get_curation_probio_profile, get_curation_cancer_hotspot, list_curation_genomic_profile, get_curation_genomic_profile, fetch_cancer_hotsport_info
 from franken_api.api.franken.serializers import curation_germline, germline_data_list, somatic_data_list, svs_data_list, hotspot_data_list, warmspot_data_list, psff_profile_data_list, probio_profile_data_list, cancer_hotspot_data_list, genomic_profile_data_list
 
 log = logging.getLogger(__name__)
@@ -37,6 +37,19 @@ class CurationCAncerHotspotTable(Resource):
         """
         result, error = get_curation_cancer_hotspot()
         return result, error
+
+    @api.expect(cancer_hotspot_arguments, validate=True)
+    @api.marshal_with(cancer_hotspot_data_list)
+    def post(self):
+        """
+           Fetch the patient information
+        """
+        args = cancer_hotspot_arguments.parse_args()
+        gene = args['gene']
+        HGVSp = args['HGVSp']
+        consequence = args['consequence']
+        result, errorcode = fetch_cancer_hotsport_info(gene, HGVSp, consequence)
+        return result, errorcode
 
 
 @ns3.route('/igv/hotspot')
