@@ -256,7 +256,7 @@ def build_small_variants(root_path):
 
 			for index, row in smv_df_filter_data.iterrows():
 
-				variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+', '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
+				variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+',&nbsp;'+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
 				clonality = row['clonality'] if 'clonality' in row else '-'
 				transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
 				assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
@@ -374,11 +374,11 @@ def build_svs(root_path):
 				for index, row in svs_filter.iterrows():
 
 
-					chr_b = int(row['CHROM_B']) if row['CHROM_B'] != '-' else row['CHROM_B']
-					start_b = int(row['START_B']) if row['START_B'] != '-' else row['START_B']
-					end_b = int(row['END_B']) if row['END_B'] != '-' else row['END_B']
+					chr_b = ' | chr'+str(int(row['CHROM_B']))+":" if row['CHROM_B'] != '-' else ''
+					start_b = str(int(row['START_B']))+"-" if row['START_B'] != '-' else ''
+					end_b = str(int(row['END_B'])) if row['END_B'] != '-' else ''
 
-					variant_det = "chr"+str(row['CHROM_A'])+":"+str(int(row['START_A']))+"-"+str(int(row['END_A']))+','+"chr"+str(chr_b)+":"+str(start_b)+"-"+str(end_b)
+					variant_det = "chr"+str(row['CHROM_A'])+":"+str(int(row['START_A']))+"-"+str(int(row['END_A']))+chr_b+start_b+end_b
 					
 					gene_det = row['GENE_A']+","+ row['GENE_B']
 					
@@ -497,7 +497,7 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 
 # ### Build HTML from output files
 
-def build_html(root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name):
+def build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name):
 	
 	print("--- MTBP Json Format Started ---\n")
 	print("Path : ", root_path, "/", file_name)
@@ -543,6 +543,9 @@ def build_html(root_path, file_name, project_name, cfdna, capture_format, base_h
 		contents = f.read()
 		soup = BeautifulSoup(contents, "html.parser")
 		
+		for tag in soup.find_all(rel="stylesheet"):
+			tag['href'] = html_root_path + tag['href']
+
 		for tag in soup.find_all(id='patient_info_table_data'):
 			tag.string.replace_with(pat_html)
 		
@@ -574,6 +577,9 @@ def build_html(root_path, file_name, project_name, cfdna, capture_format, base_h
 		contents = f.read()
 		soup1 = BeautifulSoup(contents, "html.parser")
 
+		for tag in soup1.find_all(rel="stylesheet"):
+			tag['href'] = html_root_path + tag['href']
+
 		for tag in soup1.find_all(id='tech_val_table_header'):
 			tag.string.replace_with(tech_header_html)
 		
@@ -591,7 +597,7 @@ def build_html(root_path, file_name, project_name, cfdna, capture_format, base_h
 
 # ### Change the header value
 
-def change_header_logo(header_html, project_name, output_header, specimen, sample_date):
+def change_header_logo(html_root_path, header_html, project_name, output_header, specimen, sample_date):
 	
 	report_date = date.today().strftime('%Y-%m-%d')
 	#sample_date = datetime.datetime.strptime(sample_date, '%Y%m%d').date()
@@ -616,9 +622,9 @@ def change_header_logo(header_html, project_name, output_header, specimen, sampl
 			
 #             if 'IPCM' in project_name or 'iPCM' in project_name:
 			if 'PROBIO' in project_name:
-				img_path = '/nfs/IPCM/script/pdf/static/img/probio.png'
+				img_path = html_root_path +'/static/img/probio.png'
 			else:
-				img_path = '/nfs/IPCM/script/pdf/static/img/iPCM.png'
+				img_path = html_root_path +'/static/img/iPCM.png'
 				
 			images['src'] = images['src'].replace("", img_path)
 
@@ -632,18 +638,19 @@ def change_header_logo(header_html, project_name, output_header, specimen, sampl
 
 def main(nfs_path, project_name, sample_id, capture_id):
 	
-   
 	## PDF Tempalte Path
 	### Local Path 
 	#base_html_path = '/home/karthick/project/code/curator/pdf/base.html'
 	#appendix_page = '/home/karthick/project/code/curator/pdf/appendix_c4.html'
-		
+
+	html_root_path = os.path.dirname(sys.argv[0])	
+
 	### Serve Path 
-	base_html_path = '/nfs/IPCM/script/pdf/base.html'
-	tml_header_page = '/nfs/IPCM/script/pdf/layout/header.html' 
-	footer_page = '/nfs/IPCM/script/pdf/layout/footer.html'
-	appendix_page = '/nfs/IPCM/script/pdf/appendix_c4.html'
-	tml_appendix_header_page = '/nfs/IPCM/script/pdf/layout/appendix_header.html' 
+	base_html_path = html_root_path+'/base.html'
+	tml_header_page = html_root_path+'/layout/header.html' 
+	footer_page = html_root_path+'/layout/footer.html'
+	appendix_page = html_root_path +'/appendix_c4.html'
+	tml_appendix_header_page = html_root_path+'/layout/appendix_header.html' 
 	 
 	root_path = os.path.join(nfs_path,sample_id,capture_id)
 	
@@ -654,7 +661,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	
 	if "PN" in KN_value:
 		#appendix_page = '/home/karthick/project/code/curator/pdf/appendix_pn.html'
-		appendix_page = '/nfs/IPCM/script/pdf/appendix_pn.html'
+		appendix_page = html_root_path+'/appendix_pn.html'
 	
 	cfdna = capture_id.split("-")[4]
 	
@@ -685,8 +692,8 @@ def main(nfs_path, project_name, sample_id, capture_id):
 		sample_date = sample_details_json["sample_date"]
 		
 	## Change the logo based on the project  
-	change_header_logo(tml_header_page, project_name, header_page, specimen, sample_date)
-	change_header_logo(tml_appendix_header_page, project_name, appendix_header_page, specimen, sample_date)
+	change_header_logo(html_root_path, tml_header_page, project_name, header_page, specimen, sample_date)
+	change_header_logo(html_root_path, tml_appendix_header_page, project_name, appendix_header_page, specimen, sample_date)
 	   
 	logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt =  "%Y-%m-%d %H:%M:%S")
 	logging.info('--- Generated Json format Started---')
@@ -694,7 +701,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
 		
 	try:
-		html_result = build_html(root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name)
+		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name)
 		if html_result:
 			
 			cmd = 'wkhtmltopdf --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_name, appendix_header_page, footer_page, pdf_file_name)
