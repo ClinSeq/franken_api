@@ -247,4 +247,5 @@ project_list_arguments.add_argument('project_ids' , type=str, required=True, hel
 cancer_hotspot_arguments = reqparse.RequestParser()
 cancer_hotspot_arguments.add_argument('gene' , type=str, required=True, help="")
 cancer_hotspot_arguments.add_argument('HGVSp' , type=str, required=False, help="")
-cancer_hotspot_arguments.add_argument('consequence' , type=str, required=False, help="")
+# cancer_hotspot_arguments.add_argument('consequence' , type=str, required=False, help="")
+cancer_hotspot_arguments.add_argument('position' , type=str, required=False, help="")

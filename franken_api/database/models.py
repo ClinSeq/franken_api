@@ -300,8 +300,8 @@ class TableIgvCancerHotspot(pssql.Model):
     gene = pssql.Column(pssql.String)
     hgvsp = pssql.Column(pssql.String)
     protein_position = pssql.Column(pssql.String)
-    start_aa = pssql.Column(pssql.String)
-    end_aa = pssql.Column(pssql.String)
+    start_aa = pssql.Column(pssql.Integer)
+    end_aa = pssql.Column(pssql.Integer)
 
     def __init__(self, row_dict):
 

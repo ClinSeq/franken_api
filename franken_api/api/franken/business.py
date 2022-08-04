@@ -14,6 +14,7 @@ from franken_api.database.models import TableGenomicProfileSummary as genomic_pr
 
 
 from sqlalchemy import and_
+from sqlalchemy import or_
 import os, io
 #from franken_api.settings import MOUNT_POINT
 from flask import current_app
@@ -616,7 +617,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 		asec_key = 'SECONDHIT'
 		ass_key = 'ASSESSMENT'
 		acl_key = 'CLONALITY'
-		# var_occr_key = 'autoseq_variant_db'
+		var_occr_key = 'autoseq_variant_db'
 
 		if asec_key in header:
 			asec_indx = header.index(asec_key)
@@ -633,10 +634,10 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			del header[acl_indx]
 			header.insert(0,acl_key)
 
-		# if var_occr_key in header:
-		# 	var_occr_indx = header.index(var_occr_key)
-		# 	del header[var_occr_indx]
-		# 	header.insert(0,var_occr_key)
+		if var_occr_key in header:
+			var_occr_indx = header.index(var_occr_key)
+			del header[var_occr_indx]
+			header.insert(0,var_occr_key)
 
 		if igv_var_inc_key in header:
 			igv_var_inc_indx = header.index(igv_var_inc_key)
@@ -1395,7 +1396,7 @@ def get_pdf_file2(project_path, sample_id, capture_id):
 	return file_path, 400
 
 
-def fetch_cancer_hotsport_info(gene, HGVSp, consequence):
+def fetch_cancer_hotsport_info(gene, HGVSp, position):
 
 	header = ['hs_id', 'gene', 'hgvsp', 'protein_position', 'start_aa', 'end_aa']
 	pos_st = ''
@@ -1403,18 +1404,24 @@ def fetch_cancer_hotsport_info(gene, HGVSp, consequence):
 	hgvsp_str = ''
 
 	try:
-		if consequence == 'inframe_deletion':
-			if HGVSp :
-				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.hgvsp == '{}'.format(HGVSp)).all() 
-				if hotspot_data == []:
-					HGVSp_arr = re.findall(r'\d+', HGVSp)
-					pos_st = HGVSp_arr[0]
-					pos_end = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
-					hotspot_data = igv_cancer_hotspot_table.query.filter(
-						igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(pos_st), igv_cancer_hotspot_table.end_aa >= '{}'.format(pos_end))
-					).all()
-			else:
-				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene)).all() 
+		if position:
+			# if HGVSp:
+			# 	hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.hgvsp == '{}'.format(HGVSp)).all() 
+			# 	if hotspot_data == []:
+			# 		HGVSp_arr = re.findall(r'\d+', HGVSp)
+			# 		pos_st = HGVSp_arr[0]
+			# 		pos_end = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
+			# 		hotspot_data = igv_cancer_hotspot_table.query.filter(
+			# 			igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(pos_st), igv_cancer_hotspot_table.end_aa >= '{}'.format(pos_end))
+			# 		).all()
+			# else:
+			sql3 = "SELECT * FROM cancer_hotspot_summary WHERE gene='{}' and ({} between CAST(start_aa as INT) and CAST(end_aa as INT))".format(gene, position)
+			res3 = db.session.execute(sql3, bind=db.get_engine(current_app, 'curation'))
+			hotspot_data = generate_list_to_dict(res3)
+			
+				# hotspot_data = igv_cancer_hotspot_table.query.filter(
+				# 		igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= position, igv_cancer_hotspot_table.end_aa >= position)
+				# 	).all()
 		else:
 			if HGVSp:
 				hgvsp_str = HGVSp
@@ -1423,7 +1430,8 @@ def fetch_cancer_hotsport_info(gene, HGVSp, consequence):
 					hgvsp_str = HGVSp.replace('Ter','*')
 				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.hgvsp == '{}'.format(hgvsp_str)).all() 
 			else:
-				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene)).all() 
+				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene)).all()
+
 		return {'status': True, 'data': hotspot_data, 'header': generate_headers_ngx_table(header), 'error': ''}, 200
 
 	except subprocess.CalledProcessError as e:

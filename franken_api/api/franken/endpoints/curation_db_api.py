@@ -47,8 +47,9 @@ class CurationCAncerHotspotTable(Resource):
         args = cancer_hotspot_arguments.parse_args()
         gene = args['gene']
         HGVSp = args['HGVSp']
-        consequence = args['consequence']
-        result, errorcode = fetch_cancer_hotsport_info(gene, HGVSp, consequence)
+        position = args['position']
+        # consequence = args['consequence']
+        result, errorcode = fetch_cancer_hotsport_info(gene, HGVSp, position)
         return result, errorcode
 
 
