@@ -32,9 +32,6 @@
 			padding: 0px 10px 0px 0px;
 		}
 
-		.table-bordered tr th, .table-bordered tr td {
-			border: 1px solid #D9E4EC;
-		}
 
 		table > thead > tr > th {
 			font-size: 17px;
@@ -45,15 +42,19 @@
 		
 		table > tbody > tr > td {
 			word-spacing: 3px;
-            		font-size: 16px;
+			font-size: 15px;
 			color :#6b6b6b;
-            		font-weight:800;
+			font-weight:800;
 		}
 
 		table > tbody > tr > th {
 			font-size: 17px;
 			font-weight: 800;
 			color :#000000;
+		}
+
+		.table-bordered tr th, .table-bordered tr td {
+			border: 1px solid #D9E4EC;
 		}
 
 		.patient-block .patient-td {
@@ -88,6 +89,22 @@
 			color: #B43218;
 			font-size: 20px;
 		}
+
+		.point-mut-block .table-bordered td {
+			font-size: 15px;
+		}
+
+		/* .point-mut-block .point-tb th{
+			width: 100%;
+			border: 1px solid #D9E4EC;
+			font-size: 17px;
+		} */
+
+		/* .point-mut-block .point-tb td{
+			width: 100%;
+			border: 1px solid #D9E4EC;
+			font-size: 15px;
+		} */
 
 	</style>
 </head>
@@ -153,11 +170,12 @@
 				<tr>
 					<th>GENE</th>
 					<th>SOURCE</th>
-					<th>VARIANT DETAILS</th>
+					<th width="30%">VARIANT DETAILS</th>
 					<th>CONSEQUENCE</th>
 					<th>CLONALITY</th>
 					<th>SECONDHIT</th>
 					<th>IMPACT</th>
+					<th>RSID</th>
 					<th>TRANSCRIPT ID</th>
 					<th>HGVSP</th>
 				</tr>

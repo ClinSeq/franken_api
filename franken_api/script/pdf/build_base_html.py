@@ -234,6 +234,10 @@ def build_small_variants(root_path):
 			if 'ASSESSMENT' in smv_df_call_filter.columns:
 				column_list.append('ASSESSMENT')
 				column_dict['ASSESSMENT'] = 'ASSESSMENT'
+
+			if 'RSID' in smv_df_call_filter.columns:
+				column_list.append('RSID')
+				column_dict['RSID'] = 'RSID'
 				
 			smv_df_call_filter = smv_df_call_filter[column_list]
 			smv_df_filter_data = smv_df_call_filter.rename(columns=column_dict)
@@ -260,6 +264,10 @@ def build_small_variants(root_path):
 				clonality = row['clonality'] if 'clonality' in row else '-'
 				transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
 				assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
+
+				rsID = row['RSID'] if 'RSID' in row else '-'
+				# rsID_url = "https://www.ncbi.nlm.nih.gov/snp/{}#clinical_significance".format(rsID) if 'RSID' in row else '-'
+				
 				HGVSp_org_rx = row['HGVSp_org'] if 'HGVSp_org' in row else '-'
 				HGVSp_org = HGVSp_org_rx.split("p.")[1] if 'p.' in HGVSp_org_rx else HGVSp_org_rx
 				second_hit = str(row['second_hit']) if 'second_hit' in row else '-'
@@ -272,6 +280,7 @@ def build_small_variants(root_path):
 				smt_variant_html +='<td>'+clonality+'</td>'
 				smt_variant_html +='<td>'+second_hit+'</td>'
 				smt_variant_html +='<td>'+assessment+'</td>'
+				smt_variant_html +='<td>'+rsID+'</td>'
 				smt_variant_html +='<td>'+transcript+'</td>'
 				smt_variant_html +='<td>'+HGVSp_org+'</td>'
 				smt_variant_html += '</tr>'
@@ -704,7 +713,9 @@ def main(nfs_path, project_name, sample_id, capture_id):
 		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name)
 		if html_result:
 			
-			cmd = 'wkhtmltopdf --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_name, appendix_header_page, footer_page, pdf_file_name)
+			# --enable-external-links --keep-relative-links --resolve-relative-links
+			# toc 
+			cmd = 'wkhtmltopdf  --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_name, appendix_header_page, footer_page, pdf_file_name)
 			subprocess_cmd(cmd)
 			logging.info("PDF Generated")
 
