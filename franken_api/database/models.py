@@ -79,6 +79,7 @@ class TableIgvGermline(pssql.Model):
     purecn_status = pssql.Column(pssql.String)
     purecn_tot_copies = pssql.Column(pssql.String)
     include_variant_report_pdf = pssql.Column(pssql.String)
+    user_name = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -108,6 +109,7 @@ class TableIgvGermline(pssql.Model):
         self.purecn_status = row_dict.get('purecn_status', None)
         self.purecn_tot_copies = row_dict.get('purecn_tot_copies', None)
         self.include_variant_report_pdf = row_dict.get('include_variant_report_pdf', None)
+        self.user_name = row_dict.get('user_name', None)
 
     def __repr__(self):
         return "<TableIgvGermline (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,
@@ -147,6 +149,7 @@ class TableIgvSomatic(pssql.Model):
     purecn_status = pssql.Column(pssql.String)
     purecn_tot_copies = pssql.Column(pssql.String)
     include_variant_report_pdf = pssql.Column(pssql.String)
+    user_name = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -179,6 +182,7 @@ class TableIgvSomatic(pssql.Model):
         self.purecn_status = row_dict.get('purecn_status', None)
         self.purecn_tot_copies = row_dict.get('purecn_tot_copies', None)
         self.include_variant_report_pdf = row_dict.get('include_variant_report_pdf', None)
+        self.user_name = row_dict.get('user_name', None)
 
     def __repr__(self):
         return "<TableIgvSomatic (id='%s', projectid='%s', sdid='%s', captureid='%s')>" % (self.id,self.PROJECT_ID,
@@ -218,6 +222,7 @@ class TableSVS(pssql.Model):
     FUNCTIONAL_TYPE  = pssql.Column(pssql.String)
     VARIANT_STRING  = pssql.Column(pssql.String)
     include_variant_report_pdf = pssql.Column(pssql.String)
+    user_name = pssql.Column(pssql.String)
 
     def __init__(self, row_dict):
 
@@ -250,6 +255,7 @@ class TableSVS(pssql.Model):
         self.FUNCTIONAL_TYPE = row_dict.get('FUNCTIONAL_TYPE', None)
         self.VARIANT_STRING = row_dict.get('VARIANT_STRING', None)
         self.include_variant_report_pdf = row_dict.get('include_variant_report_pdf', None)
+        self.user_name = row_dict.get('user_name', None)
 
 
     def __repr__(self):
@@ -515,4 +521,4 @@ class TableGenomicProfileSummary(pssql.Model):
 
 
     def __repr__(self):
-        return "<TableGenomicProfileSummary (id='%s', project_name='%s', sample_id='%s', capture_id='%s')>" % (self.id,selg.project_name, self.sample_id,self.capture_id)
+        return "<TableGenomicProfileSummary (id='%s', project_name='%s', sample_id='%s', capture_id='%s')>" % (self.id,self.project_name, self.sample_id,self.capture_id)

@@ -90,7 +90,7 @@ curation_germline_arguments.add_argument('purecn_probability' , type=str,  help=
 curation_germline_arguments.add_argument('purecn_status' , type=str,  help="")
 curation_germline_arguments.add_argument('purecn_tot_copies' , type=str,  help="")
 curation_germline_arguments.add_argument('include_variant_report_pdf' , type=str,  help="")
-
+curation_germline_arguments.add_argument('user_name' , type=str,  help="")
 
 
 curation_somatic_arguments = reqparse.RequestParser()
@@ -125,6 +125,7 @@ curation_somatic_arguments.add_argument('purecn_probability' , type=str,  help="
 curation_somatic_arguments.add_argument('purecn_status' , type=str,  help="")
 curation_somatic_arguments.add_argument('purecn_tot_copies' , type=str,  help="")
 curation_somatic_arguments.add_argument('include_variant_report_pdf' , type=str,  help="")
+curation_somatic_arguments.add_argument('user_name' , type=str,  help="")
 
 
 curation_svs_arguments = reqparse.RequestParser()
@@ -157,9 +158,7 @@ curation_svs_arguments.add_argument('CONSEQUENCE' , type=str,  help="")
 curation_svs_arguments.add_argument('FUNCTIONAL_TYPE' , type=str,  help="")
 curation_svs_arguments.add_argument('VARIANT_STRING' , type=str,  help="")
 curation_svs_arguments.add_argument('include_variant_report_pdf' , type=str,  help="")
-
-
-
+curation_svs_arguments.add_argument('user_name' , type=str,  help="")
 
 curation_psff_profile_arguments = reqparse.RequestParser()
 curation_psff_profile_arguments.add_argument('sample_id' , type=str, required=True, help="")

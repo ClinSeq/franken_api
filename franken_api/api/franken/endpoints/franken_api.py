@@ -31,7 +31,8 @@ class frankenStatus(Resource):
         """
         args = project_arguments.parse_args()
         proj_name = args['project_name']
-        status, error_code = check_nfs_mount(current_app.config[proj_name])
+        nfs_path = fetch_nfs_path(proj_name)
+        status, error_code = check_nfs_mount(nfs_path)
         result = {'server_status': True}
 
         if not status:
@@ -55,7 +56,8 @@ class DropdownListSample(Resource):
         """
         args = project_arguments.parse_args()
         proj_name = args['project_name']
-        result, errorcode = get_sample_ids(current_app.config[proj_name])
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_sample_ids(nfs_path)
         return result, errorcode
 
 @ns.route('/capture')
@@ -72,7 +74,9 @@ class DropdownListCapture(Resource):
         ```
         """
         args = capture_arguments.parse_args()
-        result, errorcode = get_sample_design_ids(current_app.config[args['project_name']], args['sdid'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_sample_design_ids(nfs_path, args['sdid'])
         return result, errorcode
 
 
@@ -90,7 +94,9 @@ class FrankenUrls(Resource):
         ```
         """
         args = ploturls_arguments.parse_args()
-        result, errorcode = get_static_frankenplot(current_app.config[args['project_name']], args['project_name'], args['sdid'], args['capture_id'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_static_frankenplot(nfs_path, proj_name,  args['sdid'], args['capture_id'])
         return result, errorcode
 
 
@@ -108,7 +114,9 @@ class FrankenStaticImages(Resource):
         ```
         """
         args = staticplot_arguments.parse_args()
-        result, errorcode = get_static_image(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['imagename'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_static_image(nfs_path, args['sdid'], args['capture_id'], args['imagename'])
         return send_file(result,
                       attachment_filename='frankenplot.png',
                       mimetype='image/png')
@@ -126,7 +134,9 @@ class FrankenStaticImages(Resource):
         ```
         """
         args = staticplot_arguments.parse_args()
-        result, errorcode = get_xml_image(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['imagename'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_xml_image(nfs_path, args['sdid'], args['capture_id'], args['imagename'])
         return send_file(result, mimetype='application/xml')
 
 
@@ -143,7 +153,9 @@ class frankenPlot(Resource):
         ```
         """
         args = search_arguments.parse_args()
-        result , errocode = get_interactive_plot(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['pname'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result , errocode = get_interactive_plot(nfs_path, args['sdid'], args['capture_id'], args['pname'])
         return result, errocode
 
 @ns.route('/igvsession')
@@ -188,7 +200,9 @@ class TableSvsView(Resource):
         ```
         """
         args = table_svs_arguments.parse_args()
-        result, errorcode = get_table_svs_header(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['header'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_table_svs_header(nfs_path, args['sdid'], args['capture_id'], args['header'])
         return result, errorcode
 
 @ns.route('/table/igv/<string:variant>')
@@ -211,7 +225,9 @@ class TableIgv(Resource):
         ```
         """
         args = table_svs_arguments.parse_args()
-        result, errorcode = get_table_igv(variant, current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['header'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_table_igv(variant, nfs_path, args['sdid'], args['capture_id'], args['header'])
         return result, errorcode
 
 @ns.route('/table/qc')
@@ -234,7 +250,9 @@ class TableQc(Resource):
         ```
         """
         args = table_qc_arguments.parse_args()
-        result, errorcode = get_table_qc_header(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['header'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_table_qc_header(nfs_path, args['sdid'], args['capture_id'], args['header'])
         return result, errorcode
 
 @ns.route('/table/cnv/<string:variant_type>')
@@ -257,7 +275,9 @@ class TableCNV(Resource):
         ```
         """
         args = table_cnv_arguments.parse_args()
-        result, errorcode = get_table_cnv_header(current_app.config[args['project_name']], args['sdid'], args['capture_id'], variant_type, args['header'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_table_cnv_header(nfs_path, args['sdid'], args['capture_id'], variant_type, args['header'])
         return result, errorcode
 
 
@@ -290,7 +310,9 @@ class PDFCalls(Resource):
         Returns PDF files .
         """
         args = pdf_arguments.parse_args()
-        result, errorcode = pdfs_files(variant, current_app.config[args['project_name']], args['sdid'], args['capture_id'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = pdfs_files(variant, nfs_path, args['sdid'], args['capture_id'])
         if variant != 'multiqc':
             return send_file(result, attachment_filename=variant+'.pdf', mimetype='application/pdf')
         else:
@@ -306,7 +328,9 @@ class GetPurecn(Resource):
             Fetch ploidy and purity from purecn file
         """
         args = purecn_arguments.parse_args()
-        result , errocode = get_purecn_ctdna(current_app.config[args['project_name']], args['sdid'], args['capture_id'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result , errocode = get_purecn_ctdna(nfs_path, args['sdid'], args['capture_id'])
         return result, errocode
 
 @ns.route('/get_purecn_max_val')
@@ -319,7 +343,9 @@ class UpdateMaxPurecnVal(Resource):
         Get Max PureCN value for each variant and update into somatic and germline table
         """
         args = purecn_max_val_arguments.parse_args()
-        result , errocode = update_pureCN_somatic_germline(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['variant_type'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result , errocode = update_pureCN_somatic_germline(nfs_path, args['sdid'], args['capture_id'], args['variant_type'])
         return result, errocode
 
 @ns.route('/get_curated_json')
@@ -334,7 +360,9 @@ class GetJsonFile(Resource):
 
         """
         args = json_urls_arguments.parse_args()
-        result, errorcode = get_curated_json_file(current_app.config[args['project_name']], args['project_name'], args['sdid'], args['capture_id'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_curated_json_file(nfs_path, proj_name,  args['sdid'], args['capture_id'])
         return result, errorcode
 
 
@@ -348,7 +376,9 @@ class GenerateJsonFile(Resource):
             Generate the json format
         """
         args = json_urls_arguments.parse_args()
-        result, errorcode = generate_curated_json(current_app.config[args['project_name']], args['project_name'], args['sdid'], args['capture_id'], current_app.config["MTBP_SCRIPT"])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = generate_curated_json(nfs_path, proj_name,  args['sdid'], args['capture_id'], current_app.config["MTBP_SCRIPT"])
         return result, errorcode
 
 @ns.route('/patient_info')
@@ -361,7 +391,8 @@ class FetchPatientInformation(Resource):
            Fetch the patient information
         """
         args = fetch_patient_info_arguments.parse_args()
-        result, errorcode = fetch_patient_info(args['project_name'], args['sdid'], args['capture_id'])
+        proj_name = args['project_name']
+        result, errorcode = fetch_patient_info(proj_name,  args['sdid'], args['capture_id'])
         return result, errorcode
 
 @ns.route('/generate_pdf')
@@ -374,7 +405,9 @@ class GeneratePdfFile(Resource):
             Generate the pdf
         """
         args = json_urls_arguments.parse_args()
-        result, errorcode = generate_curated_pdf(current_app.config[args['project_name']], args['project_name'], args['sdid'], args['capture_id'], current_app.config["PDF_SCRIPT"])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = generate_curated_pdf(nfs_path, proj_name,  args['sdid'], args['capture_id'], current_app.config["PDF_SCRIPT"])
         return result, errorcode
 
 
@@ -406,7 +439,9 @@ class ReportViewPDF(Resource):
         View PDF
         """
         args = view_pdf_arguments.parse_args()
-        result, errorcode = get_pdf_file(current_app.config[args['project_name']], args['sdid'], args['capture_id'], args['pdf_name'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_pdf_file(nfs_path, args['sdid'], args['capture_id'], args['pdf_name'])
         return send_file(result, attachment_filename='report.png', mimetype='application/pdf')
 
 @ns.route('/fetch_pdf')
@@ -420,5 +455,7 @@ class ReportFetchPDF(Resource):
         View PDF
         """
         args = pdf_arguments.parse_args()
-        result, errorcode = get_pdf_file2(current_app.config[args['project_name']], args['sdid'], args['capture_id'])
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
+        result, errorcode = get_pdf_file2(nfs_path, args['sdid'], args['capture_id'])
         return send_file(result, attachment_filename=args['sdid']+'_report.pdf', mimetype='application/pdf') 

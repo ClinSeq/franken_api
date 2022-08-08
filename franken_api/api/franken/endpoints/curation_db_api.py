@@ -88,14 +88,17 @@ class CurationWarmspotTable(Resource):
 @api.response(400, '/nfs is not mount locally no data found')
 class CurationIgvGermline(Resource):
     @api.marshal_with(germline_data_list)
+    @api.expect(project_list_arguments, validate=True)
     def get(self):
         """
-        Fetch all Germline
+        Fetch all Germline based on project access
         ```
 
         ```
         """
-        result, error = get_curation_igv_germline()
+        args = project_list_arguments.parse_args()
+        project_ids = args["project_ids"]
+        result, error = get_curation_igv_germline(project_ids)
         return result, error
 
     @api.expect(curation_germline_arguments, validate=True)
@@ -115,20 +118,23 @@ class CurationIgvGermline(Resource):
 @api.response(400, '/nfs is not mount locally no data found')
 class CurationIgvSomatic(Resource):
     @api.marshal_with(somatic_data_list)
+    @api.expect(project_list_arguments, validate=True)
     def get(self):
         """
-        Fetch all Somatic
+        Fetch all Somatic  based on project access
         ```
 
         ```
         """
-        result, error = get_curation_igv_somatic()
+        args = project_list_arguments.parse_args()
+        project_ids = args["project_ids"]
+        result, error = get_curation_igv_somatic(project_ids)
         return result, error
 
     @api.expect(curation_somatic_arguments, validate=True)
     def post(self):
         """
-        Fetch all Germline
+        Fetch all Somatic
         ```
 
         ```
@@ -142,14 +148,17 @@ class CurationIgvSomatic(Resource):
 @api.response(400, '/nfs is not mount locally no data found')
 class CurationSVS(Resource):
     @api.marshal_with(svs_data_list)
+    @api.expect(project_list_arguments, validate=True)
     def get(self):
         """
-        Fetch all Somatic
+        Fetch all SVS  based on project access
         ```
 
         ```
         """
-        result, error = get_curation_svs()
+        args = project_list_arguments.parse_args()
+        project_ids = args["project_ids"]
+        result, error = get_curation_svs(project_ids)
         return result, error
 
     @api.expect(curation_svs_arguments, validate=True)
@@ -251,15 +260,31 @@ class CurationPSFFProfile(Resource):
 @api.response(400, '/nfs is not mount locally no data found')
 class CurationListGenomicProfile(Resource):
     @api.marshal_with(genomic_profile_data_list)
+    @api.expect(project_list_arguments, validate=True)
     def get(self):
         """
-        Fetch all Genomic Profiling
+        Fetch all Genomic Profiling Profiling based on projectIds
         ```
 
         ```
         """
-        result, error = list_curation_genomic_profile()
-        return result, error        
+        args = project_list_arguments.parse_args()
+        project_ids = args["project_ids"]
+        result, error = list_curation_genomic_profile(project_ids)
+        return result, error
+
+    # @api.expect(project_list_arguments, validate=True)
+    # def post(self):
+    #     """
+    #      Fetch Genomic Profiling based on projectIds
+    #     ```
+
+    #     ```
+    #     """
+    #     args = project_list_arguments.parse_args()
+    #     project_ids = args["project_ids"]
+    #     result, errorcode = fetch_genomic_profile(project_ids)
+    #     return result, errorcode
 
 @ns3.route('/update_psff_profile')
 @api.response(200, 'Success')

@@ -602,7 +602,6 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For {} Variants'.format(variant_type.capitalize())}, 200
 
 		header = list(data[0])
-
 		if 'HOTSPOT' in header and variant_type == 'somatic':
 			del header[header.index('HOTSPOT')]
 
@@ -891,13 +890,17 @@ def get_curation_warmspot():
 	except Exception as e:
 		return "Error :" + str(e), 400
 
-def get_curation_igv_germline():
+def get_curation_igv_germline(project_ids):
+	
+	project_names = get_project_names(project_ids)
+	arr_proj_names = project_names.split(",")
+
 	try:
 		header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', 'CHROM', 'START', 'END',
 				  'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'GENE', 'IMPACT', 'CONSEQUENCE',
-				  'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'include_variant_report_pdf']
+				  'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'include_variant_report_pdf', 'user_name']
 		try:
-			return {'status': True, 'data': igv_germline_table.query.filter().all(),
+			return {'status': True, 'data': igv_germline_table.query.filter(igv_germline_table.PROJECT_ID.in_(arr_proj_names)).all(),
 					'header': generate_headers_ngx_table(header),
 					'error': ''}, 200
 		except Exception as e:
@@ -906,14 +909,18 @@ def get_curation_igv_germline():
 	except Exception as e:
 		return "Error :" + str(e), 400
 
-def get_curation_igv_somatic():
+def get_curation_igv_somatic(project_ids):
+	
+	project_names = get_project_names(project_ids)
+	arr_proj_names = project_names.split(",")
+
 	try:
 		header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', "CHROM", 'START', 'END',
 					'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'ASSESSMENT', 'CLONALITY',  'GENE', 'IMPACT',
 				  'CONSEQUENCE', 'HGVSp', 'T_DP', 'T_ALT', 'T_VAF', 'N_DP', 'N_ALT', 'N_VAF',
-				  'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'include_variant_report_pdf']
+				  'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'include_variant_report_pdf', 'user_name']
 		try:
-			return {'status': True, 'data': igv_somatic_table.query.filter().all(),
+			return {'status': True, 'data': igv_somatic_table.query.filter(igv_somatic_table.PROJECT_ID.in_(arr_proj_names)).all(),
 					'header': generate_headers_ngx_table(header),
 					'error': ''}, 200
 		except Exception as e:
@@ -922,13 +929,17 @@ def get_curation_igv_somatic():
 	except Exception as e:
 		return "Error :" + str(e), 400
 
-def get_curation_svs():
+def get_curation_svs(project_ids):
+
+	project_names = get_project_names(project_ids)
+	arr_proj_names = project_names.split(",")
+
 	try:
 		header = ['PROJECT_ID', 'CAPTURE_ID', 'SDID', 'CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B',
 				  'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SAMPLE', 'GENE_A', 'IN_DESIGN_A', 'GENE_B',
-				  'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'CALL', 'TYPE', 'SECONDHIT', 'COMMENT', 'ASSESSMENT', 'CLONALITY', 'CONSEQUENCE', 'FUNCTIONAL_TYPE', 'VARIANT_STRING', 'include_variant_report_pdf']
+				  'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'CALL', 'TYPE', 'SECONDHIT', 'COMMENT', 'ASSESSMENT', 'CLONALITY', 'CONSEQUENCE', 'FUNCTIONAL_TYPE', 'VARIANT_STRING',  'user_name']
 		try:
-			return {'status': True, 'data': svs_table.query.filter().all(),
+			return {'status': True, 'data': svs_table.query.filter(svs_table.PROJECT_ID.in_(arr_proj_names)).all(),
 					'header': generate_headers_ngx_table(header),
 					'error': ''}, 200
 		except Exception as e:
@@ -964,11 +975,15 @@ def list_curation_probio_profile():
 	except Exception as e:
 		return "Error :" + str(e), 400
 
-def list_curation_genomic_profile():
+def list_curation_genomic_profile(project_ids):
+
+	project_names = get_project_names(project_ids)
+	arr_proj_names = project_names.split(",")
+
 	try:
 		header = ['project_name', 'sample_id', 'capture_id', 'study_code', 'study_site', 'dob', 'disease', 'specimen_assay', 'ctdna_param', 'ctdna_method', 'genome_wide', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'summary_txt']
 		try:
-			return {'status': True, 'data': genomic_profile.query.filter().all(),
+			return {'status': True, 'data': genomic_profile.query.filter(genomic_profile.project_name.in_(arr_proj_names)).all(),
 					'header': generate_headers_ngx_table(header),
 					'error': ''}, 200
 		except Exception as e:
@@ -1292,6 +1307,7 @@ def build_sample_details(project_name, cfdna):
 
 		res = db.session.execute(sql)
 		res_data = generate_list_to_dict(res)
+		
 		if(res_data):
 			tid = res_data[0]["tid"]
 			cdk = res_data[0]["cdk"].strip()
