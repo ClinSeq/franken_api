@@ -219,17 +219,9 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 
 		column_list = list(data[0].keys())
 
-		var_inc_key = 'include_variant_report_pdf'
-
-		if var_inc_key in column_list:
-			var_inc_indx = column_list.index(var_inc_key)
-			del column_list[var_inc_indx]
-			column_list.insert(0,var_inc_key)
-
 		header = list(generate_headers_ngx_table(column_list))
 
 		new_keys = {
-			'include_variant_report_pdf': {'key': 'include_variant_report_pdf', 'title': 'INCLUDE VARIANT REPORT PDF'},
 			'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
 			'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
 			'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
@@ -240,10 +232,7 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 		for idx,value in enumerate(new_keys):
 			n_key = [item for item in header if item.get('key')==value]
 			
-			if n_key == 'include_variant_report_pdf':
-				header.insert(0, new_keys[value])
-
-			if(not n_key and n_key != 'include_variant_report_pdf'):
+			if(not n_key):
 				header.append(new_keys[value])
 			
 		new_header = []
