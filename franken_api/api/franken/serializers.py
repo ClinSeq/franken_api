@@ -1,4 +1,4 @@
-from flask_restplus import fields
+from flask_restx import fields
 from franken_api.api.restplus import api
 
 status_result = api.model('server status', {'server_status': fields.Boolean(default=False, required=True)})

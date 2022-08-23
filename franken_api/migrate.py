@@ -16,12 +16,10 @@ def configure_app(flask_app):
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
     flask_app.config['SQLALCHEMY_BINDS'] = {'curation': settings.SQLALCHEMY_BINDS}
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
-    flask_app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.RESTPLUS_SWAGGER_UI_DOC_EXPANSION
-    flask_app.config['RESTPLUS_VALIDATE'] = settings.RESTPLUS_VALIDATE
-    flask_app.config['RESTPLUS_MASK_SWAGGER'] = settings.RESTPLUS_MASK_SWAGGER
-    flask_app.config['ERROR_404_HELP'] = settings.RESTPLUS_ERROR_404_HELP
-    flask_app.config['PROBIO'] = settings.MOUNT_POINT_PROBIO
-    flask_app.config['PSFF'] = settings.MOUNT_POINT_PSFF
+    # flask_app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.RESTX_SWAGGER_UI_DOC_EXPANSION
+    flask_app.config['RESTX_VALIDATE'] = settings.RESTX_VALIDATE
+    flask_app.config['RESTX_MASK_SWAGGER'] = settings.RESTX_MASK_SWAGGER
+    flask_app.config['BUNDLE_ERRORS'] = settings.BUNDLE_ERRORS
 
 def initialize_app(flask_app):
     configure_app(flask_app)

@@ -1,7 +1,7 @@
 import logging
 from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
-from flask_restplus import Resource
+from flask_restx import Resource
 from franken_api.api.franken.parsers import referral_update_arguments
 from franken_api.api.restplus import api
 from franken_api.api.franken.business import  get_probio_blood_referrals, get_psff_blood_referrals, update_referrals

@@ -266,7 +266,11 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		else:
 			# Dataframe soted based on the below columns
 			df_sorted = df.sort_values(["GENE_A-GENE_B-sorted","CHROM_A","START_A","CHROM_B","START_B","TOOL","SUPPORT_READS"], ascending = (True,False,False,False,False,False,False))
-			df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES') | (df['TOOL'] == 'svcaller')]
+			
+			if 'IN_DESIGN_A' in df.columns:
+				df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES') | (df['TOOL'] == 'svcaller')]
+			else:
+				df_filter = df_sorted.loc[(df['CURATOR'] == 'YES') | (df['TOOL'] == 'svcaller')]
 			
 			# Add Index column in the dataframe
 			df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
@@ -403,125 +407,124 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
 
 
-def check_hotspot_status(gene, HGVSp, consequence):
+# def check_hotspot_status(gene, HGVSp, consequence):
 
+# 	'''
+# 		hotspot status - '', 0, 1
+# 			'' - empty
+# 			0 - hotspot
+# 			1 - warmspot
+# 	'''
+
+# 	hs_status = ''
+# 	HGVSp_arr = re.findall(r'\d+', HGVSp)
+# 	pos_st = ''
+# 	pos_end = ''
+# 	hgvsp_str = ''
+
+# 	if(consequence == 'inframe_deletion'):
+# 		res = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(HGVSp)).count()
+# 		if res:
+# 			hs_status = '0'
+# 		else:
+# 			pos_st = HGVSp_arr[0]
+# 			pos_end = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
+# 			res1 = igv_cancer_hotspot_table.query.filter(
+# 				igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(pos_st), igv_cancer_hotspot_table.end_aa >= '{}'.format(pos_end))
+# 			).count()
+# 			if res1: 
+# 				hs_status = '0'
+# 	else:
+# 		hgvsp_str = HGVSp
+
+# 		ter_match = re.search('Ter$', HGVSp)
+# 		if ter_match:
+# 			hgvsp_str = HGVSp.replace('Ter','*')
+
+# 		resElse1 = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(hgvsp_str)).count()
+# 		if resElse1: 
+# 			hs_status = '0'
+
+# 	return hs_status
+
+def check_hotspot(gene, hgvsp, pos_arr):
+	if not pos_arr:
+		res_data = igv_cancer_hotspot_table.query.filter(
+				igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(hgvsp)
+			).count() 
+	else:
+		res_data = igv_cancer_hotspot_table.query.filter(
+				igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.amino_acid_position == '{}'.format(pos_arr)
+			).count() 
+	
+	return res_data
+
+def check_hotpot_pos_status(gene, hgvsp, start_aa, end_aa):
+
+	end_aa_len = len(end_aa)
+
+	res_data = igv_cancer_hotspot_table.query.filter(
+		igv_cancer_hotspot_table.gene == '{}'.format(gene), 
+		and_(
+			or_(
+				igv_cancer_hotspot_table.start_aa == '{}'.format(start_aa), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(start_aa), igv_cancer_hotspot_table.end_aa >= '{}'.format(end_aa))
+			)
+		)
+	).count()
+
+	# cond_1 = "(start_aa='{}') or ( start_aa <= '{}' and '{}' <= end_aa )".format(int(start_aa), int(start_aa), int(end_aa))
+
+	# sql = "SELECT count(*) FROM cancer_hotspot_summary where gene='{}' and ({})".format(gene, cond_1)
+	return res_data
+
+def check_hotspot_status_new(gene, ref, alt, hgvsp, consequence):
 	'''
 		hotspot status - '', 0, 1
 			'' - empty
 			0 - hotspot
 			1 - warmspot
 	'''
-
 	hs_status = ''
-	HGVSp_arr = re.findall(r'\d+', HGVSp)
-	pos_st = ''
-	pos_end = ''
-	hgvsp_str = ''
+	
+	len_alt = len(alt)
+	len_ref = len(ref)
 
-	if(consequence == 'inframe_deletion'):
-		res = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(HGVSp)).count()
-		if res:
-			hs_status = '0'
-		else:
-			pos_st = HGVSp_arr[0]
-			pos_end = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
-			res1 = igv_cancer_hotspot_table.query.filter(
-				igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(pos_st), igv_cancer_hotspot_table.end_aa >= '{}'.format(pos_end))
-			).count()
-			if res1: 
+	if(len_alt == 1 and len_ref == 1):
+		if( 'splice' in consequence):
+			HGVSp_arr = re.findall(r'\d+', hgvsp)
+			pos_arr = HGVSp_arr[0]
+			hotspot_data = check_hotspot(gene, hgvsp, pos_arr)
+			# hotspot_count = hotspot_data[0]["count"]
+			if(hotspot_data >= 1):
 				hs_status = '0'
-	else:
-		hgvsp_str = HGVSp
+			
+		else:
+			hotspot_data = check_hotspot(gene, hgvsp, '')
+			# hotspot_count = hotspot_data[0]["count"]
+			if(hotspot_data >= 1):
+				hs_status = '0'
+			else:
+				HGVSp_arr = re.findall(r'\d+', hgvsp)
+				pos_arr = HGVSp_arr[0]
+				hotspot_data = check_hotspot(gene, hgvsp, pos_arr)
 
-		ter_match = re.search('Ter$', HGVSp)
-		if ter_match:
-			hgvsp_str = HGVSp.replace('Ter','*')
+				# hotspot_count = hotspot_data[0]["count"]
+				if(hotspot_data >= 1):
+					hs_status = '1'
 
-		resElse1 = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(hgvsp_str)).count()
-		if resElse1: 
-			hs_status = '0'
+	elif(len_alt != 1 or len_ref !=1):
+		if('inframe' in consequence):
+			HGVSp_arr = re.findall(r'\d+', hgvsp)
+			start_aa = HGVSp_arr[0]
+			end_aa = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
+
+			hotspot_data = check_hotpot_pos_status(gene, hgvsp, start_aa, end_aa)
+
+			# hotspot_count = hotspot_data[0]["count"]
+			if(hotspot_data >= 1):
+				hs_status = '0'
 
 	return hs_status
-
-def get_HGVSp_status_update(gene, HGVSp):
-	
-	hotspot_status = ''
-
-	hotspot_list = get_hotspot_update_info(gene)
-
-	if(hotspot_list):
-		hotspot_list =  [x.strip(' ') for x in hotspot_list.split(',')]
-		if(HGVSp in hotspot_list):
-			hotspot_status = '0'
-			
-	return hotspot_status
-
-def get_HGVSp_status(gene, HGVSp):
-	'''
-		hotspot status - '', 0, 1, 2
-			'' - empty
-			0 - hotspot
-			1 - warmspot
-			2- both hotspot and warmspot
-	'''
-
-	HGVSp = 'p.'+HGVSp 
-
-	hotspot_list = get_hotspot_info(gene)
-
-	warmspot_list = get_warmspot_info(gene)
-
-	hotspot_status = ''
-	warmspot_status = ''
-
-	if(hotspot_list):
-		hotspot_list =  [x.strip(' ') for x in hotspot_list.split(',')]
-		hotspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x), HGVSp), hotspot_list))
-		
-		if(HGVSp in hotspot_list or (''.join(hotspot_arr) in hotspot_list and hotspot_arr != []) ):
-			hotspot_status = 0
-
-	if(warmspot_list):
-		warmspot_list =  [x.strip(' ') for x in warmspot_list.split(',')]
-		warmspot_arr = list(filter(lambda x: re.findall('^({})(.+)$'.format(x), HGVSp), warmspot_list))
-
-		if(HGVSp in warmspot_list or (''.join(warmspot_arr) in warmspot_list and warmspot_arr != []) ):
-			warmspot_status = 1 
-
-	status = ''
-
-	if(hotspot_status == 0 and warmspot_status == ''):
-		status = '0'
-	elif(hotspot_status == '' and warmspot_status == 1):
-		status = '1'
-	elif(hotspot_status == 0 and warmspot_status == 1):
-		status = '0'
-
-	return status
-
-def get_hotspot_update_info(gene):
-	res = igv_hotspot_update_table.query.filter(igv_hotspot_update_table.gene == '{}'.format(gene)).all()
-	protmut = ''
-	if(res):
-		for r in res:
-			protmut += r.variant_arr + ','
-	return protmut
-
-def get_hotspot_info(gene):
-	res = igv_hotspot_table.query.filter(igv_hotspot_table.gene == '{}'.format(gene)).all()
-	protmut = ''
-	if(res):
-		for r in res:
-			protmut += r.protmut + ','
-	return protmut.rstrip(',')
-
-def get_warmspot_info(gene):
-	res = igv_warmspot_table.query.filter(igv_warmspot_table.gene == '{}'.format(gene)).all()
-	protmut = ''
-	if(res):
-		for r in res:
-			protmut += r.protmut + ','
-	return protmut.rstrip(',')
 
 def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 	"read  variant file for given sdid and return as json"
@@ -546,7 +549,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 		hide_header = ["PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
 		igv_nav_file = list(filter(lambda x: (re.match(regex2, x) if ('-somatic-' in x or '-germline-' in x) else re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
 		igv_nav_file = file_path + '/' + igv_nav_file
-
+		
 		has_rows = False
 		data = []
 		with open(igv_nav_file, 'r') as f:
@@ -572,10 +575,14 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
 				HGVSp_status = '' 
 				if variant_type == 'somatic' and each_row['HGVSp']:
-					HGVSp_status = check_hotspot_status(gene,each_row['HGVSp'], consequence)
-					# HGVSp_status = get_HGVSp_status(gene,each_row['HGVSp'])
-					# if(HGVSp_status == ''):
-					# 	HGVSp_status = get_HGVSp_status_update(gene,each_row['HGVSp'])
+					# Check hotspot ( 1 month old)
+					# HGVSp_status = check_hotspot_status(gene,each_row['HGVSp'], consequence)
+					ref = each_row['REF']
+					alt = each_row['ALT'][1:-1]
+					hgvsp =  each_row['HGVSp']
+					HGVSp_status = check_hotspot_status_new(gene,ref, alt, hgvsp, consequence)
+					
+
 				each_row['HOTSPOT'] = HGVSp_status
 
 				if None in each_row:
@@ -1246,7 +1253,7 @@ def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 
 def generate_curated_json(project_path, project_name, sample_id, capture_id, script_path):
 
-	python_cmd = "python {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	python_cmd = "python3 {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
 		return {'data': 'Json File Generated', 'status': True}, 200
@@ -1293,7 +1300,6 @@ def build_sample_details(project_name, cfdna):
 			sample_data["identifier"] = cdk if cdk != "" else cdk
 	else:
 		sql = "SELECT pnr, datum, rid, tid, cdk from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
-
 		res = db.session.execute(sql)
 		res_data = generate_list_to_dict(res)
 		
@@ -1348,7 +1354,7 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 
 def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
 
-	python_cmd = "python {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
 		return {'data': 'PDF File Generated', 'status': True}, 200
@@ -1410,23 +1416,9 @@ def fetch_cancer_hotsport_info(gene, HGVSp, position):
 
 	try:
 		if position:
-			# if HGVSp:
-			# 	hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.hgvsp == '{}'.format(HGVSp)).all() 
-			# 	if hotspot_data == []:
-			# 		HGVSp_arr = re.findall(r'\d+', HGVSp)
-			# 		pos_st = HGVSp_arr[0]
-			# 		pos_end = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
-			# 		hotspot_data = igv_cancer_hotspot_table.query.filter(
-			# 			igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(pos_st), igv_cancer_hotspot_table.end_aa >= '{}'.format(pos_end))
-			# 		).all()
-			# else:
 			sql3 = "SELECT * FROM cancer_hotspot_summary WHERE gene='{}' and ({} between CAST(start_aa as INT) and CAST(end_aa as INT))".format(gene, position)
 			res3 = db.session.execute(sql3, bind=db.get_engine(current_app, 'curation'))
 			hotspot_data = generate_list_to_dict(res3)
-			
-				# hotspot_data = igv_cancer_hotspot_table.query.filter(
-				# 		igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= position, igv_cancer_hotspot_table.end_aa >= position)
-				# 	).all()
 		else:
 			if HGVSp:
 				hgvsp_str = HGVSp

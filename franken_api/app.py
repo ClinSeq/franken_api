@@ -14,25 +14,12 @@ def configure_app(flask_app):
     flask_app.config['SQLALCHEMY_DATABASE_URI'] = settings.SQLALCHEMY_DATABASE_URI
     flask_app.config['SQLALCHEMY_BINDS'] = settings.SQLALCHEMY_BINDS
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = settings.SQLALCHEMY_TRACK_MODIFICATIONS
-    flask_app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.RESTPLUS_SWAGGER_UI_DOC_EXPANSION
-    flask_app.config['RESTPLUS_VALIDATE'] = settings.RESTPLUS_VALIDATE
-    flask_app.config['RESTPLUS_MASK_SWAGGER'] = settings.RESTPLUS_MASK_SWAGGER
-    flask_app.config['ERROR_404_HELP'] = settings.RESTPLUS_ERROR_404_HELP
-    flask_app.config['PROBIO'] = settings.MOUNT_POINT_PROBIO
-    flask_app.config['PSFF'] = settings.MOUNT_POINT_PSFF
-    flask_app.config['LARS_DUCTAL'] = settings.MOUNT_POINT_LARS_DUCTAL
-    flask_app.config['AZ_RINGTRIAL'] = settings.MOUNT_POINT_AZ_RINGTRIAL
-    flask_app.config['msHSPC'] = settings.MOUNT_POINT_MS_HSPC
-    flask_app.config['RESBIO'] = settings.MOUNT_POINT_RESBIO
-    flask_app.config['HD_C3'] = settings.MOUNT_POINT_HD_C3
-    flask_app.config['LPC'] = settings.MOUNT_POINT_LPC
-    flask_app.config['CHEERS'] = settings.MOUNT_POINT_CHEERS
-    flask_app.config['ULLEN'] = settings.MOUNT_POINT_ULLEN
-    flask_app.config['CRC_REFLEX'] = settings.MOUNT_POINT_CRC_REFLEX
-    flask_app.config['IPCM'] = settings.MOUNT_POINT_IPCM
+    # flask_app.config['SWAGGER_UI_DOC_EXPANSION'] = settings.RESTX_SWAGGER_UI_DOC_EXPANSION
+    flask_app.config['RESTX_VALIDATE'] = settings.RESTX_VALIDATE
+    flask_app.config['RESTX_MASK_SWAGGER'] = settings.RESTX_MASK_SWAGGER
+    flask_app.config['BUNDLE_ERRORS'] = settings.BUNDLE_ERRORS
     flask_app.config['MTBP_SCRIPT'] = settings.MTBP_SCRIPT_PATH
     flask_app.config['PDF_SCRIPT'] = settings.PDF_SCRIPT_PATH
-    flask_app.config['EVAL_SAMPLES'] = settings.MOUNT_POINT_EVAL_SAMPLES
 
 def initialize_app(flask_app):
     configure_app(flask_app)

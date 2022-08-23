@@ -1,7 +1,7 @@
 import logging
 from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
-from flask_restplus import Resource
+from flask_restx import Resource
 #from franken_api.api.franken.serializers import search_result
 from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, igv_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments
 from franken_api.api.restplus import api
@@ -407,7 +407,10 @@ class GeneratePdfFile(Resource):
         args = json_urls_arguments.parse_args()
         proj_name = args['project_name']
         nfs_path = fetch_nfs_path(proj_name)
-        result, errorcode = generate_curated_pdf(nfs_path, proj_name,  args['sdid'], args['capture_id'], current_app.config["PDF_SCRIPT"])
+        sample_id = args['sdid']
+        capture_id = args['capture_id']
+        pdf_script_path = current_app.config["PDF_SCRIPT"]
+        result, errorcode = generate_curated_pdf(nfs_path, proj_name, sample_id, capture_id, pdf_script_path)
         return result, errorcode
 
 
@@ -421,11 +424,11 @@ class FetchPdfFile(Resource):
             Fetch the pdf
         """
         args = json_urls_arguments.parse_args()
-        project_name = args['project_name']
-        project_path = current_app.config[project_name] 
+        proj_name = args['project_name']
+        nfs_path = fetch_nfs_path(proj_name)
         sample_id = args['sdid']
         capture_id = args['capture_id']
-        result, errorcode = fetch_curated_pdf(project_path, project_name, sample_id, capture_id)
+        result, errorcode = fetch_curated_pdf(nfs_path, proj_name, sample_id, capture_id)
         return result, errorcode
 
 @ns.route('/viewPdf')

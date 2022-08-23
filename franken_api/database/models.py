@@ -302,24 +302,24 @@ class TableIgvCancerHotspot(pssql.Model):
     __bind_key__ = 'curation'
     __tablename__ = "cancer_hotspot_summary"
 
-    hs_id = pssql.Column(pssql.Integer, primary_key=True, nullable=False)
+    h_id = pssql.Column(pssql.Integer, primary_key=True, nullable=False)
     gene = pssql.Column(pssql.String)
     hgvsp = pssql.Column(pssql.String)
-    protein_position = pssql.Column(pssql.String)
+    amino_acid_position = pssql.Column(pssql.String)
     start_aa = pssql.Column(pssql.Integer)
     end_aa = pssql.Column(pssql.Integer)
 
     def __init__(self, row_dict):
 
-        self.hs_id = row_dict.get('hs_id', None)
+        self.h_id = row_dict.get('h_id', None)
         self.gene = row_dict.get('gene', None)
         self.hgvsp = row_dict.get('hgvsp', None)
-        self.protein_position = row_dict.get('protein_position', None)
+        self.amino_acid_position = row_dict.get('amino_acid_position', None)
         self.start_aa = row_dict.get('start_aa', None)
         self.end_aa = row_dict.get('end_aa', None)
 
     def __repr__(self):
-        return "<TableIgvCancerHotspot (hs_id='%s', gene='%s', hgvsp='%s')>" % (self.hs_id,self.gene, self.hgvsp)
+        return "<TableIgvCancerHotspot (h_id='%s', gene='%s', hgvsp='%s')>" % (self.h_id,self.gene, self.hgvsp)
 
 class TableIgvHotspotUpdate(pssql.Model):
     __bind_key__ = 'curation'

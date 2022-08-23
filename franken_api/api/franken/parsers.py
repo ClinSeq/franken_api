@@ -1,4 +1,4 @@
-from flask_restplus import reqparse
+from flask_restx import reqparse
 
 project_arguments = reqparse.RequestParser()
 project_arguments.add_argument('project_name', required=True,

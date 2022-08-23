@@ -96,11 +96,13 @@ def build_sample_details(cfdna):
 	sample_data["hospital"] = ""
 	sample_data["disease_name"] = ""
 
-	sql = "SELECT pnr, datum, rid, tid from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+	sql = "SELECT pnr, datum, rid, tid, cdk from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
 	res_data = fetch_sql_query('referral', sql)
 
 	if(res_data):
-		sample_data["identifier"] = res_data[0]['tid']
+		tid = res_data[0]["tid"]
+		cdk = res_data[0]["cdk"].strip()
+		sample_data["identifier"] =  cdk if cdk != "" else cdk
 		sample_data["sample_date"] = res_data[0]["datum"]
 		pnr = res_data[0]["pnr"][0:8]
 		

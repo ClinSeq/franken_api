@@ -1,7 +1,7 @@
 import logging
 from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
-from flask_restplus import Resource
+from flask_restx import Resource
 from franken_api.api.franken.parsers import auth_login_arguments, project_list_arguments, auth_register_arguments
 from franken_api.api.restplus import api
 from franken_api.api.franken.business import  login_validate, fetch_project_list, form_registation, fetch_all_project_list

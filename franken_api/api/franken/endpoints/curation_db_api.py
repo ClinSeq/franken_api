@@ -1,7 +1,7 @@
 import logging
 from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
-from flask_restplus import Resource
+from flask_restx import Resource
 from franken_api.api.franken.parsers import curation_germline_arguments, curation_somatic_arguments, curation_svs_arguments, curation_psff_profile_arguments, curation_psff_profile_id_arguments, curation_probio_profile_id_arguments, curation_probio_profile_arguments, curation_genomic_profile_arguments, curation_genomic_profile_id_arguments, project_list_arguments, cancer_hotspot_arguments
 from franken_api.api.restplus import api
 from franken_api.api.franken.business import  get_curation_igv_germline, get_curation_igv_somatic, get_curation_svs, post_curation, get_curation_hotspot, get_curation_warmspot, get_curation_psff_profile, curation_update_profile, list_curation_psff_profile, list_curation_probio_profile, get_curation_probio_profile, get_curation_cancer_hotspot, list_curation_genomic_profile, get_curation_genomic_profile, fetch_cancer_hotsport_info
