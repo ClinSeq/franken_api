@@ -559,6 +559,11 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 				has_rows = True
 				each_row = dict(each_row)
 				each_row['indexs'] = i
+
+				if 'RSID' in each_row:
+					rs_id_arr = each_row['RSID'].split('&')
+					each_row['RSID'] = rs_id_arr
+
 				if 'HGVSp_org' in each_row:
 					each_row['HGVSp_org'] = each_row['HGVSp_org']
 				else:
