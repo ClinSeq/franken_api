@@ -176,10 +176,10 @@ curation_hotspot = api.model('IGV Hotspot', {
 })
 
 curation_cancer_hotspot = api.model('IGV Cancer Hotspot', {
-        'hs_id': fields.String(description=''),
+        'h_id': fields.String(description=''),
         'gene': fields.String(description=''),
         'hgvsp': fields.String(description=''),
-        'protein_position': fields.String(description=''),
+        'amino_acid_position': fields.String(description=''),
         'start_aa': fields.String(description=''),
         'end_aa': fields.String(description='')
 })

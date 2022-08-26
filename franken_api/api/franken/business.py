@@ -472,9 +472,6 @@ def check_hotpot_pos_status(gene, hgvsp, start_aa, end_aa):
 		)
 	).count()
 
-	# cond_1 = "(start_aa='{}') or ( start_aa <= '{}' and '{}' <= end_aa )".format(int(start_aa), int(start_aa), int(end_aa))
-
-	# sql = "SELECT count(*) FROM cancer_hotspot_summary where gene='{}' and ({})".format(gene, cond_1)
 	return res_data
 
 def check_hotspot_status_new(gene, ref, alt, hgvsp, consequence):
@@ -854,7 +851,7 @@ def post_curation(record, table_name):
 
 def get_curation_cancer_hotspot():
 	try:
-		header = ['hs_id', 'gene', 'hgvsp', 'protein_position', 'start_aa', 'end_aa']
+		header = ['h_id', 'gene', 'hgvsp', 'amino_acid_position', 'start_aa', 'end_aa']
 		try:
 			return {'status': True, 'data': igv_cancer_hotspot_table.query.filter().all(),
 					'header': generate_headers_ngx_table(header),
@@ -1414,22 +1411,22 @@ def get_pdf_file2(project_path, sample_id, capture_id):
 
 def fetch_cancer_hotsport_info(gene, HGVSp, position):
 
-	header = ['hs_id', 'gene', 'hgvsp', 'protein_position', 'start_aa', 'end_aa']
+	header = ['h_id', 'gene', 'hgvsp', 'amino_acid_position', 'start_aa', 'end_aa']
 	pos_st = ''
 	pos_end = ''
 	hgvsp_str = ''
 
 	try:
 		if position:
-			sql3 = "SELECT * FROM cancer_hotspot_summary WHERE gene='{}' and ({} between CAST(start_aa as INT) and CAST(end_aa as INT))".format(gene, position)
-			res3 = db.session.execute(sql3, bind=db.get_engine(current_app, 'curation'))
-			hotspot_data = generate_list_to_dict(res3)
+			hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.amino_acid_position == '{}'.format(position)).all() 	
+			if len(hotspot_data) == 0:
+				# sql3 = "SELECT * FROM cancer_hotspot_summary WHERE gene='{}' and ({} between CAST(start_aa as INT) and CAST(end_aa as INT))".format(gene, position)
+				# res3 = db.session.execute(sql3, bind=db.get_engine(current_app, 'curation'))
+				# hotspot_data = generate_list_to_dict(res3)
+				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(position), igv_cancer_hotspot_table.end_aa >= '{}'.format(position))).all() 	
 		else:
 			if HGVSp:
 				hgvsp_str = HGVSp
-				ter_match = re.search('Ter$', HGVSp)
-				if ter_match:
-					hgvsp_str = HGVSp.replace('Ter','*')
 				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.hgvsp == '{}'.format(hgvsp_str)).all() 
 			else:
 				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene)).all()
