@@ -558,7 +558,17 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 				each_row['indexs'] = i
 
 				if 'RSID' in each_row:
-					rs_id_arr = each_row['RSID'].split('&')
+					rs_id_arr = ''
+					if '&' in each_row['RSID']:
+						rs_id_arr = each_row['RSID'].split('&')
+					else:						
+						if re.findall("'\s*([^']*?)\s*'", each_row['RSID']):
+							rsId_arr = eval(each_row['RSID'].strip())
+							if any(rsId_arr):
+								rs_id_arr = rsId_arr
+						else:
+							rs_id_arr = each_row['RSID']
+
 					each_row['RSID'] = rs_id_arr
 
 				if 'HGVSp_org' in each_row:
