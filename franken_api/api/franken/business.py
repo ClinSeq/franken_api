@@ -905,7 +905,7 @@ def get_curation_igv_germline(project_ids):
 
 	try:
 		header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', 'CHROM', 'START', 'END',
-				  'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'GENE', 'IMPACT', 'CONSEQUENCE',
+				  'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'ASSESSMENT', 'GENE', 'IMPACT', 'CONSEQUENCE',
 				  'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'include_variant_report_pdf', 'user_name']
 		try:
 			return {'status': True, 'data': igv_germline_table.query.filter(igv_germline_table.PROJECT_ID.in_(arr_proj_names)).all(),

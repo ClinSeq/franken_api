@@ -72,6 +72,7 @@ curation_germline = api.model('IGV Germline', {
         'ALT': fields.String(description=''),
         'CALL':fields.String(description=''),
         'TAG' : fields.String(description=''),
+        'ASSESSMENT': fields.String(description=''),
         'NOTES': fields.String(description=''),
         'GENE': fields.String(description=''),
         'IMPACT': fields.String(description=''),
