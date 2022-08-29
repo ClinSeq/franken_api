@@ -75,7 +75,8 @@ def build_icpm_sample_details(cfdna):
 		res_data = fetch_sql_query('ipcmLeaderboard', sql)
 		res_json = json.dumps(res_data, default = json_serial)
 		identifier_status = True
-		return json.loads(res_json), identifier_status
+		json_data = json.loads(res_json)
+		return json_data[0], identifier_status
 	except Exception as e:
 		print("Exception", str(e))
 		return [], identifier_status

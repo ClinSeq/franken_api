@@ -1,25 +1,25 @@
 referral:
     host: localhost
-    user: referral_writer
-    password: ProbioWriter
+    user: postgres
+    password: postgres
     database: referrals
 
 curation:
     host: localhost
-    user: referral_writer
-    password: ProbioWriter
+    user: postgres
+    password: postgres
     database: curation
 
 ipcmLeaderboard:
     host: localhost
-    user: referral_writer
-    password: ProbioWriter
+    user: postgres
+    password: postgres
     database: ipcm_leaderboard
 
 leaderboard:
     host: localhost
-    user: referral_writer
-    password: ProbioWriter
+    user: postgres
+    password: postgres
     database: genomic_board
     
 tableName:
