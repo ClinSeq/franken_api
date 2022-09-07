@@ -3,21 +3,17 @@ from setuptools import setup, find_packages
 setup(
     name='franken_api',
     version='1.0.0',
-    description='Json file to plot franken plots',
+    description='Curator API\'s',
     url='',
-    author='Vinay kaikala',
+    author='',
 
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Libraries :: Application Frameworks',
         'License :: OSI Approved :: MIT License',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.10',
         
     ],
 
@@ -25,7 +21,7 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=['flask-restplus==0.12.1', 'Flask-SQLAlchemy==2.4.0', 'requests', 'click', "pytest==5.0.1", "PyMysql==0.9.3"],
+    install_requires=['flask_restx', 'Flask-SQLAlchemy', 'pandas', 'click', 'requests'],
 
     entry_points={
         'console_scripts': [
