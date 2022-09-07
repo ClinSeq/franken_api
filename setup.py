@@ -21,7 +21,7 @@ setup(
 
     packages=find_packages(),
 
-    install_requires=['flask_restx', 'Flask-SQLAlchemy', 'pandas', 'click', 'requests'],
+    install_requires=['flask_restx', 'Flask-SQLAlchemy', 'pandas', 'click', 'requests', 'werkzeug==2.0.3'],
 
     entry_points={
         'console_scripts': [
