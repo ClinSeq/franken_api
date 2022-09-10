@@ -270,7 +270,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 			if 'IN_DESIGN_A' in df.columns:
 				df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES') | (df['TOOL'] == 'svcaller')]
 			else:
-				df_filter = df_sorted.loc[(df['CURATOR'] == 'YES') | (df['TOOL'] == 'svcaller')]
+				df_filter = df_sorted.loc[(df['CURATOR'] == 'YES')]
 			
 			# Add Index column in the dataframe
 			df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
