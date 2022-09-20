@@ -72,7 +72,7 @@ def build_icpm_sample_details(cfdna):
 
 	result = ''
 
-	sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
+	sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
 	res_data = fetch_sql_query('ipcmLeaderboard', sql)
 	if res_data:
 		pnr = res_data[0]['pnr']
