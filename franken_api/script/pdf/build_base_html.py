@@ -33,7 +33,7 @@ def subprocess_cmd(command):
 	process = subprocess.Popen(command,stdout=subprocess.PIPE, shell=True)
 	proc_stdout = process.communicate()[0].strip()
 	for line in proc_stdout.decode().split('\n'):
-		print (line)
+		print("Subprocess : ", line)
 
 
 # ### Read a DB information from yml file
@@ -60,7 +60,7 @@ def fetch_sql_query(section, sql):
 		cur.close()
 		return data
 	except (Exception, psycopg2.DatabaseError) as error:
-		print(error)
+		print("Fetch SQL Exception", error)
 	finally:
 		if conn is not None:
 			conn.close()
@@ -210,6 +210,9 @@ def build_small_variants(root_path):
 			
 			smv_df_call_filter = smv_df_data.loc[(smv_df_data['CALL'] == "S") | (smv_df_data['CALL'] == "G")]
 
+			if 'include_variant_report_pdf' in smv_df_call_filter.columns:
+				smv_df_call_filter = smv_df_call_filter.loc[(smv_df_call_filter['include_variant_report_pdf'] == "True") | (smv_df_call_filter['include_variant_report_pdf'] == True)]
+
 			column_list = ['CHROM', 'START', 'END', 'REF', 'ALT', 'GENE', 'CONSEQUENCE', 'HGVSp']
 			column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt'}
 			
@@ -219,7 +222,6 @@ def build_small_variants(root_path):
 				column_list.append('CLONALITY')
 				column_dict['CLONALITY'] = 'clonality'
 				clonality_boolean = True
-
 
 			if 'SECONDHIT' in smv_df_call_filter.columns:
 				column_list.append('SECONDHIT')
@@ -266,8 +268,20 @@ def build_small_variants(root_path):
 				clonality = row['clonality'] if 'clonality' in row else '-'
 				transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
 				assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
+				
+				if 'RSID' in row:
+					rs_id_arr = ''
+					if re.findall("'\s*([^']*?)\s*'", row['RSID']):
+						rsId_arr = eval(row['RSID'])
+						for rsId_str in rsId_arr:
+							if 'rs' in rsId_str:
+								rs_id_arr += rsId_str+','
 
-				rsID = row['RSID'] if 'RSID' in row else '-'
+					rsID = rs_id_arr[:-1]
+				else: 
+					rsID = '' 
+				
+				#rsID = row['RSID'] if 'RSID' in row else '-'
 				# rsID_url = "https://www.ncbi.nlm.nih.gov/snp/{}#clinical_significance".format(rsID) if 'RSID' in row else '-'
 				
 				HGVSp_org_rx = row['HGVSp_org'] if 'HGVSp_org' in row else '-'
@@ -312,6 +326,9 @@ def build_cnv(root_path):
 		
 			if 'ASSESSMENT' in cnv_df_data.columns:
 				cnv_df_data = cnv_df_data.loc[(cnv_df_data['ASSESSMENT'].notnull())]
+
+				if 'include_variant_report_pdf' in cnv_df_data.columns:
+					cnv_df_data = cnv_df_data.loc[(cnv_df_data['include_variant_report_pdf'] == "True") | (cnv_df_data['include_variant_report_pdf'] == True)]
 
 				if(re.match(regex, i)):
 					source_type = "germline"
@@ -367,6 +384,9 @@ def build_svs(root_path):
 		
 		if 'CALL' in svs_filter.columns:
 			svs_filter = svs_filter.loc[(svs_filter['CALL'] == True ) | (svs_filter['CALL'] == 'true')]
+
+			if 'include_variant_report_pdf' in svs_filter.columns:
+				svs_filter = svs_filter.loc[(svs_filter['include_variant_report_pdf'] == "True") | (svs_filter['include_variant_report_pdf'] == True)]
 			
 			if not svs_filter.empty:
 				svs_filter = svs_filter[svs_filter['SAMPLE'].isin(sample_list)]
@@ -404,7 +424,7 @@ def build_svs(root_path):
 					svs_html += '</tr>'
 				
 	except Exception as e:
-		print(" SVS Exception", str(e))
+		print("SVS Exception", str(e))
 		svs_html = ''
 	
 	return svs_html
@@ -438,11 +458,7 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 		tech_html +='<td>Kapa Hyperprep</td>'
 		tech_html +='<td>Kapa Hyperprep</td>'
 		tech_html +='</tr>'
-#         tech_html +='<tr>'
-#         tech_html +='<th>INPUT DNA (ng)</th>'
-#         tech_html +='<td>100</td>'
-#         tech_html +='<td>100</td>'
-#         tech_html +='</tr>'
+
 		tech_html +='<tr>'
 		tech_html +='<th>HYBRIDISATION CAPTURE</th>'
 		if project_name == 'PROBIO':
@@ -722,7 +738,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 			logging.info("PDF Generated")
 
 	except Exception as e:
-		print(" Main Exception", str(e))  
+		print("Main Exception", str(e))  
 		logging.error("Failed : {}".format(str(e)))
 		logging.error('--- Generated Json format Failed ---\n')
 		raise
