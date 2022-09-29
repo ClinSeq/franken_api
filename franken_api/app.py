@@ -1,6 +1,6 @@
 import logging.config
 import click
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, request, redirect
 
 from franken_api import settings
 from franken_api.api.franken.endpoints.authentication_db_api import au as auth_namespace
@@ -34,6 +34,16 @@ def initialize_app(flask_app):
 
 
 app = Flask(__name__)
+
+'''
+@app.before_request
+def before_request():
+
+    if request.scheme == 'https' and request.is_secure:
+        url = request.url.replace("http://", "https://", 1)
+        code = 301
+        return redirect(url, code=code)
+'''
 
 @click.command()
 @click.option('-p', '--port', type=int, default=5000)

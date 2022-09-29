@@ -53,7 +53,7 @@ def fetch_sql_query(section, sql):
 		cur.close()
 		return data
 	except (Exception, psycopg2.DatabaseError) as error:
-		print("Exception", str(error))
+		print("SQL Fetch Exception", str(error))
 	finally:
 		if conn is not None:
 			conn.close()
@@ -70,15 +70,14 @@ def build_icpm_sample_details(cfdna):
 
 	identifier_status = False
 	try:
-		#sql = "SELECT ec.study_id as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date,  CAST(rf.date_birth AS VARCHAR) as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
-		sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+		sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
 		res_data = fetch_sql_query('ipcmLeaderboard', sql)
 		res_json = json.dumps(res_data, default = json_serial)
 		identifier_status = True
 		json_data = json.loads(res_json)
 		return json_data[0], identifier_status
 	except Exception as e:
-		print("Exception", str(e))
+		print("Build iPCM Exception", str(e))
 		return [], identifier_status
 
 def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_format):
@@ -102,7 +101,7 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 				identifier_name =  "MTBP_"+capture_format+"_"+res_data[key]["study_code"]+"_CFDNA"+cfdna
 				sample_data["identifier"] = identifier_name
 			if(res_data[key]["dob"]):
-				sample_data["birthdate"] = datetime.strptime(res_data[key]["dob"], "%Y%m%d").date().strftime("%Y-%m-%d")
+				sample_data["birthdate"] = datetime.strptime(res_data[key]["dob"], "%Y-%m-%d").date().strftime("%Y-%m-%d")
 			if(res_data[key]["study_site"]):
 				sample_data["hospital"] = hospital_lookup[res_data[key]["study_site"]]
 
@@ -213,7 +212,7 @@ def build_qc(root_path):
 			return msi_list, qc_json
 
 	except Exception as e:
-		print("Exception", str(e))
+		print("Build QC Exception", str(e))
 
 	return msi_list, qc_df_data
 
@@ -239,7 +238,7 @@ def build_ploidy(root_path):
 			purity_list = round(purecn_df_data['Purity'].tolist()[0],4)
 
 	except Exception as e:
-		print("Exception", str(e))
+		print("Build Polidy Exception", str(e))
 
 	return purity_list, ploidy_list
 
@@ -303,7 +302,7 @@ def build_small_variants(root_path):
 		return smv_df.to_json(orient = 'index')
 	
 	except Exception as e:
-		print("Exception", str(e))
+		print("Build Small Variants Exception", str(e))
 
 	return smv_df.to_json(orient = 'index')
 
@@ -359,7 +358,7 @@ def build_cnv(root_path):
 		return cnv_df.to_json(orient = 'index')
 	
 	except Exception as e:
-		print("Exception", str(e))
+		print("Build CNV Exception", str(e))
 
 	return cnv_df.to_json(orient = 'index')
 
@@ -423,7 +422,7 @@ def build_svs(root_path):
 			svs_filter = pd.DataFrame()
 
 	except Exception as e:
-		print("Exception", str(e))
+		print("Build SVS Exception", str(e))
 		svs_filter = pd.DataFrame()
 
 	return svs_filter.to_json(orient = 'index')
@@ -538,7 +537,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	try:
 		build_json(root_path, output_path, project_name, cfdna, sample_id, capture_format)
 	except Exception as e:
-		print("Exception", str(e))
+		print("Main Exception", str(e))
 		logging.error("Failed : {}".format(str(e)))
 		logging.error('--- Generated Json format Failed ---\n')
 		raise
