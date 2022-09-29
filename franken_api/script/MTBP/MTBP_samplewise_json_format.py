@@ -70,7 +70,7 @@ def build_icpm_sample_details(cfdna):
 
 	identifier_status = False
 	try:
-		sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
+		sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  CASE WHEN ec.cancer_type_code IS NULL THEN ec.cancer_type_code ELSE 'N/A' END as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
 		res_data = fetch_sql_query('ipcmLeaderboard', sql)
 		res_json = json.dumps(res_data, default = json_serial)
 		identifier_status = True
@@ -295,7 +295,7 @@ def build_small_variants(root_path):
 
 				smv_df_data['strand'] = '+'
 
-			smv_df = smv_df.append(smv_df_data)
+			smv_df = pd.concat([smv_df_data, smv_df])
 
 		smv_df.fillna('NA', inplace=True)
 		smv_df.reset_index(drop=True, inplace=True)
@@ -351,7 +351,7 @@ def build_cnv(root_path):
 					cnv_df_data['copy_number'] = cnv_df_data['copy_number'].round(0).astype(int,  errors='ignore')
 
 					cnv_df_data['genes'] = cnv_df_data.genes.apply(lambda x: x.split(', '))
-					cnv_df = cnv_df.append(cnv_df_data)
+					cnv_df = pd.concat([cnv_df_data, cnv_df])
 
 		cnv_df.fillna('NA', inplace=True)
 		cnv_df.reset_index(drop=True, inplace=True)
@@ -451,7 +451,7 @@ def build_json(root_path, output_path, project_name, cfdna, sample_id, capture_f
 		project_json["sample"] = sample_details_json
 
 		#project_json["sample"] = {"identifier": "NA",  "sample_date": "NA", "seq_date": "NA", "birthdate": "NA", "hospital": "NA", "cancer_taxonomy": "NA", "cancer_code": "NA", "tissue_source": "NA", "tissue_type": "NA", "pathology_ccf": "NA", "bioinf_ccf": "NA", "germline_dna": "NA"}
-
+	
 	if sample_details_json["identifier"] == "NA" :
 		identifier_study_id = sample_id
 	else:
