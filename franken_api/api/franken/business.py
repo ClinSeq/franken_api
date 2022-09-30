@@ -94,7 +94,7 @@ def get_sample_design_ids(project_path, sample_id):
 	if not status:
 		return {'sample_capture': [], 'status': False}, error
 
-	sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-')),
+	sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-')),
 				os.listdir(capture_dir)))
 
 	if len(sample_capture_list) < 1:
@@ -203,7 +203,7 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 													and not x.startswith('.')
 													and not x.endswith('.out'), os.listdir(file_path)))[0]
 	if os.path.exists(qc_filename):
-		hide_header = ["indexs",  "FOLD_80_BASE_PENALTY", "dedupped_on_bait_rate"]
+		hide_header = ["indexs", "dedupped_on_bait_rate"]
 		has_rows = False
 		data = []
 		with open(qc_filename, 'r') as f:
