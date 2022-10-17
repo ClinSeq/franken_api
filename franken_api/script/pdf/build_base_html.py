@@ -264,7 +264,7 @@ def build_small_variants(root_path):
 
 			for index, row in smv_df_filter_data.iterrows():
 
-				variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+', ;'+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
+				variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+'; '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
 				clonality = row['clonality'] if 'clonality' in row else '-'
 				transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
 				assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
@@ -291,7 +291,7 @@ def build_small_variants(root_path):
 				smt_variant_html += '<tr>'
 				smt_variant_html +='<td>'+row['GENE']+'</td>'
 				smt_variant_html +='<td>'+source_type+'</td>'
-				smt_variant_html +='<td>'+variant_det+'</td>'
+				smt_variant_html +='<td class="sm-var-dets"><p>'+variant_det+'</p></td>'
 				smt_variant_html +='<td>'+row['CONSEQUENCE']+'</td>'
 				smt_variant_html +='<td>'+clonality+'</td>'
 				smt_variant_html +='<td>'+second_hit+'</td>'
