@@ -66,7 +66,9 @@ def get_three_to_one_amino_code(code_seq):
 def generate_list_to_dict(result):
 	d, row = {}, []
 	for rowproxy in result:
-		for column, value in rowproxy.items():
+		#row_as_dict = rowproxy
+		row_as_dict = rowproxy._mapping
+		for column, value in row_as_dict.items():
 			if isinstance(value, datetime):
 				value = datetime.strftime(value, "%Y-%m-%d")
 			else:
@@ -86,6 +88,19 @@ def check_nfs_mount(file_path=None):
 		return  True, 200
 	else :
 		return False, 400
+
+def create_db_session(db_name, query):
+	engine = db.get_engine(current_app, db_name)
+	session = db.create_scoped_session(options={'bind': engine})
+	res = session.execute(query).all()
+	return res
+
+def create_db_session_update(db_name, query):
+	engine = db.get_engine(current_app, db_name)
+	session = db.create_scoped_session(options={'bind': engine})
+	session.execute(query)
+	session.commit()
+	return True
 
 def get_sample_design_ids(project_path, sample_id):
 	"get all sample design ids for given sample id"
@@ -567,7 +582,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 							if any(rsId_arr):
 								rs_id_arr = rsId_arr
 						else:
-							rs_id_arr = each_row['RSID']
+							rs_id_arr = each_row['RSID'].split()
 
 					each_row['RSID'] = rs_id_arr
 
@@ -1276,15 +1291,14 @@ def generate_curated_json(project_path, project_name, sample_id, capture_id, scr
 def build_icpm_sample_details(cfdna):
 	
 	sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
-	res = db.session.execute(sql, bind=db.get_engine(current_app, 'ipcmLeaderboard'))
+	res = create_db_session('ipcmLeaderboard', sql)
 	res_data = generate_list_to_dict(res)
 	result = ''
 
 	if(res_data):
 		pnr = res_data[0]['pnr']
-		#sql = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna)
 		sql2 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.referral_name='iPCM_blod_inklusion' and rf.pnr='{}'".format(pnr)
-		res2 = db.session.execute(sql2, bind=db.get_engine(current_app, 'ipcmLeaderboard'))
+		res2 = create_db_session('ipcmLeaderboard', sql2)
 		res_data2 = generate_list_to_dict(res2)
 		result = res_data2[0]
 	
@@ -1323,19 +1337,19 @@ def build_sample_details(project_name, cfdna):
 			sample_data["birthdate"] = datetime.strptime(pnr, '%Y%m%d').date().strftime('%Y-%m-%d')
 			
 			sql1 = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)
-			res1 = db.session.execute(sql1, bind=db.get_engine(current_app, 'leaderboard'))
+			res1 = create_db_session('leaderboard', sql1)
 			glb_data_1 = generate_list_to_dict(res1)
 			if(glb_data_1):
 				sample_data["hospital"] = glb_data_1[0]["site_name"]
 		else:
 			cfdna_rid = re.sub("^0+(?!$)", "", cfdna)
 			sql2 = "SELECT DISTINCT rid, subjectid from biobank_t WHERE regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}' or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}'  or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') IN ('{}') or regexp_replace(rid, '[^a-zA-Z0-9]+', '','g') IN('{}')".format(cfdna, cfdna, cfdna, cfdna_rid)
-			res2 = db.session.execute(sql2, bind=db.get_engine(current_app, 'leaderboard'))
+			res2 = create_db_session('leaderboard', sql2)
 			bio_data = generate_list_to_dict(res2)
 			if(bio_data):
 				subject_id = bio_data[0]['subjectid'] 
 				sql3 = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', 'P-', '','g') or regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', '-', '','g')".format(subject_id, subject_id)
-				res3 = db.session.execute(sql3, bind=db.get_engine(current_app, 'leaderboard'))
+				res3 = create_db_session('leaderboard', sql3)
 				glb_data_2 = generate_list_to_dict(res3)
 			
 				if(glb_data_2):
@@ -1430,9 +1444,6 @@ def fetch_cancer_hotsport_info(gene, HGVSp, position):
 		if position:
 			hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  igv_cancer_hotspot_table.amino_acid_position == '{}'.format(position)).all() 	
 			if len(hotspot_data) == 0:
-				# sql3 = "SELECT * FROM cancer_hotspot_summary WHERE gene='{}' and ({} between CAST(start_aa as INT) and CAST(end_aa as INT))".format(gene, position)
-				# res3 = db.session.execute(sql3, bind=db.get_engine(current_app, 'curation'))
-				# hotspot_data = generate_list_to_dict(res3)
 				hotspot_data = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene),  and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(position), igv_cancer_hotspot_table.end_aa >= '{}'.format(position))).all() 	
 		else:
 			if HGVSp:
@@ -1453,7 +1464,7 @@ def get_project_names(project_ids):
 
 	arr_ids = "','".join(project_ids.split(","))
 	sql = "SELECT string_agg(project_name, ',') as proj_names FROM cur_projects_t WHERE p_id IN ('{}') and proj_status = '1' ORDER BY 1 ASC ".format(arr_ids)
-	res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+	res = create_db_session('curation', sql)
 	res_data = generate_list_to_dict(res)
 	proj_names = res_data[0]["proj_names"]
 
@@ -1463,7 +1474,7 @@ def login_validate(email_id, passwd):
 	try:
 		hash_pwd = hashlib.md5(passwd.encode())
 		sql = "SELECT u_id, concat(first_name,  ' ', last_name) as user_name, user_status, role_id, project_access FROM cur_users_t WHERE email_id='{}' and pwd ='{}' limit 1 ".format(email_id, hash_pwd.hexdigest())
-		res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+		res = create_db_session('curation', sql)
 		res_data = generate_list_to_dict(res)
 		if(res_data):
 			status = res_data[0]['user_status']
@@ -1485,14 +1496,13 @@ def form_registation(first_name, last_name, email_id, pwd, project_access):
 
 	hash_pwd = hashlib.md5(pwd.encode())
 	sql = "SELECT count(*) as count from cur_users_t WHERE email_id ='{}' limit 1".format(email_id)
-	res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))		
+	res = create_db_session('curation', sql)
 	row = generate_list_to_dict(res)
 
 	if(int(row[0]['count']) == 0):
 		try:        
 			sql = "INSERT into cur_users_t(first_name, last_name, email_id, pwd, user_status, role_id, project_access, created_on) values('{}', '{}', '{}','{}', '0', '0', '{}', NOW());".format(first_name, last_name, email_id, hash_pwd.hexdigest(), project_access)
-			db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
-			db.session.commit()
+			create_db_session_update('curation', sql)
 			return {'status': True, 'message': 'Register Successfully' , 'error': '' }, 200
 		except Exception as e:
 			return {'status': False, 'data': [], 'error': str(e) }, 400
@@ -1502,8 +1512,8 @@ def form_registation(first_name, last_name, email_id, pwd, project_access):
 def fetch_all_project_list():
 	try:
 
-		sql = "SELECT p_id as index, project_name FROM cur_projects_t WHERE proj_status = '1' ORDER BY index ASC "
-		res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+		sql = "SELECT p_id as index, project_name FROM cur_projects_t WHERE proj_status = '1' ORDER BY index ASC"
+		res = create_db_session('curation', sql)
 		res_data = generate_list_to_dict(res)
 		if(res_data):
 			return {'status': True, 'data': res_data, 'error': '' }, 200
@@ -1517,7 +1527,7 @@ def fetch_project_list(project_ids):
 	try:
 		arr_ids = "','".join(project_ids.split(","))
 		sql = "SELECT p_id as index, project_name, nfs_path, CASE WHEN mtbp_json = '1' THEN true ELSE false end as mtbp_status, CASE WHEN pdf_report = '1' THEN true ELSE false end as pdf_status  FROM cur_projects_t WHERE p_id IN ('{}') and proj_status = '1' ORDER BY sort_order ASC ".format(arr_ids)
-		res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+		res = create_db_session('curation', sql)
 		res_data = generate_list_to_dict(res)
 		if(res_data):
 			return {'status': True, 'data': res_data, 'error': '' }, 200
@@ -1532,7 +1542,7 @@ def fetch_nfs_path(project_name):
 	try:
 		nfs_out_path = ''
 		sql = "SELECT nfs_path FROM cur_projects_t WHERE project_name = '{}' and proj_status = '1' ORDER BY sort_order ASC ".format(project_name)
-		res = db.session.execute(sql, bind=db.get_engine(current_app, 'curation'))
+		res = create_db_session('curation', sql)
 		res_data = generate_list_to_dict(res)
 
 		if(res_data):
@@ -1552,8 +1562,8 @@ def fetch_nfs_path(project_name):
 # 	header = ['project_name', 'sample_id', 'capture_id', 'study_code', 'study_site', 'dob', 'disease', 'specimen_assay', 'ctdna_param', 'ctdna_method', 'genome_wide', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'summary_txt']
 
 # 	try:
-# 		sql1 = "SELECT * FROM genomic_profile_summary WHERE project_name IN ('{}') order by id ASC".format(arr_proj_names)
-# 		res1 = db.session.execute(sql1, bind=db.get_engine(current_app, 'curation'))
+# 		sql1 = "SELECT * FROM genomic_profile_summary WHERE project_name IN ('{}') order by id ASC".format(arr_proj_names)		
+# 		res1 = create_db_session('curation', sql1)
 # 		res_data1 = generate_list_to_dict(res1)
 
 # 		if(res_data1):
