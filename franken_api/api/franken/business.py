@@ -82,7 +82,7 @@ def run_cmd(cmd):
 	"Run external commands"
 	return subprocess.check_output(cmd, shell=True).decode('utf-8')
 
-def check_nfs_mount(file_path=None):
+def check_nfs_mount(file_path):
 	"Check anchorage is mount to /nfs"
 	if os.path.exists(file_path) and len(file_path) > 0:
 		return  True, 200
