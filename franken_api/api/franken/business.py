@@ -767,6 +767,31 @@ def pdfs_files(variant_type, project_path, sdid, capture_id):
 
 	return file_path, 400
 
+def check_frankenplot_files(project_path, sdid, capture_id):
+
+	file_path = project_path + '/' + sdid + '/' + capture_id + '/qc'
+
+	html_file = list(filter(lambda x: (re.match('[-\w]+_(franken_plot)+.html$', x) or x.endswith('_franken_plot.html')) and not x.startswith('.') and not x.endswith('.out'),
+							   os.listdir(file_path)))
+
+	if len(html_file) > 0 and os.path.exists(file_path):
+		return {'status': True, 'error': ''}, 200
+
+	return {'status': False, 'error': ''}, 400
+
+def frankenplot_files(project_path, sdid, capture_id):
+
+	file_path = project_path + '/' + sdid + '/' + capture_id + '/qc'
+
+	html_file = list(filter(lambda x: (re.match('[-\w]+_(franken_plot)+.html$', x) or x.endswith('_franken_plot.html')) and not x.startswith('.') and not x.endswith('.out'),
+							   os.listdir(file_path)))
+
+	if len(html_file) > 0 and os.path.exists(file_path):
+		file_path = file_path + '/' + html_file[0]
+		return file_path, 200
+
+	return file_path, 400
+
 def check_curation_germline_record(table, record):
 	return table.query.filter(table.PROJECT_ID==record['PROJECT_ID'],
 								   table.SDID == record['SDID'],
