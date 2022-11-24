@@ -63,6 +63,12 @@ referral_update_arguments = reqparse.RequestParser()
 referral_update_arguments.add_argument('db_name', choices=('probio', 'psff'), required=True,
                               help="provide db name to updae the referral db for probio / psff")
 
+referral_db_arguments = project_arguments.copy()
+referral_db_arguments.add_argument('filter_option', required=True,
+                              help="Option: 'pnr', 'tid', 'datum', 'cfdna', 'blood' ")
+referral_db_arguments.add_argument('search',  required=True, help="Search Pattern")
+
+
 curation_germline_arguments = reqparse.RequestParser()
 curation_germline_arguments.add_argument('PROJECT_ID', type=str, required=True, help="")
 curation_germline_arguments.add_argument('SDID' , type=str, required=True, help="")

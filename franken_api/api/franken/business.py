@@ -92,7 +92,8 @@ def check_nfs_mount(file_path):
 def create_db_session(db_name, query):
 	engine = db.get_engine(current_app, db_name)
 	session = db.create_scoped_session(options={'bind': engine})
-	res = session.execute(query).all()
+	res = session.execute(query)
+	session.commit()
 	return res
 
 def create_db_session_update(db_name, query):
@@ -104,29 +105,36 @@ def create_db_session_update(db_name, query):
 
 def get_sample_design_ids(project_path, sample_id):
 	"get all sample design ids for given sample id"
-	capture_dir = project_path + '/' + sample_id
-	status, error =  check_nfs_mount(capture_dir)
-	if not status:
-		return {'sample_capture': [], 'status': False}, error
+	try:
+		capture_dir = project_path + '/' + sample_id
+		status, error =  check_nfs_mount(capture_dir)
+		if not status:
+			return {'sample_capture': [], 'status': False}, error
 
-	sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-')),
-				os.listdir(capture_dir)))
+		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-')),
+					os.listdir(capture_dir)))
 
-	if len(sample_capture_list) < 1:
-		return {'sample_capture': [], 'status': False}, 400
+		if len(sample_capture_list) < 1:
+			return {'sample_capture': [], 'status': False}, 400
 
-	return {'sample_capture': sample_capture_list, 'status': True}, 200
+		return {'sample_capture': sample_capture_list, 'status': True}, 200
 
+	except Exception as e:
+		return {'sample_capture': [], 'status': False,  'error': str(e)}, 400
 
 def get_sample_ids(project_path):
 	"Get all probio samples"
-	status, error = check_nfs_mount(project_path)
-	if status:
-		files = list(filter(lambda x: x.startswith('P-'), os.listdir(project_path)))
-		files.sort(key=lambda x : os.path.getmtime(project_path + '/' + x), reverse=True)
-		return {'sidis': files, 'status': True}, error
+	try:
+		status, error = check_nfs_mount(project_path)
+		if status:
+			files = list(filter(lambda x: x.startswith('P-'), os.listdir(project_path)))
+			files.sort(key=lambda x : os.path.getmtime(project_path + '/' + x), reverse=True)
+			return {'sidis': files, 'status': True}, error
+		else:
+			return {'sidis': [], 'status': False}, error
+	except Exception as e:
+		return {'sidis': [], 'status': False,  'error': str(e)}, 400
 
-	return {'sidis': [], 'status': False}, error
 
 def check_franken_plot_link(url_list):
 	valid_url_list = []
@@ -161,20 +169,9 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
 
 def get_static_image(project_path, sample_id, capture_id, image_name):
 	"""retrun the franken static png image"""
-
+	
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/' + image_name
 	
-	if os.path.exists(file_path):
-		return file_path, 200
-
-	return file_path, 400
-
-def get_xml_image(project_path, sample_id, capture_id, xml):
-	"""retrun the franken static png image"""
-
-	# file_path = project_path + '/' + sample_id + '/' + capture_id + '/IGVnav/' + xml
-	file_path = "/home/karman/igv.js/examples/sessions/IGVnav/igv_session_sv.xml"
-
 	if os.path.exists(file_path):
 		return file_path, 200
 
@@ -213,53 +210,57 @@ def generate_headers_ngx_table(headers):
 def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 	"read qc file from qc_overview.txt and return as json"
 	data = []
-	file_path = project_path + '/' + sdid + '/' + capture_id + '/' + 'qc/'
-	qc_filename = file_path + list(filter(lambda x: x.endswith('.qc_overview.txt')
-													and not x.startswith('.')
-													and not x.endswith('.out'), os.listdir(file_path)))[0]
-	if os.path.exists(qc_filename):
-		hide_header = ["indexs", "dedupped_on_bait_rate"]
-		has_rows = False
-		data = []
-		with open(qc_filename, 'r') as f:
-			reader_ponter = csv.DictReader(f, delimiter ='\t')
-			for i, each_row in enumerate(reader_ponter):
-				has_rows = True
-				each_row = dict(each_row)
-				each_row['indexs'] = i
-				data.append(each_row)
-			
-		if(not has_rows):
-			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For QC'}, 200
+	try:
+		file_path = project_path + '/' + sdid + '/' + capture_id + '/' + 'qc/'
+		qc_filename = file_path + list(filter(lambda x: x.endswith('.qc_overview.txt')
+														and not x.startswith('.')
+														and not x.endswith('.out'), os.listdir(file_path)))[0]
+		if os.path.exists(qc_filename):
+			hide_header = ["indexs", "dedupped_on_bait_rate"]
+			has_rows = False
+			data = []
+			with open(qc_filename, 'r') as f:
+				reader_ponter = csv.DictReader(f, delimiter ='\t')
+				for i, each_row in enumerate(reader_ponter):
+					has_rows = True
+					each_row = dict(each_row)
+					each_row['indexs'] = i
+					data.append(each_row)
+				
+			if(not has_rows):
+				return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For QC'}, 200
 
-		column_list = list(data[0].keys())
+			column_list = list(data[0].keys())
 
-		header = list(generate_headers_ngx_table(column_list))
+			header = list(generate_headers_ngx_table(column_list))
 
-		new_keys = {
-			'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
-			'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
-			'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
-			'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
-			'Comment': {'key': 'Comment', 'title': 'Comment'}
-		}
+			new_keys = {
+				'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
+				'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
+				'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
+				'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
+				'Comment': {'key': 'Comment', 'title': 'Comment'}
+			}
 
-		for idx,value in enumerate(new_keys):
-			n_key = [item for item in header if item.get('key')==value]
-			
-			if(not n_key):
-				header.append(new_keys[value])
-			
-		new_header = []
-		for i,value in enumerate(header):
-			key_name = value['key']
-			if(key_name not in hide_header):
-				new_header.append(value)
+			for idx,value in enumerate(new_keys):
+				n_key = [item for item in header if item.get('key')==value]
+				
+				if(not n_key):
+					header.append(new_keys[value])
+				
+			new_header = []
+			for i,value in enumerate(header):
+				key_name = value['key']
+				if(key_name not in hide_header):
+					new_header.append(value)
 
-		return {'header': new_header, 'data': data, 'filename': qc_filename, 'status': True}, 200
+			return {'header': new_header, 'data': data, 'filename': qc_filename, 'status': True}, 200
 
-	else:
-		return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
+		else:
+			return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
+	
+	except Exception as e:
+			return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
 
 
 def get_table_svs_header(project_path, sdid, capture_id, header='true'):
@@ -422,46 +423,6 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 		return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
 
 
-# def check_hotspot_status(gene, HGVSp, consequence):
-
-# 	'''
-# 		hotspot status - '', 0, 1
-# 			'' - empty
-# 			0 - hotspot
-# 			1 - warmspot
-# 	'''
-
-# 	hs_status = ''
-# 	HGVSp_arr = re.findall(r'\d+', HGVSp)
-# 	pos_st = ''
-# 	pos_end = ''
-# 	hgvsp_str = ''
-
-# 	if(consequence == 'inframe_deletion'):
-# 		res = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(HGVSp)).count()
-# 		if res:
-# 			hs_status = '0'
-# 		else:
-# 			pos_st = HGVSp_arr[0]
-# 			pos_end = HGVSp_arr[1] if len(HGVSp_arr) > 1 else HGVSp_arr[0]
-# 			res1 = igv_cancer_hotspot_table.query.filter(
-# 				igv_cancer_hotspot_table.gene == '{}'.format(gene), and_(igv_cancer_hotspot_table.start_aa <= '{}'.format(pos_st), igv_cancer_hotspot_table.end_aa >= '{}'.format(pos_end))
-# 			).count()
-# 			if res1: 
-# 				hs_status = '0'
-# 	else:
-# 		hgvsp_str = HGVSp
-
-# 		ter_match = re.search('Ter$', HGVSp)
-# 		if ter_match:
-# 			hgvsp_str = HGVSp.replace('Ter','*')
-
-# 		resElse1 = igv_cancer_hotspot_table.query.filter(igv_cancer_hotspot_table.gene == '{}'.format(gene), igv_cancer_hotspot_table.hgvsp == '{}'.format(hgvsp_str)).count()
-# 		if resElse1: 
-# 			hs_status = '0'
-
-# 	return hs_status
-
 def check_hotspot(gene, hgvsp, pos_arr):
 	if not pos_arr:
 		res_data = igv_cancer_hotspot_table.query.filter(
@@ -506,13 +467,11 @@ def check_hotspot_status_new(gene, ref, alt, hgvsp, consequence):
 			HGVSp_arr = re.findall(r'\d+', hgvsp)
 			pos_arr = HGVSp_arr[0]
 			hotspot_data = check_hotspot(gene, hgvsp, pos_arr)
-			# hotspot_count = hotspot_data[0]["count"]
 			if(hotspot_data >= 1):
 				hs_status = '0'
 			
 		else:
 			hotspot_data = check_hotspot(gene, hgvsp, '')
-			# hotspot_count = hotspot_data[0]["count"]
 			if(hotspot_data >= 1):
 				hs_status = '0'
 			else:
@@ -520,7 +479,6 @@ def check_hotspot_status_new(gene, ref, alt, hgvsp, consequence):
 				pos_arr = HGVSp_arr[0]
 				hotspot_data = check_hotspot(gene, hgvsp, pos_arr)
 
-				# hotspot_count = hotspot_data[0]["count"]
 				if(hotspot_data >= 1):
 					hs_status = '1'
 
@@ -532,7 +490,6 @@ def check_hotspot_status_new(gene, ref, alt, hgvsp, consequence):
 
 			hotspot_data = check_hotpot_pos_status(gene, hgvsp, start_aa, end_aa)
 
-			# hotspot_count = hotspot_data[0]["count"]
 			if(hotspot_data >= 1):
 				hs_status = '0'
 
@@ -602,8 +559,6 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
 				HGVSp_status = '' 
 				if variant_type == 'somatic' and each_row['HGVSp']:
-					# Check hotspot ( 1 month old)
-					# HGVSp_status = check_hotspot_status(gene,each_row['HGVSp'], consequence)
 					ref = each_row['REF']
 					alt = each_row['ALT'][1:-1]
 					hgvsp =  each_row['HGVSp']
@@ -777,7 +732,7 @@ def check_frankenplot_files(project_path, sdid, capture_id):
 	if len(html_file) > 0 and os.path.exists(file_path):
 		return {'status': True, 'error': ''}, 200
 
-	return {'status': False, 'error': ''}, 400
+	return {'status': False, 'error': ''}, 200
 
 def frankenplot_files(project_path, sdid, capture_id):
 
@@ -1578,6 +1533,32 @@ def fetch_nfs_path(project_name):
 	except Exception as e:
 		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
 
+
+def get_referrals_information(project_name, filter_option, search_pattern):
+
+	try:
+		if project_name == 'PROBIO':
+			header = ['crid','pnr','rid','datum','tid','remisstyp', 'studieid', 'sign','countyletter','new','progression','follow_up','cf_dna1','cf_dna2','cf_dna3','blood','kommentar','filnamn', 'hormonkänslig', 'kastrationsresistent', 'cdk', 'endofstudy']
+			if filter_option == 'CFDNA':
+				sql = "SELECT crid, OVERLAY(pnr placing 'xxxx' from 9) as pnr, rid, datum,tid,remisstyp, studieid, sign,countyletter,new,progression,follow_up,cf_dna1,cf_dna2,cf_dna3,blod,kommentar,filnamn, hormonkänslig, kastrationsresistent, cdk, endofstudy from probio_bloodreferrals where cf_dna1 like '{}%' OR cf_dna2 like '{}%' or cf_dna3 like '{}%' or kommentar like '{}%'".format(search_pattern, search_pattern, search_pattern, search_pattern)
+			else:
+				sql = "SELECT * from probio_bloodreferrals where {}='{}'".format(filter_option.lower(), search_pattern)
+		else:
+			header = ['crid','rid','datum','tid','sign','blood1','blood2','blood3','blood4','comment', 'filnamn', 'cdk']
+			if filter_option == 'BLOOD':
+				sql= "SELECT * from psff_bloodreferrals where blood1 like '{}%' OR blood2 like '{}%' or blood3 like '{}%' or blood4 like '{}%'".format(search_pattern, search_pattern, search_pattern, search_pattern)
+			else:
+				sql = "SELECT * from psff_bloodreferrals where {}='{}'".format(filter_option.lower(), search_pattern)
+		
+		res = db.session.execute(sql)
+		res_data = generate_list_to_dict(res)
+		
+		if(res_data):
+			return {'status': True, 'data': res_data, 'header': generate_headers_ngx_table(header), 'error': '' }, 200
+		else:
+			return {'status': True, 'data': [], 'header': generate_headers_ngx_table(header), 'error': '' }, 200
+	except Exception as e:
+		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
 
 # def fetch_genomic_profile(project_ids):
 

@@ -6,7 +6,7 @@ from flask_restx import Resource
 from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, igv_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments
 from franken_api.api.restplus import api
 from flask import jsonify
-from franken_api.api.franken.business import pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_xml_image, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path
+from franken_api.api.franken.business import pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path
 from franken_api.api.franken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
 import io
 #import  franken_api.database.models
@@ -119,25 +119,6 @@ class FrankenStaticImages(Resource):
         return send_file(result,
                       attachment_filename='frankenplot.png',
                       mimetype='image/png')
-
-@ns.route('/igvXML')
-@api.response(200, 'IGV Session XML')
-@api.response(400, 'No XML found')
-class FrankenStaticImages(Resource):
-    @api.expect(staticplot_arguments, validate=True)
-    def get(self):
-        """
-        Returns static franken plot.
-        ```
-        session XML
-        ```
-        """
-        args = staticplot_arguments.parse_args()
-        proj_name = args['project_name']
-        nfs_path = fetch_nfs_path(proj_name)
-        result, errorcode = get_xml_image(nfs_path, args['sdid'], args['capture_id'], args['imagename'])
-        return send_file(result, mimetype='application/xml')
-
 
 @ns.route('/plot')
 @api.response(200, 'Json file to plot')
