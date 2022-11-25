@@ -76,7 +76,6 @@ def build_icpm_sample_details(cfdna):
 	res_data = fetch_sql_query('ipcmLeaderboard', sql)
 	if res_data:
 		pnr = res_data[0]['pnr']
-
 		sql2 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.referral_name='iPCM_blod_inklusion' and rf.pnr='{}'".format(pnr)
 		res_data2 = fetch_sql_query('ipcmLeaderboard', sql2)
 		if res_data2:
@@ -101,10 +100,12 @@ def build_sample_details(cfdna):
 
 	if(res_data):
 		tid = res_data[0]["tid"]
-		cdk = res_data[0]["cdk"].strip()
+		cdk_1 = res_data[0]["cdk"]
+		cdk =  cdk_1.strip() if cdk_1 != None else cdk_1
 		sample_data["identifier"] =  cdk if cdk != "" else cdk
 		sample_data["sample_date"] = res_data[0]["datum"]
-		pnr = res_data[0]["pnr"][0:8]
+		pnr_1 = res_data[0]["pnr"]
+		pnr = pnr_1[0:8] if pnr_1 != None else pnr_1
 		
 		sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)
 		glb_data_1 = fetch_sql_query('leaderboard', sql)

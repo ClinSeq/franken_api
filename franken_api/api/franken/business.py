@@ -732,7 +732,7 @@ def check_frankenplot_files(project_path, sdid, capture_id):
 	if len(html_file) > 0 and os.path.exists(file_path):
 		return {'status': True, 'error': ''}, 200
 
-	return {'status': False, 'error': ''}, 200
+	return {'status': False, 'error': 'Not FrankenPlot Found'}, 200
 
 def frankenplot_files(project_path, sdid, capture_id):
 
@@ -1491,7 +1491,6 @@ def form_registation(first_name, last_name, email_id, pwd, project_access):
 
 def fetch_all_project_list():
 	try:
-
 		sql = "SELECT p_id as index, project_name FROM cur_projects_t WHERE proj_status = '1' ORDER BY index ASC"
 		res = create_db_session('curation', sql)
 		res_data = generate_list_to_dict(res)
@@ -1536,19 +1535,20 @@ def fetch_nfs_path(project_name):
 
 def get_referrals_information(project_name, filter_option, search_pattern):
 
+	filter_option = 'pnr' if filter_option == 'BIRTHDATE' else filter_option
 	try:
 		if project_name == 'PROBIO':
 			header = ['crid','pnr','rid','datum','tid','remisstyp', 'studieid', 'sign','countyletter','new','progression','follow_up','cf_dna1','cf_dna2','cf_dna3','blood','kommentar','filnamn', 'hormonkänslig', 'kastrationsresistent', 'cdk', 'endofstudy']
 			if filter_option == 'CFDNA':
 				sql = "SELECT crid, OVERLAY(pnr placing 'xxxx' from 9) as pnr, rid, datum,tid,remisstyp, studieid, sign,countyletter,new,progression,follow_up,cf_dna1,cf_dna2,cf_dna3,blod,kommentar,filnamn, hormonkänslig, kastrationsresistent, cdk, endofstudy from probio_bloodreferrals where cf_dna1 like '{}%' OR cf_dna2 like '{}%' or cf_dna3 like '{}%' or kommentar like '{}%'".format(search_pattern, search_pattern, search_pattern, search_pattern)
 			else:
-				sql = "SELECT * from probio_bloodreferrals where {}='{}'".format(filter_option.lower(), search_pattern)
+				sql = "SELECT * from probio_bloodreferrals where {} like'%{}%'".format(filter_option.lower(), search_pattern)
 		else:
 			header = ['crid','rid','datum','tid','sign','blood1','blood2','blood3','blood4','comment', 'filnamn', 'cdk']
 			if filter_option == 'BLOOD':
 				sql= "SELECT * from psff_bloodreferrals where blood1 like '{}%' OR blood2 like '{}%' or blood3 like '{}%' or blood4 like '{}%'".format(search_pattern, search_pattern, search_pattern, search_pattern)
 			else:
-				sql = "SELECT * from psff_bloodreferrals where {}='{}'".format(filter_option.lower(), search_pattern)
+				sql = "SELECT * from psff_bloodreferrals where {} like'%{}%'".format(filter_option.lower(), search_pattern)
 		
 		res = db.session.execute(sql)
 		res_data = generate_list_to_dict(res)
@@ -1559,23 +1559,3 @@ def get_referrals_information(project_name, filter_option, search_pattern):
 			return {'status': True, 'data': [], 'header': generate_headers_ngx_table(header), 'error': '' }, 200
 	except Exception as e:
 		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
-
-# def fetch_genomic_profile(project_ids):
-
-# 	project_names = get_project_names(project_ids)
-# 	arr_proj_names = "','".join(project_names.split(","))
-
-# 	header = ['project_name', 'sample_id', 'capture_id', 'study_code', 'study_site', 'dob', 'disease', 'specimen_assay', 'ctdna_param', 'ctdna_method', 'genome_wide', 'somatic_mutations', 'germline_alterations', 'structural_variants', 'cnvs', 'summary_txt']
-
-# 	try:
-# 		sql1 = "SELECT * FROM genomic_profile_summary WHERE project_name IN ('{}') order by id ASC".format(arr_proj_names)		
-# 		res1 = create_db_session('curation', sql1)
-# 		res_data1 = generate_list_to_dict(res1)
-
-# 		if(res_data1):
-# 			return {'status': True, 'data': res_data1, 'header': generate_headers_ngx_table(header), 'error': '' }, 200
-# 		else:
-# 			return {'status': True, 'data': [], 'header': header, 'error': str(e)}, 400
-
-# 	except Exception as e:
-# 		return {'status': True, 'data': [], 'header': header, 'error': str(e)}, 400
