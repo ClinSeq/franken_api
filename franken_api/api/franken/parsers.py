@@ -37,14 +37,8 @@ purecn_max_val_arguments.add_argument('variant_type', choices=('somatic', 'germl
 staticplot_arguments = common_arguments.copy()
 staticplot_arguments.add_argument('imagename', type=str, required=True,  help='static franken plot name')
 
-
-igv_arguments =  common_arguments.copy()
-igv_arguments.add_argument('filename', type=str, required=True,  help='file required for igv track creation')
-
-
 table_svs_arguments =  common_arguments.copy()
 table_svs_arguments.add_argument('header', choices=('true', 'false'), default='true', required=True,  help='Boolen True or False : True returns only column header')
-
 
 table_igvnav_arguments = table_svs_arguments.copy()
 

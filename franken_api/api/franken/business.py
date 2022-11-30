@@ -1526,9 +1526,9 @@ def fetch_nfs_path(project_name):
 
 		if(res_data):
 			nfs_out_path = res_data[0]["nfs_path"]
-			return nfs_out_path
+			return nfs_out_path, 200
 		else:
-			return {'status': True, 'data': [], 'error': 'nfs Path not found'}, 200
+			return {'status': True, 'data': [], 'error': 'nfs Path not found'}, 400
 	except Exception as e:
 		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
 
