@@ -216,7 +216,7 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 														and not x.startswith('.')
 														and not x.endswith('.out'), os.listdir(file_path)))[0]
 		if os.path.exists(qc_filename):
-			hide_header = ["indexs", "dedupped_on_bait_rate"]
+			hide_header = ["indexs", "dedupped_on_bait_rate", "CHIP", "PURITY", "PLOIDY", "Comment"]
 			has_rows = False
 			data = []
 			with open(qc_filename, 'r') as f:
@@ -235,11 +235,11 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 			header = list(generate_headers_ngx_table(column_list))
 
 			new_keys = {
-				'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
-				'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
-				'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
+				# 'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
+				# 'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
+				# 'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
 				'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
-				'Comment': {'key': 'Comment', 'title': 'Comment'}
+				# 'Comment': {'key': 'Comment', 'title': 'Comment'}
 			}
 
 			for idx,value in enumerate(new_keys):
