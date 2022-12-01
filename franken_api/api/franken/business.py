@@ -265,163 +265,137 @@ def get_table_qc_header(project_path, sdid, capture_id, header='true'):
 
 def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 	"read structural variant file from sdid_annotate_combined_SV.txt and return as json"
-	file_path = project_path + '/' + sdid + '/' + capture_id + '/svs/igv/'
 
-	file_path = file_path + list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt$', x) or
+	data = []
+	try:
+		file_path = project_path + '/' + sdid + '/' + capture_id + '/svs/igv/'
+
+		file_path_list =  list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt$', x) or
 									   x.endswith('_annotate_combined_SV.txt'))
 									  and not x.startswith('.')
 									  and not x.endswith('.out'),
-							os.listdir(file_path)))[0]
-	data = []
-	if os.path.exists(file_path):
-		hide_header = ["GENE_A-GENE_B-sorted", "CAPTURE_ID", "PROJECT_ID", "SDID", "indexs"]
-		df = pd.read_csv(file_path,delimiter="\t")
+							os.listdir(file_path)))
+		if len(file_path_list) > 0:
+			file_path = file_path + file_path_list[0]
 
-		if(df.empty):
-			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For Structural Variants'}, 200
-		else:
-			# Dataframe soted based on the below columns
-			df_sorted = df.sort_values(["GENE_A-GENE_B-sorted","CHROM_A","START_A","CHROM_B","START_B","TOOL","SUPPORT_READS"], ascending = (True,False,False,False,False,False,False))
-			
-			if 'IN_DESIGN_A' in df.columns:
-				df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES') | (df['TOOL'] == 'svcaller')]
-			else:
-				df_filter = df_sorted.loc[(df['CURATOR'] == 'YES')]
-			
-			# Add Index column in the dataframe
-			df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
-			
+			if os.path.exists(file_path):
+				hide_header = ["GENE_A-GENE_B-sorted", "CAPTURE_ID", "PROJECT_ID", "SDID", "indexs", "ASSESSMENT"]
+				df = pd.read_csv(file_path,delimiter="\t")
 
-			# if "IGV_COORD" in df_filter.columns:
-			# 	df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'IGV_COORD', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
-			# else:
-			# 	df_filter = df_filter[['CHROM_A', 'START_A', 'END_A', 'CHROM_B', 'START_B', 'END_B', 'SVTYPE', 'SV_LENGTH', 'SUPPORT_READS', 'TOOL', 'SDID', 'SAMPLE', 'GENE_A', 'GENE_B', 'IN_DESIGN_A', 'IN_DESIGN_B', 'GENE_A-GENE_B-sorted', 'indexs']]
-
-			column_list = list(df_filter.columns)
-
-			result = df_filter.to_json(orient="records")
-			data = json.loads(result)
-
-			svs_var_inc_key = 'include_variant_report_pdf'
-			cal_key = 'CALL'
-			typ_key = 'TYPE'
-			sec_key = 'SECONDHIT'
-			com_key = 'COMMENT'
-			asst_key = 'ASSESSMENT'
-			clon_key = 'CLONALITY'
-			consq_key = 'CONSEQUENCE'
-			funtp_key = 'FUNCTIONAL_TYPE'
-			vatStr_key = 'VARIANT_STRING'
-
-			if cal_key in column_list:
-				cal_indx = column_list.index(cal_key)
-				del column_list[cal_indx]
-				column_list.insert(0,cal_key)
-
-			if typ_key in column_list:
-				typ_indx = column_list.index(typ_key)
-				del column_list[typ_indx]
-				column_list.insert(0,typ_key)
+				if(df.empty):
+					return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For Structural Variants'}, 200
+				else:
+					# Dataframe soted based on the below columns
+					df_sorted = df.sort_values(["GENE_A-GENE_B-sorted","CHROM_A","START_A","CHROM_B","START_B","TOOL","SUPPORT_READS"], ascending = (True,False,False,False,False,False,False))
+					
+					if 'IN_DESIGN_A' in df.columns:
+						df_filter = df_sorted.loc[(df['IN_DESIGN_A'] == 'YES') | (df['IN_DESIGN_B'] == 'YES') | (df['TOOL'] == 'svcaller')]
+					else:
+						df_filter = df_sorted.loc[(df['CURATOR'] == 'YES')]
+					
+					# Add Index column in the dataframe
+					df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
 				
-			if sec_key in column_list:
-				sec_indx = column_list.index(sec_key)
-				del column_list[sec_indx]
-				column_list.insert(0,sec_key)    
+					column_list = list(df_filter.columns)
 
-			if com_key in column_list:
-				com_indx = column_list.index(com_key)
-				del column_list[com_indx]
-				column_list.insert(0,com_key)
+					result = df_filter.to_json(orient="records")
+					data = json.loads(result)
 
-			if asst_key in column_list:
-				asst_indx = column_list.index(asst_key)
-				del column_list[asst_indx]
-				column_list.insert(0,asst_key)
-			
-			if clon_key in column_list:
-				clon_indx = column_list.index(clon_key)
-				del column_list[clon_indx]
-				column_list.insert(0,clon_key)
+					svs_var_inc_key = 'include_variant_report_pdf'
+					cal_key = 'CALL'
+					typ_key = 'TYPE'
+					sec_key = 'SECONDHIT'
+					com_key = 'COMMENT'
+					# asst_key = 'ASSESSMENT'
+					clon_key = 'CLONALITY'
+					consq_key = 'CONSEQUENCE'
+					funtp_key = 'FUNCTIONAL_TYPE'
+					vatStr_key = 'VARIANT_STRING'
 
-			if funtp_key in column_list:
-				funtp_indx = column_list.index(funtp_key)
-				del column_list[funtp_indx]
-				column_list.insert(0,funtp_key)
+					if cal_key in column_list:
+						cal_indx = column_list.index(cal_key)
+						del column_list[cal_indx]
+						column_list.insert(0,cal_key)
 
-			if consq_key in column_list:
-				consq_indx = column_list.index(consq_key)
-				del column_list[consq_indx]
-				column_list.insert(0,consq_key)
+					if typ_key in column_list:
+						typ_indx = column_list.index(typ_key)
+						del column_list[typ_indx]
+						column_list.insert(0,typ_key)
+						
+					if sec_key in column_list:
+						sec_indx = column_list.index(sec_key)
+						del column_list[sec_indx]
+						column_list.insert(0,sec_key)    
 
-			if vatStr_key in column_list:
-				vatStr_indx = column_list.index(vatStr_key)
-				del column_list[vatStr_indx]
-				column_list.insert(0,vatStr_key)
+					if com_key in column_list:
+						com_indx = column_list.index(com_key)
+						del column_list[com_indx]
+						column_list.insert(0,com_key)
 
-			if svs_var_inc_key in column_list:
-				svs_var_inc_indx = column_list.index(svs_var_inc_key)
-				del column_list[svs_var_inc_indx]
-				column_list.insert(0,svs_var_inc_key)
+					# if asst_key in column_list:
+					# 	asst_indx = column_list.index(asst_key)
+					# 	del column_list[asst_indx]
+					# 	column_list.insert(0,asst_key)
+					
+					if clon_key in column_list:
+						clon_indx = column_list.index(clon_key)
+						del column_list[clon_indx]
+						column_list.insert(0,clon_key)
 
-			header = list(generate_headers_ngx_table(column_list))
-			
-			#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
-			new_keys = {
-				cal_key: {'key': cal_key, 'title': 'CALL'},
-				typ_key: {'key': typ_key, 'title': 'TYPE'},
-				sec_key :  {'key': sec_key, 'title': 'SECONDHIT'},
-				com_key :  {'key': com_key, 'title': 'COMMENT'},
-				asst_key :  {'key': asst_key, 'title': 'ASSESSMENT'},
-				clon_key :  {'key': clon_key, 'title': 'CLONALITY'},
-				consq_key :  {'key': consq_key, 'title': 'CONSEQUENCE'},
-				funtp_key :  {'key': funtp_key, 'title': 'FUNCTIONAL TYPE'},
-				vatStr_key :  {'key': vatStr_key, 'title': 'VARIANT STRING'},
-				svs_var_inc_key: {'key': svs_var_inc_key, 'title': 'INCLUDE VARIANT REPORT PDF'}
-			}
+					if funtp_key in column_list:
+						funtp_indx = column_list.index(funtp_key)
+						del column_list[funtp_indx]
+						column_list.insert(0,funtp_key)
 
-			for idx,value in enumerate(new_keys):
-				n_key = [item for item in header if item.get('key')==value]
-				if(not n_key):
-					header.insert(0, new_keys[value])
+					if consq_key in column_list:
+						consq_indx = column_list.index(consq_key)
+						del column_list[consq_indx]
+						column_list.insert(0,consq_key)
 
-			new_header = []
-			for i,value in enumerate(header):
-				key_name = value['key']
-				if(key_name not in hide_header):
-					new_header.append(value)
+					if vatStr_key in column_list:
+						vatStr_indx = column_list.index(vatStr_key)
+						del column_list[vatStr_indx]
+						column_list.insert(0,vatStr_key)
 
-			return {'header': new_header, 'data': data, 'filename': file_path, 'status': True}, 200		
-		
-		#====== Start : Old code for structural variant ===========#
-		'''
-		with open(file_path, 'r') as f:
-			reader_ponter = csv.DictReader(f, delimiter ='\t')
-			for i, each_row in enumerate(reader_ponter):
-				each_row = dict(each_row)
-				each_row['indexs'] = i
-				data.append(each_row)
-			header = list(generate_headers_ngx_table(data[0].keys()))
+					if svs_var_inc_key in column_list:
+						svs_var_inc_indx = column_list.index(svs_var_inc_key)
+						del column_list[svs_var_inc_indx]
+						column_list.insert(0,svs_var_inc_key)
 
-			#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
-			new_keys = {
-				'CALL': {'key': 'CALL', 'title': 'CALL'},
-				'TYPE': {'key': 'TYPE', 'title': 'TYPE'},
-				'SECONDHIT': {'key': 'SECONDHIT', 'title': 'SECONDHIT'},
-				'COMMENT': {'key': 'COMMENT', 'title': 'COMMENT'}
-			}
-			
-			for idx,value in enumerate(new_keys):
-				n_key = [item for item in header if item.get('key')==value]
-				if(not n_key):
-					header.insert(0, new_keys[value])
+					header = list(generate_headers_ngx_table(column_list))
+					
+					#Add additional columns to SV  [CALL(True | False):  TYPE:(Somatic| germline) and comment columns]
+					new_keys = {
+						cal_key: {'key': cal_key, 'title': 'CALL'},
+						typ_key: {'key': typ_key, 'title': 'TYPE'},
+						sec_key :  {'key': sec_key, 'title': 'SECONDHIT'},
+						com_key :  {'key': com_key, 'title': 'COMMENT'},
+						# asst_key :  {'key': asst_key, 'title': 'ASSESSMENT'},
+						clon_key :  {'key': clon_key, 'title': 'CLONALITY'},
+						consq_key :  {'key': consq_key, 'title': 'CONSEQUENCE'},
+						funtp_key :  {'key': funtp_key, 'title': 'FUNCTIONAL TYPE'},
+						vatStr_key :  {'key': vatStr_key, 'title': 'VARIANT STRING'},
+						svs_var_inc_key: {'key': svs_var_inc_key, 'title': 'INCLUDE VARIANT REPORT PDF'}
+					}
 
-			return {'header': header, 'data': data, 'filename': file_path, 'status': True}, 200
-		 '''   
-		#====== End : Old code for structural variant ===========#
+					for idx,value in enumerate(new_keys):
+						n_key = [item for item in header if item.get('key')==value]
+						if(not n_key):
+							header.insert(0, new_keys[value])
 
-	else:
-		return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
+					new_header = []
+					for i,value in enumerate(header):
+						key_name = value['key']
+						if(key_name not in hide_header):
+							new_header.append(value)
 
+					return {'header': new_header, 'data': data, 'filename': file_path, 'status': True}, 200		
+			else:
+				return {'header': [], 'data': [], 'status': False, 'error': 'No File Found For Structural Variants'}, 400
+		else:
+				return {'header': [], 'data': [], 'status': False, 'error': 'No File Found For Structural Variants'}, 400
+	except Exception as e:
+			return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
 
 def check_hotspot(gene, hgvsp, pos_arr):
 	if not pos_arr:
