@@ -1254,7 +1254,8 @@ def build_icpm_sample_details(cfdna):
 		sql2 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.referral_name='iPCM_blod_inklusion' and rf.pnr='{}'".format(pnr)
 		res2 = create_db_session('ipcmLeaderboard', sql2)
 		res_data2 = generate_list_to_dict(res2)
-		result = res_data2[0]
+		if(res_data2):
+			result = res_data2[0]
 	
 	return result
 
@@ -1326,7 +1327,10 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 		else:
 			sample_details_json = build_sample_details(project_name, cfdna)
 
-		return {'status': True, 'data': sample_details_json, 'error': ''}, 200
+		if sample_details_json:
+			return {'status': True, 'data': sample_details_json, 'error': ''}, 200
+		else:
+			return {'status': True, 'data': '', 'error': 'Patient Information not found'}, 200
 
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
