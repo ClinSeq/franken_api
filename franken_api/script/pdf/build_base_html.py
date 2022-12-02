@@ -163,11 +163,13 @@ def build_basic_html(sample_id, capture_id):
 
 		for i in specimen_assay_json:
 
+			quality = specimen_assay_json[i]['quality'] if isinstance(specimen_assay_json[i]['quality'], str) else ''
+
 			specimen_assay_html += '<tr>'
 			specimen_assay_html += '<th>'+specimen_assay_json[i]["specimen"]+'</th>'
 			specimen_assay_html += '<td>'+specimen_assay_json[i]["analyte"]+'</td>'
 			specimen_assay_html += '<td>'+specimen_assay_json[i]["assay"]+'</td>'
-			specimen_assay_html += '<td>'+specimen_assay_json[i]["quality"]+'</td>'
+			specimen_assay_html += '<td>'+quality+'</td>'
 			specimen_assay_html += '</tr>'
 
 		genome_wide = res_data[0]['genome_wide'].replace("\'", "\"")
@@ -176,7 +178,7 @@ def build_basic_html(sample_id, capture_id):
 		
 		for j in genome_wide_json: 
 			
-			result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] else ''
+			result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else ''
 
 			assessment = 'Yes' if genome_wide_json[j]["assessment"] == 'Possible' else ( 'No' if genome_wide_json[j]["assessment"] == 'Not possible' else '')
 			genome_wide_html += '<tr>'
