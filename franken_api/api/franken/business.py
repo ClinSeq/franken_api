@@ -700,7 +700,7 @@ def check_frankenplot_files(project_path, sdid, capture_id):
 
 	file_path = project_path + '/' + sdid + '/' + capture_id + '/qc'
 
-	html_file = list(filter(lambda x: (re.match('[-\w]+_(franken_plot)+.html$', x) or x.endswith('_franken_plot.html')) and not x.startswith('.') and not x.endswith('.out'),
+	html_file = list(filter(lambda x: (re.match('[-\w*]+(frankenplot|franken_plot)+(.html)$', x) or x.endswith('-frankenplot.html')) and not x.startswith('.') and not x.endswith('.out'),
 							   os.listdir(file_path)))
 
 	if len(html_file) > 0 and os.path.exists(file_path):
@@ -712,7 +712,7 @@ def frankenplot_files(project_path, sdid, capture_id):
 
 	file_path = project_path + '/' + sdid + '/' + capture_id + '/qc'
 
-	html_file = list(filter(lambda x: (re.match('[-\w]+_(franken_plot)+.html$', x) or x.endswith('_franken_plot.html')) and not x.startswith('.') and not x.endswith('.out'),
+	html_file = list(filter(lambda x: (re.match('[-\w*]+(frankenplot|franken_plot)+(.html)$', x) or x.endswith('-frankenplot.html')) and not x.startswith('.') and not x.endswith('.out'),
 							   os.listdir(file_path)))
 
 	if len(html_file) > 0 and os.path.exists(file_path):
