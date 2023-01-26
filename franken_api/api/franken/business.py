@@ -477,7 +477,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 	header = []
 
 	if variant_type == 'germline':
-		missing_header = ['HGVSp_org', 'purecn_status', 'purecn_probability', 'purecn_tot_copies', 'include_variant_report_pdf']
+		missing_header = ['zygosity', 'HGVSp_org', 'purecn_status', 'purecn_probability', 'purecn_tot_copies', 'include_variant_report_pdf']
 		regex = '^(?:(?!-(CFDNA|T)-).)*igvnav-input.txt$'
 		regex2 = '(.*)-(CFDNA|T)-(\w.*)(germline-igvnav-input).*txt$'
 	elif variant_type == 'somatic':
@@ -567,6 +567,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 		igv_var_inc_key = 'include_variant_report_pdf'
 		asec_key = 'SECONDHIT'
 		ass_key = 'ASSESSMENT'
+		zyg_key = 'zygosity'
 		acl_key = 'CLONALITY'
 		var_occr_key = 'autoseq_variant_db'
 
@@ -579,6 +580,11 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			ass_indx = header.index(ass_key)
 			del header[ass_indx]
 			header.insert(0,ass_key)
+
+		if zyg_key in header:
+			ass_indx = header.index(zyg_key)
+			del header[ass_indx]
+			header.insert(0,zyg_key)
 
 		if acl_key in header:
 			acl_indx = header.index(acl_key)
@@ -874,7 +880,7 @@ def get_curation_igv_germline(project_ids):
 
 	try:
 		header = ['PROJECT_ID', 'SDID', 'CAPTURE_ID', 'CHROM', 'START', 'END',
-				  'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'ASSESSMENT', 'GENE', 'IMPACT', 'CONSEQUENCE',
+				  'REF', 'ALT', 'CALL', 'TAG', 'NOTES', 'ASSESSMENT', 'zygosity', 'GENE', 'IMPACT', 'CONSEQUENCE',
 				  'HGVSp', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'purecn_probability', 'purecn_status', 'purecn_tot_copies', 'include_variant_report_pdf', 'user_name']
 		try:
 			return {'status': True, 'data': igv_germline_table.query.filter(igv_germline_table.PROJECT_ID.in_(arr_proj_names)).all(),

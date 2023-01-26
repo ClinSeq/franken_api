@@ -64,6 +64,7 @@ class TableIgvGermline(pssql.Model):
     CALL = pssql.Column(pssql.String)
     TAG = pssql.Column(pssql.String)
     ASSESSMENT = pssql.Column(pssql.String)
+    zygosity = pssql.Column(pssql.String)
     NOTES = pssql.Column(pssql.String)
     GENE  = pssql.Column(pssql.String)
     IMPACT = pssql.Column(pssql.String)

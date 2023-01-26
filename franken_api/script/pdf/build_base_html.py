@@ -242,6 +242,10 @@ def build_small_variants(root_path):
 				column_list.append('ASSESSMENT')
 				column_dict['ASSESSMENT'] = 'ASSESSMENT'
 
+			if 'zygosity' in smv_df_call_filter.columns:
+				column_list.append('zygosity')
+				column_dict['zygosity'] = 'zygosity'
+
 			if 'RSID' in smv_df_call_filter.columns:
 				column_list.append('RSID')
 				column_dict['RSID'] = 'RSID'
@@ -268,7 +272,11 @@ def build_small_variants(root_path):
 			for index, row in smv_df_filter_data.iterrows():
 
 				variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+'; '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
-				clonality = row['clonality'] if 'clonality' in row else '-'
+				if source_type == 'somatic':
+					clonality = row['clonality'] if 'clonality' in row else '-'
+				else:
+					clonality = row['zygosity'].upper() if 'zygosity' in row else '-'
+				# clonality = row['clonality'] if 'clonality' in row else '-'
 				transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
 				assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
 				
