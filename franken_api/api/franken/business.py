@@ -28,6 +28,7 @@ import subprocess
 from collections import OrderedDict
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import sys
 from flask import request
 import requests
@@ -1454,7 +1455,7 @@ def login_validate(email_id, passwd):
 			return {'status': True, 'message': 'Invalid Email-id and password', 'data': [], 'error': ''}, 200
 
 	except Exception as e:
-		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
 def form_registation(first_name, last_name, email_id, pwd, project_access):
 
@@ -1484,7 +1485,7 @@ def fetch_all_project_list():
 			return {'status': True, 'data': [], 'error': 'No Project list Found'}, 200
 
 	except Exception as e:
-		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
 def fetch_project_list(project_ids):
 	try:
@@ -1498,7 +1499,7 @@ def fetch_project_list(project_ids):
 			return {'status': True, 'data': [], 'error': 'No Project list Found'}, 200
 
 	except Exception as e:
-		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
 
 def fetch_nfs_path(project_name):
@@ -1514,7 +1515,7 @@ def fetch_nfs_path(project_name):
 		else:
 			return {'status': True, 'data': [], 'error': 'nfs Path not found'}, 400
 	except Exception as e:
-		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
 
 def get_referrals_information(project_name, filter_option, search_pattern):
@@ -1542,4 +1543,48 @@ def get_referrals_information(project_name, filter_option, search_pattern):
 		else:
 			return {'status': True, 'data': [], 'header': generate_headers_ngx_table(header), 'error': '' }, 200
 	except Exception as e:
-		return {'status': True, 'message': 'Something worng', 'error': str(e)}, 400
+		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
+
+def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val):
+
+	print("clonality_vaf", clonality_vaf)
+	regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
+	regex2 = '(.*)-(CFDNA|T)-(\w.*)(somatic-igvnav-input).*txt$'
+
+	try:
+		igv_nav_file = list(filter(lambda x: (re.match(regex2, x) if ('-somatic-' in x or '-germline-' in x) else re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
+		igv_nav_file = file_path + '/' + igv_nav_file
+		df_sm = pd.read_csv(igv_nav_file,delimiter="\t")
+
+		sm_column_arr = df_sm.columns
+
+		if 'CLONALITY' in sm_column_arr:
+			df_sm["CLONALITY"] = np.where(df_sm["T_VAF"] >= clonality_vaf, "CLONAL", "SUBCLONAL")
+
+		if 'SECONDHIT' in sm_column_arr:
+			if ctdna_val < 0.1:
+				df_sm["SECONDHIT"] = 'NA'
+			else:
+				df_sm["SECONDHIT"] = np.where(df_sm["CLONALITY"] == "SUBCLONAL", "NA", df_sm["SECONDHIT"])
+		
+		df_sm.to_csv(igv_nav_file,index = False, header=True, sep='\t')
+
+		return {'status': True, 'message': 'Somatic Curation updated based on ctdna fraction'}, 200
+	except Exception as e:
+		return {'status': False, 'message': str(e)}, 400
+
+def update_curated_info(project_path, sample_id, capture_id, ctdna_val, ctdna_opt):
+	try:
+		ctdna_val = float(ctdna_val)
+		msg = ''
+		clonality_vaf = ''
+		## SV = ctdna_val * 0.25 * 0.275 
+		## SNV = ctdna_val * 0.25
+
+		clonality_vaf = ctdna_val * 0.25
+		file_path = project_path + '/' + sample_id + '/' + capture_id
+		result, errorcode = rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val)
+		return result, errorcode
+		
+	except Exception as e:
+		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400

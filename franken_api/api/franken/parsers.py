@@ -249,3 +249,8 @@ cancer_hotspot_arguments = reqparse.RequestParser()
 cancer_hotspot_arguments.add_argument('gene' , type=str, required=True, help="")
 cancer_hotspot_arguments.add_argument('HGVSp' , type=str, required=False, help="")
 cancer_hotspot_arguments.add_argument('position' , type=str, required=False, help="")
+
+
+update_curated_info_arguments = common_arguments.copy()
+update_curated_info_arguments.add_argument('ctdna_val', type=str, required=True, help="ctdna value")
+update_curated_info_arguments.add_argument('ctdna_opt',  type=str, required=True, help="ctdna option")
