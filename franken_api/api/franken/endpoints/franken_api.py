@@ -57,7 +57,6 @@ class DropdownListSample(Resource):
 		args = project_arguments.parse_args()
 		proj_name = args['project_name']
 		nfs_path,response_code = fetch_nfs_path(proj_name)
-		print(nfs_path, response_code)
 		if response_code == 200:
 			result, error_code = get_sample_ids(nfs_path)
 			return result, error_code
@@ -535,7 +534,7 @@ class UpdateCuratedInfo(Resource):
 		proj_name = args['project_name']
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
-			result, errorcode = update_curated_info(nfs_path, args['sdid'], args['capture_id'], args['ctdna_val'], args['ctdna_opt'])
+			result, errorcode = update_curated_info(nfs_path, proj_name, args['sdid'], args['capture_id'], args['ctdna_val'], args['ctdna_opt'])
 			return result, errorcode
 		else:
 			return nfs_path,response_code

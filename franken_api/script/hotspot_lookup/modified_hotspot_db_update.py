@@ -29,7 +29,6 @@ def merge_hotspot_data():
     df_concat.index = np.arange(1, len(df_concat)+1)
     df_concat.index.name='h_id'
     
-    print(df_concat)
     tot_count = len(df_concat)
     
     print(" SNP Count '{}' + '{}' INDEL Count = {}".format(snp_count, indel_count,tot_count))
