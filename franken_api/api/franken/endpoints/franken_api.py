@@ -3,10 +3,10 @@ from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
 from flask_restx import Resource
 #from franken_api.api.franken.serializers import search_result
-from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments, update_curated_info_arguments
+from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments, update_curated_info_arguments, send_json_mtbp_arguments
 from franken_api.api.restplus import api
 from flask import jsonify
-from franken_api.api.franken.business import pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path, update_curated_info
+from franken_api.api.franken.business import pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path, update_curated_info, send_json_mtbp_portal
 from franken_api.api.franken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
 import io
 #import  franken_api.database.models
@@ -538,3 +538,25 @@ class UpdateCuratedInfo(Resource):
 			return result, errorcode
 		else:
 			return nfs_path,response_code
+
+@ns.route('/send_json_mtbp')
+@api.response(200, 'Send json file to MTBP portal')
+@api.response(400, 'Json file not found')
+class SendJsonMTBP(Resource):
+	@api.expect(send_json_mtbp_arguments, validate=True)
+	def post(self):
+		"""
+		   Send json file to MTBP portal
+		"""
+		args = send_json_mtbp_arguments.parse_args()
+		proj_name = args['project_name']
+		sample_id = args['sdid']
+		capture_id = args['capture_id']
+		user_name = args['user_name']
+		user_pwd = args['user_pwd']
+		nfs_path,response_code = fetch_nfs_path(proj_name)
+		if response_code == 200:
+			result, errorcode = send_json_mtbp_portal(nfs_path, proj_name,  sample_id, capture_id, user_name, user_pwd)
+			return result, errorcode
+		else:
+			return nfs_path,response_code	

@@ -255,3 +255,7 @@ cancer_hotspot_arguments.add_argument('position' , type=str, required=False, hel
 update_curated_info_arguments = common_arguments.copy()
 update_curated_info_arguments.add_argument('ctdna_val', type=str, required=True, help="ctdna value")
 update_curated_info_arguments.add_argument('ctdna_opt',  type=str, required=True, help="ctdna option")
+
+send_json_mtbp_arguments = common_arguments.copy()
+send_json_mtbp_arguments.add_argument('user_name', type=str, required=True, help="ctdna value")
+send_json_mtbp_arguments.add_argument('user_pwd',  type=str, required=True, help="ctdna option")

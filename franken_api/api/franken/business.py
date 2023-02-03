@@ -26,6 +26,8 @@ import re
 import ast
 from flask import jsonify
 import subprocess
+from subprocess import Popen
+
 from collections import OrderedDict
 from datetime import datetime
 import pandas as pd
@@ -1611,4 +1613,25 @@ def update_curated_info(project_path, proj_name, sample_id, capture_id, ctdna_va
 		return result, errorcode
 		
 	except Exception as e:
+		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
+
+def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_name, user_pwd):
+	try:
+		file_path = project_path + '/' + sample_id + '/' + capture_id + '/MTBP/'
+		status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
+		if status:
+			file_name = list(filter(lambda x: x.endswith('.json') and not x.startswith('.'), os.listdir(file_path)))
+			if len(file_name) > 0:
+				json_file_path = file_path + file_name[0]
+				curl_cmd = "curl --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
+				# curl_cmd = "ls -l"
+				proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+				output= proc.stdout
+				return {'status': True, 'message': 'Json upload to MTBP Portal successfully'}, 200
+			else:
+				return {'status': False, 'message': 'Json File not generated'}, 200
+		else:
+			return {'status': False, 'message': 'Json File not generated'}, 200
+
+	except subprocess.CalledProcessError as e:
 		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
