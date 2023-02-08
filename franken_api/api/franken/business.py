@@ -526,6 +526,11 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 				else:
 					each_row['HGVSp_org'] = each_row['HGVSp']
 
+				if 'CGC_ANN' in each_row:
+					each_row['CGC_bool'] = 1 if each_row['CGC_ANN'] != '' else 0
+				else:
+					each_row['CGC_bool'] = 1
+
 				gene = each_row['GENE']
 				if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
 					one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
@@ -558,8 +563,11 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For {} Variants'.format(variant_type.capitalize())}, 200
 
 		header = list(data[0])
-		if 'HOTSPOT' in header and variant_type == 'somatic':
+		if 'HOTSPOT' in header: ## and variant_type == 'somatic'
 			del header[header.index('HOTSPOT')]
+
+		if 'CGC_bool' in header:
+			del header[header.index('CGC_bool')]
 
 		if 'HOTSPOT' not in header and variant_type == 'somatic':
 			conseq_index = header.index('CONSEQUENCE') + 1
