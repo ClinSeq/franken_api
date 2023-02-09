@@ -1505,7 +1505,7 @@ def fetch_all_project_list():
 def fetch_project_list(project_ids):
 	try:
 		arr_ids = "','".join(project_ids.split(","))
-		sql = "SELECT p_id as index, project_name, nfs_path, CASE WHEN mtbp_json = '1' THEN true ELSE false end as mtbp_status, CASE WHEN pdf_report = '1' THEN true ELSE false end as pdf_status  FROM cur_projects_t WHERE p_id IN ('{}') and proj_status = '1' ORDER BY sort_order ASC ".format(arr_ids)
+		sql = "SELECT p_id as index, project_name, nfs_path, CASE WHEN mtbp_json = '1' THEN true ELSE false end as mtbp_status, CASE WHEN mtbp_report = '1' THEN true ELSE false end as mtbp_json_report, CASE WHEN pdf_report = '1' THEN true ELSE false end as pdf_status  FROM cur_projects_t WHERE p_id IN ('{}') and proj_status = '1' ORDER BY sort_order ASC ".format(arr_ids)
 		res = create_db_session('curation', sql)
 		res_data = generate_list_to_dict(res)
 		if(res_data):
