@@ -1561,15 +1561,13 @@ def get_referrals_information(project_name, filter_option, search_pattern):
 		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
 def get_curated_db_record(project_id, sample_id, capture_id, table_name):
-
-	sql = 'SELECT * FROM {} WHERE "PROJECT_ID"=\'{}\' and "SDID"=\'{}\' and "CAPTURE_ID"=\'{}\''.format(table_name, project_id, sample_id, capture_id)
-	res_exc = create_db_session('curation', sql)
-	res_data = generate_list_to_dict(res_exc)
-
-	if res_data:
+	try:
+		sql = 'SELECT * FROM {} WHERE "PROJECT_ID"=\'{}\' and "SDID"=\'{}\' and "CAPTURE_ID"=\'{}\''.format(table_name, project_id, sample_id, capture_id)
+		res_exc = create_db_session('curation', sql)
+		res_data = generate_list_to_dict(res_exc)
 		return res_data
-	else:
-		return False
+	except Exception as e:
+		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
 def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 
@@ -1594,12 +1592,13 @@ def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 		
 		df_sm.to_csv(igv_nav_file,index = False, header=True, sep='\t')
 
-		for tr in tb_record:
-			rslt_df = df_sm.loc[(df_sm['CHROM'] == int(tr['CHROM'])) & (df_sm['START'] == int(tr['START']))  & (df_sm['END'] == int(tr['END']))  & (df_sm['REF'] == tr['REF'])  & (df_sm['ALT'] == tr['ALT'])]
-			tb_record = rslt_df.to_dict('records')
-			tr['CLONALITY'] = tb_record[0]['CLONALITY']
-			tr['SECONDHIT'] = tb_record[0]['SECONDHIT']
-			post_curation(tr, 'somatic')
+		if tb_record:
+			for tr in tb_record:
+				rslt_df = df_sm.loc[(df_sm['CHROM'] == int(tr['CHROM'])) & (df_sm['START'] == int(tr['START']))  & (df_sm['END'] == int(tr['END']))  & (df_sm['REF'] == tr['REF'])  & (df_sm['ALT'] == tr['ALT'])]
+				tb_record = rslt_df.to_dict('records')
+				tr['CLONALITY'] = tb_record[0]['CLONALITY']
+				tr['SECONDHIT'] = tb_record[0]['SECONDHIT']
+				post_curation(tr, 'somatic')
 
 		return {'status': True, 'message': 'Somatic Curation updated based on ctdna fraction'}, 200
 	except Exception as e:
