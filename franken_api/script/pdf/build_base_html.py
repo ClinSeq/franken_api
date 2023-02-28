@@ -179,15 +179,18 @@ def build_basic_html(sample_id, capture_id):
 		for j in genome_wide_json: 
 			
 			result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else ''
+			
+			assessment =''
+			if 'assessment' in genome_wide_json[j]:
+				assessment = 'Yes' if genome_wide_json[j]["assessment"] == 'Possible' else ( 'No' if genome_wide_json[j]["assessment"] == 'Not possible' else '')
 
-			assessment = 'Yes' if genome_wide_json[j]["assessment"] == 'Possible' else ( 'No' if genome_wide_json[j]["assessment"] == 'Not possible' else '')
 			genome_wide_html += '<tr>'
 			genome_wide_html += '<th>'+genome_wide_json[j]["title"]+'</th>'
 			genome_wide_html += '<td>'+result_data+'</td>'
 			genome_wide_html += '<td>'+assessment+'</td>'
 
 
-			if genome_wide_json[j]["title"] == 'OTHER GENOMIC PHENOTYPE' and genome_wide_json[j]["assessment"] == 'Possible' and result_data == 'Yes':
+			if ('assessment' in genome_wide_json[j]) and (genome_wide_json[j]["title"] == 'OTHER GENOMIC PHENOTYPE' and genome_wide_json[j]["assessment"] == 'Possible' and result_data == 'Yes'):
 				genome_wide_html += '<td>'+genome_wide_json[j]["categories"]+'</td>'
 			else:
 				genome_wide_html += '<td>'+genome_wide_json[j]["comment"]+'</td>'
@@ -681,7 +684,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	#base_html_path = '/home/karthick/project/code/curator/pdf/base.html'
 	#appendix_page = '/home/karthick/project/code/curator/pdf/appendix_c4.html'
 
-	html_root_path = os.path.dirname(sys.argv[0])	
+	html_root_path = os.path.dirname(sys.argv[0])
 
 	### Serve Path 
 	base_html_path = html_root_path+'/base.html'
