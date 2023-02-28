@@ -163,7 +163,9 @@ def build_basic_html(sample_id, capture_id):
 
 		for i in specimen_assay_json:
 
-			quality = specimen_assay_json[i]['quality'] if isinstance(specimen_assay_json[i]['quality'], str) else ''
+			quality ='' 
+			if 'quality' in specimen_assay_json[i]:
+				quality = specimen_assay_json[i]['quality'] if isinstance(specimen_assay_json[i]['quality'], str) else ''
 
 			specimen_assay_html += '<tr>'
 			specimen_assay_html += '<th>'+specimen_assay_json[i]["specimen"]+'</th>'
