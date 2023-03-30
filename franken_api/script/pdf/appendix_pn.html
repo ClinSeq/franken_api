@@ -9,8 +9,10 @@
 	<link rel="stylesheet" href="/static/css/bootstrap.min.css" >
 	<style>
 		*{
-			font-family: 'Roboto', serif;
-			font-size: 14px;
+			font-family: 'Roboto', sans-serif;
+			font-size: 12px;
+			margin: 0;
+			padding: 0;
 		}
 
 		section {
@@ -25,19 +27,23 @@
 			border: 1px solid #000;
 		}
 
+		hr {
+			page-break-inside:avoid; page-break-after:auto 
+		}
 		/* .hz-line {
 			height:1px;
 			border-width:0;
 			color:#868B8E;
 			background-color:#868B8E;
-			width: 50%;
-		} */
+			width: 100%;
+		}
+		*/
 
 		h5 {
 			font-weight: bold;
 			padding-bottom: 15px;
 			color: #B43218;
-			font-size: 16px;
+			font-size: 14px;
 		}
 
 		.technical-validation{
@@ -46,17 +52,17 @@
 		}
 
 		.technical-validation table tr th{
-			font-size: 14px;
+			font-size: 12px;
 		}
 
 		.technical-validation thead tr th{
-			background-color: #d3d3d3;
+			background-color: #F2F1F0;
 			text-align: center;
 			color: #000000;
 		}
 
 		.technical-validation table tr td{
-			font-size: 13px;
+			font-size: 10px;
             /* color :#7E7C73; */
             color:#6b6b6b;
             font-weight:800;
@@ -71,9 +77,9 @@
 		}
 
 		.genomic-alteration table tr th {
-			background-color: #d3d3d3;
+			background-color: #F2F1F0;
 			color: #000000;
-			font-size: 14px;
+			font-size: 12px;
 			text-transform: uppercase;
 		}
 
@@ -81,7 +87,7 @@
 			/* color :#7E7C73; */
             color : #6b6b6b;
             font-weight:800;
-			font-size: 13px;
+			font-size: 10px;
 			text-transform:capitalize;
 		}
 
@@ -93,7 +99,7 @@
 		}
 
 		.gene-panel {
-			font-size: 14px;
+			font-size: 12px;
 		}
 
 		.gene-panel ul {
@@ -104,14 +110,16 @@
 		.gene-panel ul li {
 			display: inline-block;
 			height: 28px;
-			width: 100px;
-			line-height: 30px;
-			margin: 5px;
-			background: #657786;
-			color: #ffffff;
-			font-size: 12px;
+			width: 95px;
+			line-height: 25px;
+			margin: 2px;
+			/*background: #657786;
+			color: #ffffff; */
+			border: 1px solid #B9B7BD;
+			color: #000000;
+			font-size: 10px;
 			text-align: center;
-			font-weight: 600;
+			font-weight: 500;
 		}
 
 	</style>
