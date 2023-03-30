@@ -412,12 +412,14 @@ def build_svs(root_path):
 
 				for index, row in svs_filter.iterrows():
 
-
-					chr_b = ' | chr'+str(int(row['CHROM_B']))+":" if row['CHROM_B'] != '-' else ''
+					chr_b = ' | chr'+str(row['CHROM_B'])+":" if row['CHROM_B'] != '-' else ' | '
 					start_b = str(int(row['START_B']))+"-" if row['START_B'] != '-' else ''
 					end_b = str(int(row['END_B'])) if row['END_B'] != '-' else ''
 
-					variant_det = "chr"+str(row['CHROM_A'])+":"+str(int(row['START_A']))+"-"+str(int(row['END_A']))+chr_b+start_b+end_b
+					if start_b != '':
+						variant_det = "chr"+str(row['CHROM_A'])+":"+str(int(row['START_A']))+"-"+str(int(row['END_A']))+chr_b+start_b+end_b
+					else:
+						variant_det = "chr"+str(row['CHROM_A'])+":"+str(int(row['START_A']))+"-"+str(int(row['END_A']))
 
 					gene_det = row['GENE_A']+","+ row['GENE_B']
 
