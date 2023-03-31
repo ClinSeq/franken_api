@@ -476,8 +476,8 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 		else:
 #             tech_html +='<td>Pan-cancer comprehensive panel (GMCK) v1</td>'
 #             tech_html +='<td>Pan-cancer comprehensive panel (GMCK) v1</td>'
-			tech_html +='<td>ProBio comprehensive panel (GMCK) v1</td>'
-			tech_html +='<td>ProBio comprehensive panel (GMCK) v1</td>'
+			tech_html +='<td>ProBio comprehensive panel v2</td>'
+			tech_html +='<td>ProBio comprehensive panel v2</td>'
 
 		tech_html +='</tr>'
 
@@ -643,30 +643,51 @@ def change_header_logo(html_root_path, header_html, project_name, output_header,
 		soup = BeautifulSoup(contents, "html.parser")
 
 		for tag in soup.find_all(id='specimen_data'):
-			specimen_html = '<span>'+specimen+'</span>'
+			specimen_html = specimen
 			tag.string.replace_with(specimen_html)
 
 		for tag in soup.find_all(id='recieved_date'):
-			sample_date_html = '<span>'+str(sample_date)+'</span>'
+			sample_date_html = str(sample_date)
 			tag.string.replace_with(sample_date_html)
+
+		for tag in soup.find_all(id='epm_dnr_data'):
+			if 'PROBIO' in project_name:
+				epm_dnr_data_html = "2016/101-32"
+			else:
+				epm_dnr_data_html = "2021-00135"
+			tag.string.replace_with(epm_dnr_data_html)
 
 		for tag in soup.find_all(id='report_date'):
 			report_date_html = report_date
 			tag.string.replace_with(report_date_html)
-			
-		for images in soup.find_all(id='ki_logo_img'):
-			img_path = html_root_path +'/static/img/KS_logo.png'
-			images['src'] = images['src'].replace("", img_path)
-			
-		for images in soup.find_all(id='project_logo_img'):
 
-	#             if 'IPCM' in project_name or 'iPCM' in project_name:
+		for tag in soup.find_all(id='about_data'):
 			if 'PROBIO' in project_name:
-				img_path = html_root_path +'/static/img/probio_logo.png'
+				about_date_html = 'The ProBio profile consists of a RUO next-generation sequencing assay, analysis pipeline and curation procedure.'
+			elif 'CLINPROST' in project_name:
+				about_date_html = 'ProBio Prostatacancer Assay, ackreditated at Karolinska University Hospital.'
 			else:
-				img_path = html_root_path +'/static/img/iPCM.png'
-
-			images['src'] = images['src'].replace("", img_path)
+				about_date_html = 'The iPCM profile consists of a RUO next-generation sequencing assay, analysis pipeline and curation procedure.'
+			tag.string.replace_with(about_date_html)
+		
+		if 'CLINPROST' in project_name:
+			for images in soup.find_all(id='ki_logo_img'):
+				img_path = html_root_path +'/static/img/KS_logo.png'
+				images['src'] = images['src'].replace("", img_path)
+			
+			for images in soup.find_all(id='project_logo_img'):
+				if 'PROBIO' in project_name or 'CLINPROST' in project_name:
+					img_path = html_root_path +'/static/img/probio_logo.png'
+				else:
+					img_path = html_root_path +'/static/img/iPCM.png'
+				images['src'] = images['src'].replace("", img_path)
+		else:
+			for images in soup.find_all(id='ki_logo_img'):
+				if 'PROBIO' in project_name or 'CLINPROST' in project_name:
+					img_path = html_root_path +'/static/img/probio_logo.png'
+				else:
+					img_path = html_root_path +'/static/img/iPCM.png'
+				images['src'] = images['src'].replace("", img_path)
 
 		new_text = soup.prettify(formatter=None)
 
@@ -687,10 +708,15 @@ def main(nfs_path, project_name, sample_id, capture_id):
 
 	### Serve Path 
 	base_html_path = html_root_path+'/base.html'
-	tml_header_page = html_root_path+'/layout/header.html' 
+	if 'CLINPROST' in project_name:
+		tml_header_page = html_root_path+'/layout/header_ks.html' 
+		tml_appendix_header_page = html_root_path+'/layout/appendix_header_ks.html' 
+	else:
+		tml_header_page = html_root_path+'/layout/header.html' 
+		tml_appendix_header_page = html_root_path+'/layout/appendix_header.html' 
+
 	footer_page = html_root_path+'/layout/footer.html'
 	appendix_page = html_root_path +'/appendix_c4.html'
-	tml_appendix_header_page = html_root_path+'/layout/appendix_header.html' 
 
 	root_path = os.path.join(nfs_path,sample_id,capture_id)
 

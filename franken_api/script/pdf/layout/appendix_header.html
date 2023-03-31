@@ -5,6 +5,7 @@
 	<meta name="pdfkit-page-size" content="Legal"/>
 	<meta name="pdfkit-orientation" content="Landscape"/>	
 	<style>
+		
 		* {
 			font-family: 'Roboto', serif;			
 			font-size: 12px;
@@ -21,13 +22,18 @@
 			padding: 5px 0px;
 		}
 
-		/* .table tr th, .table tr td {
-			border: 1px solid black;
-		} */
-
 		.table.borderless {
 			border-bottom: 10px solid #4472c4;
 			border-top: 10px solid #4472c4;
+		}
+
+		.logo-img {
+			width: 50px;
+			height: auto;
+			padding-bottom: 5px;
+			display: block;
+			margin-right: auto;
+			padding-left: 5px;
 		}
 
 		.log-title {
@@ -37,26 +43,10 @@
 			text-transform: uppercase;
 			text-align: center;
 			font-weight: bold;
-		}
-		.logo-img {
-			width: 50px;
-			height: auto;
-			padding-bottom: 5px;
-			display: block;
-			margin-left: auto;
-			padding-left: 5px;		
+			padding-left:220px;
 		}
 
-		.logo-ki-img {
-			width: 50px;
-			height: auto;
-			padding-bottom: 5px;
-			display: block;
-			margin-right: auto;
-			padding-left: 5px;
-		}
-
-		ul.header-ul {
+		.header-ul-01 {
 			list-style-type: none;
 			color:#9D1306;
 			font-weight:bold;
@@ -66,7 +56,52 @@
 			display: -webkit-flex;
 			display: flex;
 			-webkit-box-pack: center; 
-			-webkit-justify-content: space-betwoptionseen;
+			/* -webkit-justify-content: space-between;
+			justify-content: space-between; */
+			padding-top: 5px;
+		}
+
+		.header-ul-01 li {
+			padding-bottom: 2px;
+			font-size: 12px;
+			margin: 0px;
+			-webkit-box-flex: 1;
+			-webkit-flex:1;
+			flex: 1;
+			text-align: right;
+			font-size: 12px;
+		}
+
+		.header-ul-01  li h6 {
+			font-weight: bold;
+			text-transform: capitalize;
+			font-size: 11px;
+		}
+
+		.header-ul-01  li span{
+			font-size: 10px;
+			color: #808080;
+			margin: 0px;
+		}
+
+		.header-ul-01  li p{
+			font-size: 10px;
+			color: #808080;
+			margin: 0px;
+			padding-left: 10px;
+		}
+
+		.header-ul {
+			list-style-type: none;
+			color:#9D1306;
+			font-weight:bold;
+			margin: 0px;
+			padding: 0px;
+			display: -webkit-box; 
+			display: -webkit-flex;
+			display: flex;
+			-webkit-box-pack: center; 
+			-webkit-justify-content: space-between;
 			justify-content: space-between;
 			padding-top: 5px;
 		}
@@ -74,7 +109,6 @@
 		.header-ul li {
 			padding-bottom: 2px;
 			font-size: 12px;
-			/* padding-left: 15px; */
 			margin: 0px;
 			-webkit-box-flex: 1;
 			-webkit-flex:1;
@@ -88,7 +122,8 @@
 		}
 
 		.header-ul .pull-right-li {
-			padding-left: 460px;
+			padding-left: 300px;
+			text-align: right;
 		}
 
 		.header-ul li h6 {
@@ -101,7 +136,7 @@
 			font-size: 10px;
 			color: #808080;
 			margin: 0px;
-			padding-left: 25px;
+			/* padding-left: 25px; */
 		}
 
 		.header-ul li p{
@@ -118,13 +153,32 @@
 			<tbody>
 				<tr>
 					<td>
-						<img id="ki_logo_img" src="" class="logo-ki-img"/>
+						<img id="ki_logo_img" src="" class="logo-img"/>
 					</td>
 					<td>
-						<h4 class="log-title">AUTOSEQ CURATION REPORT</h4>
+						<h4 class="log-title">Appendix Panel</h4>
 					</td>
 					<td>
-						<img id="project_logo_img" src="" class="logo-img"/>
+						<ul class="header-ul-01">
+							<li>
+								<h6>SPECIMENS</h6>
+								<span id="specimen_data">
+
+								</span>
+							</li>
+							<li>
+								<h6>EPM DNR</h6>
+								<span id="epm_dnr_data">
+									
+								</span>
+							</li>
+							<li>
+								<h6>RECIEVED DATE</h6>
+								<span id="recieved_date">
+
+								</span>
+							</li>
+						</ul>
 					</td>
 				</tr>
 				<tr>
@@ -132,8 +186,11 @@
 						<ul class="header-ul">
 							<li class="about">
 								<h6>ABOUT THE TEST</h6>
-								<p> ProBio Prostatacancer Assay, ackreditated at Karolinska University Hospital. </p>
+								<p id="about_data">
+									
+								</p>
 							</li>
+
 							<li class="pull-right-li">
 								<h6>REPORT DATE</h6>
 								<span id="report_date">
