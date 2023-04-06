@@ -115,8 +115,7 @@ def get_sample_design_ids(project_path, sample_id):
 		if not status:
 			return {'sample_capture': [], 'status': False}, error
 
-		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-')),
-					os.listdir(capture_dir)))
+		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('CPC-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-')),os.listdir(capture_dir)))
 
 		if len(sample_capture_list) < 1:
 			return {'sample_capture': [], 'status': False}, 400
@@ -1338,14 +1337,21 @@ def build_sample_details(project_name, cfdna):
 def fetch_patient_info(project_name, sample_id, capture_id):
 
 	capture_id_arr = capture_id.split("-")
+
+	normal_idx = capture_id_arr.index("N")
+	normal_id = capture_id_arr[normal_idx+1]
+
+	cfdna_idx = capture_id_arr.index("T") if 'T' in capture_id_arr else capture_id_arr.index("CFDNA")
+	cfdna_id = capture_id_arr[cfdna_idx+1]
+
 	cfdna1 = capture_id_arr[4]
 	cfdna =  cfdna1 if cfdna1.isdigit() else capture_id_arr[10]
 
-	capture_format = capture_id.split("-")[0]
+	capture_format = capture_id_arr[0]
 
 	try:
-		if(project_name == "ICPM" or capture_format == "iPCM"):
-			sample_details_json = build_icpm_sample_details(cfdna)
+		if(project_name == "IPCM" or capture_format == "iPCM"):
+			sample_details_json = build_icpm_sample_details(normal_id)
 		else:
 			sample_details_json = build_sample_details(project_name, cfdna)
 
@@ -1356,7 +1362,7 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-		return {'data':[], 'status': False}, 400
+		#return {'data':[], 'status': False}, 400
 
 def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
 

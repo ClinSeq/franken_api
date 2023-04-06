@@ -63,16 +63,21 @@ def json_serial(obj):
 
 
 # ### Fetch the sample information from ipcm referral table
-def build_icpm_sample_details(cfdna):
+def build_icpm_sample_details(cfdna,cfdna_2):
 
 	identifier_status = False
+	res_json_data = ''
 	try:
-		sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
+		sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna_2, cfdna, cfdna, cfdna, cfdna, cfdna, cfdna)
 		res_data = fetch_sql_query('ipcmLeaderboard', sql)
-		res_json = json.dumps(res_data, default = json_serial)
-		identifier_status = True
-		json_data = json.loads(res_json)
-		return json_data[0], identifier_status
+		if len(res_data)>0:
+			res_json = json.dumps(res_data, default = json_serial)
+			identifier_status = True
+			json_data = json.loads(res_json)
+			res_json_data = json_data[0]
+		else:
+			identifier_status = False
+		return res_json_data, identifier_status
 	except Exception as e:
 		print("Build iPCM Exception", str(e))
 		return [], identifier_status
@@ -418,7 +423,7 @@ def build_svs(root_path):
 
 
 # ## Build Json from output files
-def build_json(root_path, output_path, project_name, cfdna, sample_id, capture_format):
+def build_json(root_path, output_path, project_name, normal_id, cfdna, sample_id, capture_format):
 
 	print("--- MTBP Json Format Started ---\n")
 
@@ -428,7 +433,7 @@ def build_json(root_path, output_path, project_name, cfdna, sample_id, capture_f
 	logging.info('--- Sample fetching started ---')
 	itendifiter_status = True
 	if(project_name == "IPCM" or capture_format == "iPCM"):
-		sample_details_json, itendifiter_status = build_icpm_sample_details(cfdna)
+		sample_details_json, itendifiter_status = build_icpm_sample_details(normal_id, cfdna)
 	else:
 		sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna)
 
@@ -500,9 +505,17 @@ def main(nfs_path, project_name, sample_id, capture_id):
 
 	output_path = root_path+"/MTBP"
 
-	cfdna = capture_id.split("-")[4]
+	capture_arr = capture_id.split("-")
+	normal_idx = capture_arr.index("N")
+	normal_id = capture_arr[normal_idx+1]
 
-	capture_format = capture_id.split("-")[0]
+	cfdna_idx = capture_arr.index("T") if 'T' in capture_arr else capture_arr.index("CFDNA")
+	cfdna_id = capture_arr[cfdna_idx+1]
+
+	#cfdna = capture_id.split("-")[4]
+	cfdna = re.sub(r'[a-zA-Z]', '', cfdna_id)
+
+	capture_format = capture_arr[0]
 
 	log_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_CFDNA"+cfdna+".log"
 
@@ -519,7 +532,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	logging.info("Sample Id : {} || Capture Id : {} ".format(sample_id,capture_id))
 
 	try:
-		build_json(root_path, output_path, project_name, cfdna, sample_id, capture_format)
+		build_json(root_path, output_path, project_name, normal_id, cfdna, sample_id, capture_format)
 	except Exception as e:
 		print("Main Exception", str(e))
 		logging.error("Failed : {}".format(str(e)))
