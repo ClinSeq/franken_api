@@ -270,7 +270,7 @@ def build_small_variants(root_path):
 
 			for index, row in smv_df_filter_data.iterrows():
 
-				variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+'; '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
+				variant_det = "chr"+str(row['chr'])+":"+str(row['end'])+'; '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
 				if source_type == 'somatic':
 					clonality = row['clonality'] if 'clonality' in row else '-'
 				else:
