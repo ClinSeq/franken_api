@@ -1,8 +1,8 @@
 CREATE TYPE cur_user_status AS ENUM ('0','1', '2', '-1');
 CREATE TYPE cur_user_status_desc AS ENUM ('0 -New user','1 - Active User', '2 - Suspended User', '-1 Delete User');
 
-CREATE TYPE cur_role_status AS ENUM ('0', '1', '-1');
-CREATE TYPE cur_role_status_desc AS ENUM('0 - Normal User', '1 - Admin', '-1 Super Admin');
+CREATE TYPE cur_role_status AS ENUM ('0', '1', '-1', '2');
+CREATE TYPE cur_role_status_desc AS ENUM('0 - Normal User', '1 - Admin', '2 Course User', '-1 Super Admin');
 
 CREATE TABLE cur_users_t (
     u_id SERIAL PRIMARY KEY, 

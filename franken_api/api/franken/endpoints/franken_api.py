@@ -174,9 +174,10 @@ class TableSvsView(Resource):
 		"""
 		args = table_svs_arguments.parse_args()
 		proj_name = args['project_name']
+		user_id = args['uId']
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
-			result, errorcode = get_table_svs_header(nfs_path, args['sdid'], args['capture_id'], args['header'])
+			result, errorcode = get_table_svs_header(nfs_path, args['sdid'], args['capture_id'], user_id, args['header'])
 			return result, errorcode
 		else:
 			return nfs_path,response_code
@@ -202,9 +203,10 @@ class TableIgv(Resource):
 		"""
 		args = table_svs_arguments.parse_args()
 		proj_name = args['project_name']
+		user_id = args['uId']
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
-			result, errorcode = get_table_igv(variant, nfs_path, args['sdid'], args['capture_id'], args['header'])
+			result, errorcode = get_table_igv(variant, nfs_path, args['sdid'], args['capture_id'], user_id, args['header'])
 			return result, errorcode
 		else:
 			return nfs_path,response_code
@@ -230,9 +232,10 @@ class TableQc(Resource):
 		"""
 		args = table_qc_arguments.parse_args()
 		proj_name = args['project_name']
+		user_id = args['uId']
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
-			result, errorcode = get_table_qc_header(nfs_path, args['sdid'], args['capture_id'], args['header'])
+			result, errorcode = get_table_qc_header(nfs_path, args['sdid'], args['capture_id'], user_id, args['header'])
 			return result, errorcode
 		else:
 			return nfs_path,response_code
@@ -258,9 +261,10 @@ class TableCNV(Resource):
 		"""
 		args = table_cnv_arguments.parse_args()
 		proj_name = args['project_name']
+		user_id = args['uId']
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
-			result, errorcode = get_table_cnv_header(nfs_path, args['sdid'], args['capture_id'], variant_type, args['header'])
+			result, errorcode = get_table_cnv_header(nfs_path, args['sdid'], args['capture_id'], variant_type, user_id, args['header'])
 			return result, errorcode
 		else:
 			return nfs_path,response_code

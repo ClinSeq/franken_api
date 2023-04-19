@@ -81,6 +81,19 @@ def generate_list_to_dict(result):
 		row.append(d)
 	
 	return row
+
+### check the user role with course role-id
+def check_user_role(user_id):
+	engine = db.get_engine(current_app, 'curation')
+	session = db.create_scoped_session(options={'bind': engine})
+	sql="SELECT count(*) as count from cur_users_t where u_id='{}' and role_id='2' and user_status='1' limit 1".format(user_id)
+	res = session.execute(sql)
+	res_data = generate_list_to_dict(res)
+	res_count = int(res_data[0]['count'])
+	if res_count > 0:
+		return True
+	else:
+		return False
 	
 def run_cmd(cmd):
 	"Run external commands"
@@ -210,80 +223,147 @@ def generate_headers_ngx_table(headers):
 	return columns
 
 
-def get_table_qc_header(project_path, sdid, capture_id, header='true'):
+def get_table_qc_header(project_path, sdid, capture_id, user_id, header='true'):
 	"read qc file from qc_overview.txt and return as json"
 	data = []
 	try:
 		file_path = project_path + '/' + sdid + '/' + capture_id + '/' + 'qc/'
-		qc_filename = file_path + list(filter(lambda x: x.endswith('.qc_overview.txt')
-														and not x.startswith('.')
-														and not x.endswith('.out'), os.listdir(file_path)))[0]
-		if os.path.exists(qc_filename):
-			hide_header = ["indexs", "dedupped_on_bait_rate", "CHIP", "PURITY", "PLOIDY", "Comment"]
-			has_rows = False
-			data = []
-			with open(qc_filename, 'r') as f:
-				reader_ponter = csv.DictReader(f, delimiter ='\t')
-				for i, each_row in enumerate(reader_ponter):
-					has_rows = True
-					each_row = dict(each_row)
-					each_row['indexs'] = i
-					data.append(each_row)
+		
+		file_search_txt = '.qc_overview.txt'
+		regex = '(.*)(CFDNA|T)-(.*)({})$'.format(file_search_txt)
+
+		file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
+
+		if len(file_list) > 0:
 				
-			if(not has_rows):
-				return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For QC'}, 200
+			user_role_status = check_user_role(user_id)
+			set_save_file = file_search_txt if not user_role_status else '_uid'+user_id+file_search_txt
 
-			column_list = list(data[0].keys())
+			regex_fetch_file = '^((?!_uid).)*$' if not user_role_status else '.*_uid'+user_id+file_search_txt
+			r = re.compile(regex_fetch_file)
+			newlist = list(filter(r.match, file_list))
+			save_to_qc_file = ""
+			
+			if len(newlist) > 0:
+				qc_filename = file_path + newlist[0]
+				save_to_qc_file  = qc_filename.split(set_save_file)[0] + set_save_file
+			else:
+				regex_fetch_file = '^((?!-uid).)*$'
+				r = re.compile(regex_fetch_file)
+				file_list = list(filter(r.match, file_list))
+				qc_filename = file_path + file_list[0]
+				save_to_qc_file  = qc_filename.split(file_search_txt)[0] + set_save_file
+						
+			curated_cnv_file =  list(filter(lambda x: ( x.endswith(qc_filename))
+											and not x.startswith('.')
+											and not x.endswith('.out'),
+									os.listdir(file_path)))
 
-			header = list(generate_headers_ngx_table(column_list))
+			curated_file_status = True if curated_cnv_file else False
 
-			new_keys = {
-				# 'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
-				# 'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
-				# 'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
-				'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
-				# 'Comment': {'key': 'Comment', 'title': 'Comment'}
-			}
+			if curated_file_status:
+				qc_filename = save_to_qc_file
+		
+			if os.path.exists(qc_filename):
+				hide_header = ["indexs", "dedupped_on_bait_rate", "CHIP", "PURITY", "PLOIDY", "Comment"]
+				has_rows = False
+				data = []
+				with open(qc_filename, 'r') as f:
+					reader_ponter = csv.DictReader(f, delimiter ='\t')
+					for i, each_row in enumerate(reader_ponter):
+						has_rows = True
+						each_row = dict(each_row)
+						each_row['indexs'] = i
+						data.append(each_row)
+					
+				if(not has_rows):
+					return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For QC'}, 200
 
-			for idx,value in enumerate(new_keys):
-				n_key = [item for item in header if item.get('key')==value]
-				
-				if(not n_key):
-					header.append(new_keys[value])
-				
-			new_header = []
-			for i,value in enumerate(header):
-				key_name = value['key']
-				if(key_name not in hide_header):
-					new_header.append(value)
+				column_list = list(data[0].keys())
 
-			return {'header': new_header, 'data': data, 'filename': qc_filename, 'status': True}, 200
+				header = list(generate_headers_ngx_table(column_list))
 
+				new_keys = {
+					# 'CHIP': {'key': 'CHIP', 'title': 'CHIP'},    
+					# 'PURITY': {'key': 'PURITY', 'title': 'PURITY'},
+					# 'PLOIDY': {'key': 'PLOIDY', 'title': 'PLOIDY'},
+					'Overall_QC': {'key': 'Overall_QC', 'title': 'Overall_QC'},
+					# 'Comment': {'key': 'Comment', 'title': 'Comment'}
+				}
+
+				for idx,value in enumerate(new_keys):
+					n_key = [item for item in header if item.get('key')==value]
+					
+					if(not n_key):
+						header.append(new_keys[value])
+					
+				new_header = []
+				for i,value in enumerate(header):
+					key_name = value['key']
+					if(key_name not in hide_header):
+						new_header.append(value)
+
+				return {'header': new_header, 'data': data, 'filename': save_to_qc_file, 'status': True}, 200
+
+			else:
+				return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
 		else:
 			return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
-	
+		
 	except Exception as e:
 			return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
 
 
-def get_table_svs_header(project_path, sdid, capture_id, header='true'):
+def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true'):
 	"read structural variant file from sdid_annotate_combined_SV.txt and return as json"
 
 	data = []
 	try:
 		file_path = project_path + '/' + sdid + '/' + capture_id + '/svs/igv/'
 
-		file_path_list =  list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt$', x) or
-									   x.endswith('_annotate_combined_SV.txt'))
-									  and not x.startswith('.')
-									  and not x.endswith('.out'),
-							os.listdir(file_path)))
-		if len(file_path_list) > 0:
-			file_path = file_path + file_path_list[0]
+		file_search_txt = '-sv-annotated.txt'
+		regex = '(.*)(CFDNA|T)-(.*)({})$'.format(file_search_txt)
 
-			if os.path.exists(file_path):
+		file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
+
+		# file_path_list =  list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt$', x) or
+		# 							   x.endswith('_annotate_combined_SV.txt'))
+		# 							  and not x.startswith('.')
+		# 							  and not x.endswith('.out'),
+		# 					os.listdir(file_path)))
+		
+		if len(file_list) > 0:
+
+			user_role_status = check_user_role(user_id)
+			set_save_file = file_search_txt if not user_role_status else '-uid'+user_id+file_search_txt
+
+			regex_fetch_file = '^((?!-uid).)*$' if not user_role_status else '.*-uid'+user_id+file_search_txt
+			r = re.compile(regex_fetch_file)
+			newlist = list(filter(r.match, file_list))
+
+			if len(newlist) > 0:
+				svs_filename = file_path + newlist[0]
+				save_to_svs_file  = svs_filename.split(set_save_file)[0] + set_save_file
+			else:
+				regex_fetch_file = '^((?!-uid).)*$'
+				r = re.compile(regex_fetch_file)
+				file_list = list(filter(r.match, file_list))
+				svs_filename = file_path + file_list[0]
+				save_to_svs_file  = svs_filename.split(file_search_txt)[0] + set_save_file
+
+			curated_svs_file =  list(filter(lambda x: ( x.endswith(svs_filename))
+								and not x.startswith('.')
+								and not x.endswith('.out'),
+						os.listdir(file_path)))
+
+			curated_file_status = True if curated_svs_file else False
+
+			if curated_file_status:
+				svs_filename = save_to_svs_file
+
+			if os.path.exists(svs_filename):
 				hide_header = ["GENE_A-GENE_B-sorted", "CAPTURE_ID", "PROJECT_ID", "SDID", "indexs", "ASSESSMENT"]
-				df = pd.read_csv(file_path,delimiter="\t")
+				df = pd.read_csv(svs_filename,delimiter="\t")
 
 				if(df.empty):
 					return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For Structural Variants'}, 200
@@ -392,7 +472,7 @@ def get_table_svs_header(project_path, sdid, capture_id, header='true'):
 						if(key_name not in hide_header):
 							new_header.append(value)
 
-					return {'header': new_header, 'data': data, 'filename': file_path, 'status': True}, 200		
+					return {'header': new_header, 'data': data, 'filename': save_to_svs_file, 'status': True}, 200		
 			else:
 				return {'header': [], 'data': [], 'status': False, 'error': 'No File Found For Structural Variants'}, 400
 		else:
@@ -472,9 +552,10 @@ def check_hotspot_status_new(gene, ref, alt, hgvsp, consequence):
 
 	return hs_status
 
-def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
+def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header='true'):
+
 	"read  variant file for given sdid and return as json"
-	file_path = project_path + '/' + sdid + '/' + capture_id
+	file_path = project_path + '/' + sdid + '/' + capture_id +"/"
 	data = []
 	missing_header = []
 	header = []
@@ -493,134 +574,166 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, header='true'):
 
 	try:
 		hide_header = ["PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
-		igv_nav_file = list(filter(lambda x: (re.match(regex2, x) if ('-somatic-' in x or '-germline-' in x) else re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
-		igv_nav_file = file_path + '/' + igv_nav_file
+
+		igv_nav_file = list(filter(lambda x: (re.match(regex2, x) if ('-somatic-' in x or '-germline-' in x) else re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))
 		
-		has_rows = False
-		data = []
-		with open(igv_nav_file, 'r') as f:
-			reader_pointer = csv.DictReader(f, delimiter='\t')
-			for i, each_row in enumerate(reader_pointer):
-				
-				has_rows = True
-				each_row = dict(each_row)
-				each_row['indexs'] = i
+		if len(igv_nav_file) > 0:
+			user_role_status = check_user_role(user_id)
+			file_search_txt = '-igvnav-input.txt'
+			set_save_file = file_search_txt if not user_role_status else '-uid'+user_id+file_search_txt
 
-				if 'RSID' in each_row:
-					rs_id_arr = ''
-					if '&' in each_row['RSID']:
-						rs_id_arr = each_row['RSID'].split('&')
-					else:						
-						if re.findall("'\s*([^']*?)\s*'", each_row['RSID']):
-							rsId_arr = eval(each_row['RSID'].strip())
-							if any(rsId_arr):
-								rs_id_arr = rsId_arr
-						else:
-							rs_id_arr = each_row['RSID'].split()
+			regex_fetch_file = '^((?!-uid).)*$' if not user_role_status else  '^(.*)(-uid{}).*$'.format(user_id+file_search_txt)
+			r = re.compile(regex_fetch_file)
+			newlist = list(filter(r.match, igv_nav_file))
+			save_to_nav_file = ""
 
-					each_row['RSID'] = rs_id_arr
+			if len(newlist) > 0:
+				igv_nav_file = file_path + newlist[0]
+				save_to_nav_file  = igv_nav_file.split(set_save_file)[0] + set_save_file
+			else:
+				regex_fetch_file = '^((?!-uid).)*$'
+				r = re.compile(regex_fetch_file)
+				file_list = list(filter(r.match, igv_nav_file))
+				igv_nav_file = file_path + file_list[0]
+				save_to_nav_file  = igv_nav_file.split(file_search_txt)[0] + set_save_file
+						
+			curated_cnv_file =  list(filter(lambda x: ( x.endswith(igv_nav_file))
+											and not x.startswith('.')
+											and not x.endswith('.out'),
+									os.listdir(file_path)))
 
-				if 'HGVSp_org' in each_row:
-					each_row['HGVSp_org'] = each_row['HGVSp_org']
-				else:
-					each_row['HGVSp_org'] = each_row['HGVSp']
+			curated_file_status = True if curated_cnv_file else False
 
-				if 'CGC_ANN' in each_row:
-					each_row['CGC_bool'] = 1 if each_row['CGC_ANN'] != '' else 0
-				else:
-					each_row['CGC_bool'] = 1
-
-				gene = each_row['GENE']
-				if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
-					one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
-					each_row['HGVSp'] = one_amino_code
-				
-				consequence = ''
-				consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
-				each_row['CONSEQUENCE'] = consequence   
-
-				HGVSp_status = '' 
-				if variant_type == 'somatic' and each_row['HGVSp']:
-					ref = each_row['REF']
-					alt = each_row['ALT'][1:-1]
-					hgvsp =  each_row['HGVSp']
-					HGVSp_status = check_hotspot_status_new(gene,ref, alt, hgvsp, consequence)
+			if curated_file_status:
+				igv_nav_file = save_to_nav_file
+		
+			has_rows = False
+			data = []
+			with open(igv_nav_file, 'r') as f:
+				reader_pointer = csv.DictReader(f, delimiter='\t')
+				for i, each_row in enumerate(reader_pointer):
 					
+					has_rows = True
+					each_row = dict(each_row)
+					each_row['indexs'] = i
 
-				each_row['HOTSPOT'] = HGVSp_status
+					if 'RSID' in each_row:
+						rs_id_arr = ''
+						if '&' in each_row['RSID']:
+							rs_id_arr = each_row['RSID'].split('&')
+						else:						
+							if re.findall("'\s*([^']*?)\s*'", each_row['RSID']):
+								rsId_arr = eval(each_row['RSID'].strip())
+								if any(rsId_arr):
+									rs_id_arr = rsId_arr
+							else:
+								rs_id_arr = each_row['RSID'].split()
 
-				if None in each_row:
-					if isinstance(each_row[None], list):
-						for i, each_none in enumerate(each_row[None]):
-							each_row[missing_header[i]] = each_none
-						#each_row['Notes'] = " ".join( each_row[None])
-						del each_row[None]
+						each_row['RSID'] = rs_id_arr
 
-				data.append(dict(each_row))
+					if 'HGVSp_org' in each_row:
+						each_row['HGVSp_org'] = each_row['HGVSp_org']
+					else:
+						each_row['HGVSp_org'] = each_row['HGVSp']
 
-		if(not has_rows):
-			return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For {} Variants'.format(variant_type.capitalize())}, 200
+					if 'CGC_ANN' in each_row:
+						each_row['CGC_bool'] = 1 if each_row['CGC_ANN'] != '' else 0
+					else:
+						each_row['CGC_bool'] = 1
 
-		header = list(data[0])
-		if 'HOTSPOT' in header: ## and variant_type == 'somatic'
-			del header[header.index('HOTSPOT')]
+					gene = each_row['GENE']
+					if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
+						one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
+						each_row['HGVSp'] = one_amino_code
+					
+					consequence = ''
+					consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
+					each_row['CONSEQUENCE'] = consequence   
 
-		if 'CGC_bool' in header:
-			del header[header.index('CGC_bool')]
+					HGVSp_status = '' 
+					if variant_type == 'somatic' and each_row['HGVSp']:
+						ref = each_row['REF']
+						alt = each_row['ALT'][1:-1]
+						hgvsp =  each_row['HGVSp']
+						HGVSp_status = check_hotspot_status_new(gene,ref, alt, hgvsp, consequence)
+						
 
-		if 'HOTSPOT' not in header and variant_type == 'somatic':
-			conseq_index = header.index('CONSEQUENCE') + 1
-			header.insert(conseq_index, 'HOTSPOT')
+					each_row['HOTSPOT'] = HGVSp_status
 
-		if 'include_variant_report_pdf' not in header:
-			header.insert(0, 'include_variant_report_pdf')
+					if None in each_row:
+						if isinstance(each_row[None], list):
+							for i, each_none in enumerate(each_row[None]):
+								each_row[missing_header[i]] = each_none
+							#each_row['Notes'] = " ".join( each_row[None])
+							del each_row[None]
 
-		igv_var_inc_key = 'include_variant_report_pdf'
-		asec_key = 'SECONDHIT'
-		ass_key = 'ASSESSMENT'
-		zyg_key = 'zygosity'
-		acl_key = 'CLONALITY'
-		var_occr_key = 'autoseq_variant_db'
+					data.append(dict(each_row))
 
-		if asec_key in header:
-			asec_indx = header.index(asec_key)
-			del header[asec_indx]
-			header.insert(0,asec_key)
+			if(not has_rows):
+				return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For {} Variants'.format(variant_type.capitalize())}, 200
 
-		if ass_key in header:
-			ass_indx = header.index(ass_key)
-			del header[ass_indx]
-			header.insert(0,ass_key)
+			header = list(data[0])
+			if 'HOTSPOT' in header: ## and variant_type == 'somatic'
+				del header[header.index('HOTSPOT')]
 
-		if zyg_key in header:
-			ass_indx = header.index(zyg_key)
-			del header[ass_indx]
-			header.insert(0,zyg_key)
+			if 'CGC_bool' in header:
+				del header[header.index('CGC_bool')]
 
-		if acl_key in header:
-			acl_indx = header.index(acl_key)
-			del header[acl_indx]
-			header.insert(0,acl_key)
+			if 'HOTSPOT' not in header and variant_type == 'somatic':
+				conseq_index = header.index('CONSEQUENCE') + 1
+				header.insert(conseq_index, 'HOTSPOT')
 
-		if var_occr_key in header:
-			var_occr_indx = header.index(var_occr_key)
-			del header[var_occr_indx]
-			header.insert(0,var_occr_key)
+			if 'include_variant_report_pdf' not in header:
+				header.insert(0, 'include_variant_report_pdf')
 
-		if igv_var_inc_key in header:
-			igv_var_inc_indx = header.index(igv_var_inc_key)
-			del header[igv_var_inc_indx]
-			header.insert(0,igv_var_inc_key)
-		
-		header = generate_headers_ngx_table(header)
+			igv_var_inc_key = 'include_variant_report_pdf'
+			asec_key = 'SECONDHIT'
+			ass_key = 'ASSESSMENT'
+			zyg_key = 'zygosity'
+			acl_key = 'CLONALITY'
+			var_occr_key = 'autoseq_variant_db'
 
-		new_header = []
-		for i,value in enumerate(header):
-			key_name = value['key']
-			if(key_name not in hide_header):
-				new_header.append(value)
+			if asec_key in header:
+				asec_indx = header.index(asec_key)
+				del header[asec_indx]
+				header.insert(0,asec_key)
 
-		return {'header': new_header, 'data': data, 'filename' : igv_nav_file, 'status': True}, 200
+			if ass_key in header:
+				ass_indx = header.index(ass_key)
+				del header[ass_indx]
+				header.insert(0,ass_key)
+
+			if zyg_key in header:
+				ass_indx = header.index(zyg_key)
+				del header[ass_indx]
+				header.insert(0,zyg_key)
+
+			if acl_key in header:
+				acl_indx = header.index(acl_key)
+				del header[acl_indx]
+				header.insert(0,acl_key)
+
+			if var_occr_key in header:
+				var_occr_indx = header.index(var_occr_key)
+				del header[var_occr_indx]
+				header.insert(0,var_occr_key)
+
+			if igv_var_inc_key in header:
+				igv_var_inc_indx = header.index(igv_var_inc_key)
+				del header[igv_var_inc_indx]
+				header.insert(0,igv_var_inc_key)
+			
+			header = generate_headers_ngx_table(header)
+
+			new_header = []
+			for i,value in enumerate(header):
+				key_name = value['key']
+				if(key_name not in hide_header):
+					new_header.append(value)
+
+			return {'header': new_header, 'data': data, 'filename' : save_to_nav_file, 'status': True}, 200
+		else:
+			return {'header': [], 'data': [], 'filename': '', 'status': False}, 400
 
 	except Exception as e:
 		return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
@@ -1008,158 +1121,164 @@ def get_curation_genomic_profile(record):
 	except Exception as e:
 		return {'status': True, 'data': [], 'error': str(e)}, 400		
 
-def get_table_cnv_header(project_path, sdid, capture_id, variant_type, header='true'):
+def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, header='true'):
 	"read qc file from qc_overview.txt and return as json"
 	data = []
-	file_path = project_path + '/' + sdid + '/' + capture_id + '/' + 'cnv/'
-	if variant_type == 'somatic':
-		regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns$'
-		set_save_file = '_somatic_curated.cns'
-	elif variant_type == 'germline':
-		regex = '^(?:(?!(-CFDNA-|_germline_curated|-T-)).)*.cns$'
-		#regex = '[-\w]+-(N)-([A-Za-z0-9-]|_germline_curated)+.cns$'
-		set_save_file = '_germline_curated.cns'
-	else:
-		return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400
-	
-	file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
-
-	if file_list != []:
-
-		cnv_filename = file_path + file_list[0]
-
-		save_to_cnv_file  = cnv_filename.split('.cns')[0] + set_save_file
-
-		curated_cnv_file =  list(filter(lambda x: ( x.endswith(set_save_file))
-										and not x.startswith('.')
-										and not x.endswith('.out'),
-								os.listdir(file_path)))
-
-		curated_file_status = True if curated_cnv_file else False
-
-		if curated_file_status:
-			cnv_filename = save_to_cnv_file
-		
-		if os.path.exists(cnv_filename):
-			has_rows = False
-			hide_header = ["ABSOLUTE_COPY_NUMBER", "COMMENT", "depth", "weight", "indexs"]
-			data = []
-			with open(cnv_filename, 'r') as f:
-				reader_ponter = csv.DictReader(f, delimiter ='\t')
-				for i, each_row in enumerate(reader_ponter):
-					has_rows = True
-					each_row = dict(each_row)
-					each_row['indexs'] = i
-					gene_list = each_row['gene'].split(",")
-					
-					if 'COPY_NUMBER' in each_row.keys() and each_row["COPY_NUMBER"] != '':
-						copy_number = each_row["COPY_NUMBER"]
-						each_row["COPY_NUMBER"] = math.ceil(float(copy_number))
-						
-					glist = []
-					[glist.append(x) for x in gene_list if x not in glist]
-					each_row['gene'] = ', '.join(glist)
-					if 'SIZE' in each_row.keys() and each_row['SIZE'].isdecimal():
-						each_row['SIZE'] = '{0:.4f} Mb'.format(int(each_row['SIZE'])/1000000)
-					data.append(each_row)
-
-			if(not has_rows):
-				return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For CNV {} Variants'.format(variant_type.capitalize())}, 200
-
-			header = list(data[0])
-			#compute size for cnv using start and end
-			if 'SIZE' not in header:
-				end_index = header.index('end') + 1
-				header.insert(end_index, 'SIZE')
-				for data_dict in data:
-					size = int(data_dict['end']) - int(data_dict['start']) + 1
-					data_dict['SIZE'] = '{0:.2f} Mb'.format(size/1000000)
-
-			acn_key = 'ABSOLUTE_COPY_NUMBER'
-			ass_key = 'ASSESSMENT'
-			com_key = 'COMMENT'
-			pur_key = 'PURITY'
-			plo_key = 'PLOIDY'
-			copy_nu_key = 'COPY_NUMBER'
-			plo_tp_key = 'PLOIDY_TYPE'
-			cnv_var_inc_key = 'include_variant_report_pdf'
-
-
-			if acn_key in header:
-				acn_indx = header.index(acn_key)
-				del header[acn_indx]
-				header.insert(0,acn_key)
-
-			if ass_key in header:
-				ass_indx = header.index(ass_key)
-				del header[ass_indx]
-				header.insert(0,ass_key)
-
-			if com_key in header:
-				com_indx = header.index(com_key)
-				del header[com_indx]
-				header.insert(0,com_key)
-
-			if pur_key in header:
-				pur_indx = header.index(pur_key)
-				del header[pur_indx]
-				header.insert(0,pur_key)
-
-			if plo_key in header:
-				plo_indx = header.index(plo_key)
-				del header[plo_indx]
-				header.insert(0,plo_key)
-
-			if copy_nu_key in header:
-				copy_nu_indx = header.index(copy_nu_key)
-				del header[copy_nu_indx]
-				header.insert(0,copy_nu_key)
-			
-			if plo_tp_key in header:
-				plo_tp_indx = header.index(plo_tp_key)
-				del header[plo_tp_indx]
-				header.insert(0,plo_tp_key)
-
-			if cnv_var_inc_key in header:
-				cnv_var_inc_indx = header.index(cnv_var_inc_key)
-				del header[cnv_var_inc_indx]
-				header.insert(0,cnv_var_inc_key)
-			
-			del header[header.index('gene')]
-			header.append('gene')
-			header = generate_headers_ngx_table(header)
-
-			new_keys = {
-				acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
-				ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
-				com_key :  {'key': com_key, 'title': 'COMMENT'},
-				pur_key :  {'key': pur_key, 'title': 'CANCER CELL FRACTION'},
-				plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
-				copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
-				plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'},
-				cnv_var_inc_key :  {'key': cnv_var_inc_key, 'title': 'INCLUDE VARIANT REPORT PDF'}
-			}
-
-			for idx,value in enumerate(new_keys):
-				n_key = [item for item in header if item.get('key')==value]
-				if(not n_key):
-					header.insert(0, new_keys[value])
-			
-			new_header = []
-			for i,value in enumerate(header):
-				key_name = value['key']
-				title_name = value['title']
-				if(key_name not in hide_header):
-					if(title_name in 'PURITY'):
-						value['title'] = "CANCER CELL FRACTION"
-					new_header.append(value)
-			
-			return {'header': new_header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
-
+	try:
+		user_role_status = check_user_role(user_id)
+		file_path = project_path + '/' + sdid + '/' + capture_id + '/' + 'cnv/'
+		if variant_type == 'somatic':
+			regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns$'
+			set_save_file = '_somatic_curated.cns' if not user_role_status else '_uid'+user_id+'somatic_curated.cns'
+		elif variant_type == 'germline':
+			regex = '^(?:(?!(-CFDNA-|germline_curated|-T-)).)*.cns$'
+			#regex = '[-\w]+-(N)-([A-Za-z0-9-]|_germline_curated)+.cns$'
+			set_save_file = '_germline_curated.cns' if not user_role_status else '_uid'+user_id+'germline_curated.cns'
 		else:
-			return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid file', 'status': False}, 400
-	else:
-		return {'header': [], 'data': [], 'filename': '', 'error': 'File not found', 'status': False}, 400
+			return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400
+		
+		file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
+
+		if len(file_list) > 0:
+
+			cnv_filename = file_path + file_list[0]
+
+			save_to_cnv_file  = cnv_filename.split('.cns')[0] + set_save_file
+
+			curated_cnv_file =  list(filter(lambda x: ( x.endswith(set_save_file))
+											and not x.startswith('.')
+											and not x.endswith('.out'),
+									os.listdir(file_path)))
+
+			curated_file_status = True if curated_cnv_file else False
+
+			if curated_file_status:
+				cnv_filename = save_to_cnv_file
+			
+			if os.path.exists(cnv_filename):
+				has_rows = False
+				hide_header = ["ABSOLUTE_COPY_NUMBER", "COMMENT", "depth", "weight", "indexs"]
+				data = []
+				with open(cnv_filename, 'r') as f:
+					reader_ponter = csv.DictReader(f, delimiter ='\t')
+					for i, each_row in enumerate(reader_ponter):
+						has_rows = True
+						each_row = dict(each_row)
+						each_row['indexs'] = i
+						gene_list = each_row['gene'].split(",")
+						
+						if 'COPY_NUMBER' in each_row.keys() and each_row["COPY_NUMBER"] != '':
+							copy_number = each_row["COPY_NUMBER"]
+							each_row["COPY_NUMBER"] = math.ceil(float(copy_number))
+							
+						glist = []
+						[glist.append(x) for x in gene_list if x not in glist]
+						each_row['gene'] = ', '.join(glist)
+						if 'SIZE' in each_row.keys() and each_row['SIZE'].isdecimal():
+							each_row['SIZE'] = '{0:.4f} Mb'.format(int(each_row['SIZE'])/1000000)
+						data.append(each_row)
+
+				if(not has_rows):
+					return {'header': [], 'data': [], 'status': True, 'error': 'No Data Found For CNV {} Variants'.format(variant_type.capitalize())}, 200
+
+				header = list(data[0])
+				#compute size for cnv using start and end
+				if 'SIZE' not in header:
+					end_index = header.index('end') + 1
+					header.insert(end_index, 'SIZE')
+					for data_dict in data:
+						size = int(data_dict['end']) - int(data_dict['start']) + 1
+						data_dict['SIZE'] = '{0:.2f} Mb'.format(size/1000000)
+
+				acn_key = 'ABSOLUTE_COPY_NUMBER'
+				ass_key = 'ASSESSMENT'
+				com_key = 'COMMENT'
+				pur_key = 'PURITY'
+				plo_key = 'PLOIDY'
+				copy_nu_key = 'COPY_NUMBER'
+				plo_tp_key = 'PLOIDY_TYPE'
+				cnv_var_inc_key = 'include_variant_report_pdf'
+
+
+				if acn_key in header:
+					acn_indx = header.index(acn_key)
+					del header[acn_indx]
+					header.insert(0,acn_key)
+
+				if ass_key in header:
+					ass_indx = header.index(ass_key)
+					del header[ass_indx]
+					header.insert(0,ass_key)
+
+				if com_key in header:
+					com_indx = header.index(com_key)
+					del header[com_indx]
+					header.insert(0,com_key)
+
+				if pur_key in header:
+					pur_indx = header.index(pur_key)
+					del header[pur_indx]
+					header.insert(0,pur_key)
+
+				if plo_key in header:
+					plo_indx = header.index(plo_key)
+					del header[plo_indx]
+					header.insert(0,plo_key)
+
+				if copy_nu_key in header:
+					copy_nu_indx = header.index(copy_nu_key)
+					del header[copy_nu_indx]
+					header.insert(0,copy_nu_key)
+				
+				if plo_tp_key in header:
+					plo_tp_indx = header.index(plo_tp_key)
+					del header[plo_tp_indx]
+					header.insert(0,plo_tp_key)
+
+				if cnv_var_inc_key in header:
+					cnv_var_inc_indx = header.index(cnv_var_inc_key)
+					del header[cnv_var_inc_indx]
+					header.insert(0,cnv_var_inc_key)
+				
+				del header[header.index('gene')]
+				header.append('gene')
+				header = generate_headers_ngx_table(header)
+
+				new_keys = {
+					acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
+					ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
+					com_key :  {'key': com_key, 'title': 'COMMENT'},
+					pur_key :  {'key': pur_key, 'title': 'CANCER CELL FRACTION'},
+					plo_key :  {'key': plo_key, 'title': 'PLOIDY'},
+					copy_nu_key :  {'key': copy_nu_key, 'title': 'COPY_NUMBER'},
+					plo_tp_key :  {'key': plo_tp_key, 'title': 'PLOIDY_TYPE'},
+					cnv_var_inc_key :  {'key': cnv_var_inc_key, 'title': 'INCLUDE VARIANT REPORT PDF'}
+				}
+
+				for idx,value in enumerate(new_keys):
+					n_key = [item for item in header if item.get('key')==value]
+					if(not n_key):
+						header.insert(0, new_keys[value])
+				
+				new_header = []
+				for i,value in enumerate(header):
+					key_name = value['key']
+					title_name = value['title']
+					if(key_name not in hide_header):
+						if(title_name in 'PURITY'):
+							value['title'] = "CANCER CELL FRACTION"
+						new_header.append(value)
+				
+				return {'header': new_header, 'data': data, 'filename': save_to_cnv_file, 'status': True}, 200
+
+			else:
+				return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid file', 'status': False}, 400
+		else:
+			return {'header': [], 'data': [], 'filename': '', 'error': 'File not found', 'status': False}, 400
+	except Exception as e:
+			return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
+	
+
 
 
 def get_purecn_ctdna(project_path, sample_id, capture_id):

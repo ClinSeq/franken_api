@@ -38,6 +38,7 @@ staticplot_arguments = common_arguments.copy()
 staticplot_arguments.add_argument('imagename', type=str, required=True,  help='static franken plot name')
 
 table_svs_arguments =  common_arguments.copy()
+table_svs_arguments.add_argument('uId',  type=str, required=True, help="user id")
 table_svs_arguments.add_argument('header', choices=('true', 'false'), default='true', required=True,  help='Boolen True or False : True returns only column header')
 
 table_igvnav_arguments = table_svs_arguments.copy()
