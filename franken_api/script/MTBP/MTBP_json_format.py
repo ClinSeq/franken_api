@@ -319,7 +319,7 @@ def build_json(root_path, file_name, project_name, cfdna):
     project_json = {}
     
     # Sample Information
-    if(project_name == "ICPM"):
+    if(project_name == "IPCM"):
         sample_details_json = build_icpm_sample_details(cfdna)
     else:
         sample_details_json = build_sample_details(cfdna)

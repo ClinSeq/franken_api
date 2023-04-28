@@ -63,20 +63,38 @@ def json_serial(obj):
 
 
 # ### Fetch the sample information from ipcm referral table
-def build_icpm_sample_details(cfdna,cfdna_2):
+def build_icpm_sample_details(normal_cfdna, cfdna):
 
 	identifier_status = False
 	res_json_data = ''
 	try:
-		sql = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna_2, cfdna, cfdna, cfdna, cfdna, cfdna, cfdna)
+
+		## tissue cfdna
+		cfdna = re.sub(r'[a-zA-Z]', '', cfdna)
+		sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
 		res_data = fetch_sql_query('ipcmLeaderboard', sql)
-		if len(res_data)>0:
-			res_json = json.dumps(res_data, default = json_serial)
-			identifier_status = True
-			json_data = json.loads(res_json)
-			res_json_data = json_data[0]
-		else:
-			identifier_status = False
+
+		## normal cfdna
+		sql2 = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna)
+		res_normal_data = fetch_sql_query('ipcmLeaderboard', sql2)
+
+		t_pnr = res_data[0]['pnr'] if len(res_data) else ''
+		n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) else''
+
+		## Compare two pnr number
+		pnr = n_pnr if (t_pnr == n_pnr) else t_pnr
+
+		if(pnr):
+			# dob = pnr[0:8]
+			sql3 = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}'".format(cfdna, pnr)
+			res_data2 = fetch_sql_query('ipcmLeaderboard', sql3)
+			if len(res_data2)>0:
+				res_json = json.dumps(res_data2, default = json_serial)
+				identifier_status = True
+				json_data = json.loads(res_json)
+				res_json_data = json_data[0]
+			else:
+				identifier_status = False
 		return res_json_data, identifier_status
 	except Exception as e:
 		print("Build iPCM Exception", str(e))
@@ -254,6 +272,7 @@ def build_small_variants(root_path):
 	try:
 		smv_file_list = list(filter(lambda x: x.endswith('-igvnav-input.txt') and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))
 		regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
+		regex2 = '(.*)-(CFDNA|T)-(\w.*)(germline-igvnav-input).*txt$'
 
 		for i in smv_file_list:
 			smv_filename = file_path + i
@@ -262,7 +281,7 @@ def build_small_variants(root_path):
 			if 'CALL' in smv_df_data.columns:
 
 				column_list = ['CHROM', 'START', 'END', 'REF', 'ALT']
-				if(re.match(regex, i)):
+				if(re.match(regex, i) or re.match(regex2, i)):
 					reads_column_list = ['N_DP', 'N_ALT', 'N_VAF']
 					column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt', 'N_DP' : 'ref_reads',  'N_ALT' : 'alt_reads', 'N_VAF' : 'vaf'}
 				else:
@@ -423,7 +442,7 @@ def build_svs(root_path):
 
 
 # ## Build Json from output files
-def build_json(root_path, output_path, project_name, normal_id, cfdna, sample_id, capture_format):
+def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_format):
 
 	print("--- MTBP Json Format Started ---\n")
 
@@ -433,7 +452,7 @@ def build_json(root_path, output_path, project_name, normal_id, cfdna, sample_id
 	logging.info('--- Sample fetching started ---')
 	itendifiter_status = True
 	if(project_name == "IPCM" or capture_format == "iPCM"):
-		sample_details_json, itendifiter_status = build_icpm_sample_details(normal_id, cfdna)
+		sample_details_json, itendifiter_status = build_icpm_sample_details(normal_cfdna, cfdna)
 	else:
 		sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna)
 
@@ -507,7 +526,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 
 	capture_arr = capture_id.split("-")
 	normal_idx = capture_arr.index("N")
-	normal_id = capture_arr[normal_idx+1]
+	normal_cfdna = capture_arr[normal_idx+1]
 
 	cfdna_idx = capture_arr.index("T") if 'T' in capture_arr else capture_arr.index("CFDNA")
 	cfdna_id = capture_arr[cfdna_idx+1]
@@ -532,7 +551,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	logging.info("Sample Id : {} || Capture Id : {} ".format(sample_id,capture_id))
 
 	try:
-		build_json(root_path, output_path, project_name, normal_id, cfdna, sample_id, capture_format)
+		build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_format)
 	except Exception as e:
 		print("Main Exception", str(e))
 		logging.error("Failed : {}".format(str(e)))

@@ -1382,17 +1382,31 @@ def generate_curated_json(project_path, project_name, sample_id, capture_id, scr
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
 		return {'data':[], 'status': False}, 400
 
-def build_icpm_sample_details(cfdna):
+def build_icpm_sample_details(cfdna_id, normal_id):
 	
-	sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+	## tissue cfdna
+	cfdna = re.sub(r'[a-zA-Z]', '', cfdna_id)
+	sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
 	res = create_db_session('ipcmLeaderboard', sql)
 	res_data = generate_list_to_dict(res)
-	result = ''
 
-	if(res_data):
-		pnr = res_data[0]['pnr']
-		sql2 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.referral_name='iPCM_blod_inklusion' and rf.pnr='{}'".format(pnr)
-		res2 = create_db_session('ipcmLeaderboard', sql2)
+	## normal cfdna
+	sql2 = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_id, normal_id, normal_id, normal_id, normal_id)
+	res_normal = create_db_session('ipcmLeaderboard', sql2)
+	res_normal_data = generate_list_to_dict(res_normal)
+
+	result = ''
+	t_pnr = res_data[0]['pnr'] if len(res_data) else ''
+	n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) else''
+
+	## Compare two pnr number
+	pnr = n_pnr if (t_pnr == n_pnr) else t_pnr
+
+	if(pnr):
+		dob = pnr[0:8]
+		#sql3 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.pnr='{}'".format(pnr)
+		sql3="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') limit 1 ;".format(dob)
+		res2 = create_db_session('ipcmLeaderboard', sql3)
 		res_data2 = generate_list_to_dict(res2)
 		if(res_data2):
 			result = res_data2[0]
@@ -1470,7 +1484,7 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 
 	try:
 		if(project_name == "IPCM" or capture_format == "iPCM"):
-			sample_details_json = build_icpm_sample_details(normal_id)
+			sample_details_json = build_icpm_sample_details(cfdna_id, normal_id)
 		else:
 			sample_details_json = build_sample_details(project_name, cfdna)
 

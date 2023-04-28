@@ -64,19 +64,34 @@ def fetch_sql_query(section, sql):
 
 
 # ### Fetch the sample information from ipcm referral table
-def build_icpm_sample_details(cfdna):
+def build_icpm_sample_details(cfdna, normal_cfdna):
+	print("cfdna",cfdna, "normal_cfdna",normal_cfdna)
 
 	result = ''
 
-	sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' or rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+	## tissue cfdna
+	cfdna = re.sub(r'[a-zA-Z]', '', cfdna)
+	sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
 	res_data = fetch_sql_query('ipcmLeaderboard', sql)
-	if res_data:
-		pnr = res_data[0]['pnr']
-		sql2 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.referral_name='iPCM_blod_inklusion' and rf.pnr='{}'".format(pnr)
-		res_data2 = fetch_sql_query('ipcmLeaderboard', sql2)
+
+	## normal cfdna
+	sql2 = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna)
+	res_normal_data = fetch_sql_query('ipcmLeaderboard', sql2)
+
+	t_pnr = res_data[0]['pnr'] if len(res_data) else ''
+	n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) else''
+
+	## Compare two pnr number
+	pnr = n_pnr if (t_pnr == n_pnr) else t_pnr
+
+	if pnr:
+		dob = pnr[0:8]
+		# sql3 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.referral_name='iPCM_blod_inklusion' and rf.pnr='{}'".format(pnr)
+		sql3="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') limit 1 ;".format(dob)
+		res_data2 = fetch_sql_query('ipcmLeaderboard', sql3)
 		if res_data2:
 			result = res_data2[0]
-
+	print(result)
 	return result
 
 
@@ -721,17 +736,23 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	root_path = os.path.join(nfs_path,sample_id,capture_id)
 
 	output_path = root_path+"/pdf"
+	capture_arr = capture_id.split("-")
 
 	## Check the sample is 'PN' and 'C4' design
-	KN_value = capture_id.split("-")[6]
+	KN_value = capture_arr[6]
 
 	if "PN" in KN_value:
 		#appendix_page = '/home/karthick/project/code/curator/pdf/appendix_pn.html'
 		appendix_page = html_root_path+'/appendix_pn.html'
 
-	cfdna = capture_id.split("-")[4]
+	# cfdna = capture_arr[4]
+	normal_idx = capture_arr.index("N")
+	normal_cfdna = capture_arr[normal_idx+1]
 
-	capture_format = capture_id.split("-")[0]
+	cfdna_idx = capture_arr.index("T") if 'T' in capture_arr else capture_arr.index("CFDNA")
+	cfdna = capture_arr[cfdna_idx+1]
+
+	capture_format = capture_arr[0]
 
 	file_name = output_path+"/base_"+project_name+"_"+sample_id+"_"+cfdna+".html"
 	appendix_name = output_path+"/appendix_"+project_name+"_"+sample_id+"_"+cfdna+".html" 
@@ -743,12 +764,12 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	if(not os.path.exists(output_path)):
 		os.mkdir(output_path)
 
-	capture_arr = capture_id.split("_")
-	specimen =  'cfDNA' if 'CFDNA' in capture_arr[0] else ( 'FFPE' if 'T' in capture_arr[0] else '')
+	capture_arr1 = capture_id.split("_")
+	specimen =  'cfDNA' if 'CFDNA' in capture_arr1[0] else ( 'FFPE' if 'T' in capture_arr1[0] else '')
 
 	# Sample Information
-	if(project_name == "ICPM" or capture_format == "iPCM"):
-		sample_details_json = build_icpm_sample_details(cfdna)
+	if(project_name == "IPCM" or capture_format == "iPCM"):
+		sample_details_json = build_icpm_sample_details(cfdna, normal_cfdna)
 	else:
 		sample_details_json = build_sample_details(cfdna)
 
@@ -756,6 +777,8 @@ def main(nfs_path, project_name, sample_id, capture_id):
 
 	if(sample_details_json):
 		sample_date = sample_details_json["sample_date"]
+	
+	print("sample_details_json",sample_details_json)
 
 	## Change the logo based on the project  
 	change_header_logo(html_root_path, tml_header_page, project_name, header_page, specimen, sample_date)
@@ -767,9 +790,8 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
 
 	try:
-		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name)
+		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id, capture_id, appendix_page, appendix_name)
 		if html_result:
-
 			# --enable-external-links --keep-relative-links --resolve-relative-links
 			# toc 
 			cmd = 'wkhtmltopdf  --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_name, appendix_header_page, footer_page, pdf_file_name)
