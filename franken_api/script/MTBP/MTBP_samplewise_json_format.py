@@ -82,7 +82,7 @@ def build_icpm_sample_details(normal_cfdna, cfdna):
 		n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) else''
 
 		## Compare two pnr number
-		pnr = n_pnr if (t_pnr == n_pnr) else t_pnr
+		pnr = n_pnr if (t_pnr == n_pnr or t_pnr == '') else t_pnr
 
 		if(pnr):
 			# dob = pnr[0:8]
