@@ -324,8 +324,8 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 		file_search_txt = '-sv-annotated.txt'
 		regex = '(.*)(CFDNA|T)-(.*)({})$'.format(file_search_txt)
 
-		file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
-
+		file_list = list(filter(lambda x: (re.match(regex, x) or x.endswith('_annotate_combined_SV.txt')) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
+		print(file_list)
 		# file_path_list =  list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt$', x) or
 		# 							   x.endswith('_annotate_combined_SV.txt'))
 		# 							  and not x.startswith('.')
