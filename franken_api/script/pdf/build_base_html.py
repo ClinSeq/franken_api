@@ -189,8 +189,11 @@ def build_basic_html(sample_id, capture_id):
 		genome_wide_json = json.loads(genome_wide)
 
 		for j in genome_wide_json:
-			if 'CHIP' not in genome_wide_json[j]["title"]:
-				result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else ''
+				
+				if 'CHIP' not in genome_wide_json[j]["title"]:
+					result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else ''
+				else:
+					result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else ''
 
 				assessment =''
 				if 'assessment' in genome_wide_json[j]:

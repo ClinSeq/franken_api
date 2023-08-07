@@ -88,6 +88,7 @@ def check_user_role(user_id):
 	session = db.create_scoped_session(options={'bind': engine})
 	sql="SELECT count(*) as count from cur_users_t where u_id='{}' and role_id='2' and user_status='1' limit 1".format(user_id)
 	res = session.execute(sql)
+	session.commit()
 	res_data = generate_list_to_dict(res)
 	res_count = int(res_data[0]['count'])
 	if res_count > 0:
@@ -1769,7 +1770,7 @@ def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_
 			file_name = list(filter(lambda x: x.endswith('.json') and not x.startswith('.'), os.listdir(file_path)))
 			if len(file_name) > 0:
 				json_file_path = file_path + file_name[0]
-				curl_cmd = "curl --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
+				curl_cmd = "curl -k --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
 				# curl_cmd = "ls -l"
 				proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 				output= proc.stdout
