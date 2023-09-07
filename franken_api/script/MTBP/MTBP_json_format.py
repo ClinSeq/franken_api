@@ -56,7 +56,7 @@ def fetch_sql_query(section, sql):
             conn.close()
 
 
-def build_icpm_sample_details(cfdna):
+def build_ipcm_sample_details(cfdna):
        
     sql = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna)
     res_data = fetch_sql_query('ipcmLeaderboard', sql)
@@ -320,7 +320,7 @@ def build_json(root_path, file_name, project_name, cfdna):
     
     # Sample Information
     if(project_name == "IPCM"):
-        sample_details_json = build_icpm_sample_details(cfdna)
+        sample_details_json = build_ipcm_sample_details(cfdna)
     else:
         sample_details_json = build_sample_details(cfdna)
        

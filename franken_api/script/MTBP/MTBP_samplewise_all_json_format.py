@@ -63,7 +63,7 @@ def json_serial(obj):
 
 
 # ### Fetch the sample information from ipcm referral table
-def build_icpm_sample_details(cfdna):
+def build_ipcm_sample_details(cfdna):
 
 	identifier_status = False
 	try:
@@ -448,7 +448,7 @@ def build_json(root_path, output_path, project_name, cfdna, sample_id, capture_f
 	logging.info('--- Sample fetching started ---')
 	itendifiter_status = True
 	if(project_name == "IPCM" or capture_format == "iPCM"):
-		sample_details_json, itendifiter_status = build_icpm_sample_details(cfdna)
+		sample_details_json, itendifiter_status = build_ipcm_sample_details(cfdna)
 	else:
 		sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna)
 

@@ -63,42 +63,70 @@ def json_serial(obj):
 
 
 # ### Fetch the sample information from ipcm referral table
-def build_icpm_sample_details(normal_cfdna, cfdna):
+def build_ipcm_sample_details(normal_cfdna, cfdna):
 
 	identifier_status = False
-	res_json_data = ''
+	res_json_data = []
 	try:
 
 		## tissue cfdna
 		cfdna = re.sub(r'[a-zA-Z]', '', cfdna)
-		sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
+		sql = "select rf.pnr, rf.cdk from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
 		res_data = fetch_sql_query('ipcmLeaderboard', sql)
 
 		## normal cfdna
-		sql2 = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna)
+		sql2 = "select rf.pnr, rf.cdk from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna)
 		res_normal_data = fetch_sql_query('ipcmLeaderboard', sql2)
 
-		t_pnr = res_data[0]['pnr'] if len(res_data) else ''
-		n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) else''
+		t_pnr = res_data[0]['pnr'] if len(res_data) > 0 else ''
+		t_cdk = res_data[0]['cdk'] if len(res_data) > 0 else ''
+
+		n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) > 0 else''
+		n_cdk = res_normal_data[0]['cdk'] if len(res_normal_data) > 0 else ''
 
 		## Compare two pnr number
-		pnr = n_pnr if (t_pnr == n_pnr or t_pnr == '') else t_pnr
-
-		if(pnr):
-			# dob = pnr[0:8]
-			sql3 = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}'".format(cfdna, pnr)
-			res_data2 = fetch_sql_query('ipcmLeaderboard', sql3)
-			if len(res_data2)>0:
-				res_json = json.dumps(res_data2, default = json_serial)
-				identifier_status = True
+		if (t_pnr == n_pnr or t_pnr == ''):
+			study_id = n_cdk
+			pnr = n_pnr
+			query_ecrf = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}' and ec.study_id='{}' limit 1 ".format(cfdna, pnr, study_id)
+			res_ecrd_data = fetch_sql_query('ipcmLeaderboard', query_ecrf)
+			if len(res_ecrd_data)>0:
+				res_json = json.dumps(res_ecrd_data, default = json_serial)
 				json_data = json.loads(res_json)
+				identifier_status = True
 				res_json_data = json_data[0]
 			else:
 				identifier_status = False
+		else:
+			pnr = t_pnr
+			query_ecrf_2 = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}'".format(cfdna, pnr)
+			res_ecrd_data_2 = fetch_sql_query('ipcmLeaderboard', query_ecrf_2)
+			if len(res_ecrd_data_2) > 0:
+				res_json_2 = json.dumps(res_ecrd_data_2, default = json_serial)
+				json_data_2 = json.loads(res_json_2)
+				identifier_status = True
+				res_json_data = json_data_2[0]
+			else:
+				identifier_status = False
+
+		# pnr = n_pnr if (t_pnr == n_pnr or t_pnr == '') else t_pnr
+		# if(pnr):
+		# 	# dob = pnr[0:8]
+		# 	sql3 = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}'".format(cfdna, pnr)
+		# 	res_data2 = fetch_sql_query('ipcmLeaderboard', sql3)
+		# 	if len(res_data2)>0:
+		# 		res_json = json.dumps(res_data2, default = json_serial)
+		# 		identifier_status = True
+		# 		json_data = json.loads(res_json)
+		# 		res_json_data = json_data[0]
+		# 	else:
+		# 		identifier_status = False
+
 		return res_json_data, identifier_status
+	
 	except Exception as e:
 		print("Build iPCM Exception", str(e))
-		return [], identifier_status
+		return res_json_data, identifier_status
 
 
 # ### Fetch the genomic profile information
@@ -452,7 +480,7 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	logging.info('--- Sample fetching started ---')
 	itendifiter_status = True
 	if(project_name == "IPCM" or capture_format == "iPCM"):
-		sample_details_json, itendifiter_status = build_icpm_sample_details(normal_cfdna, cfdna)
+		sample_details_json, itendifiter_status = build_ipcm_sample_details(normal_cfdna, cfdna)
 	else:
 		sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna)
 

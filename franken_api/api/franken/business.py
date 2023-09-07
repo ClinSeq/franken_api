@@ -326,7 +326,6 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 		regex = '(.*)(CFDNA|T)-(.*)({})$'.format(file_search_txt)
 
 		file_list = list(filter(lambda x: (re.match(regex, x) or x.endswith('_annotate_combined_SV.txt')) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
-		print(file_list)
 		# file_path_list =  list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt$', x) or
 		# 							   x.endswith('_annotate_combined_SV.txt'))
 		# 							  and not x.startswith('.')
@@ -395,6 +394,7 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 					consq_key = 'CONSEQUENCE'
 					funtp_key = 'FUNCTIONAL_TYPE'
 					vatStr_key = 'VARIANT_STRING'
+					# var_occr_key = 'autoseq_variant_db'
 
 					if cal_key in column_list:
 						cal_indx = column_list.index(cal_key)
@@ -441,10 +441,17 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 						del column_list[vatStr_indx]
 						column_list.insert(0,vatStr_key)
 
+					# if var_occr_key in column_list:
+					# 	var_occr_indx = column_list.index(var_occr_key)
+					# 	del column_list[var_occr_indx]
+					# 	column_list.insert(0,var_occr_key)
+
 					if svs_var_inc_key in column_list:
 						svs_var_inc_indx = column_list.index(svs_var_inc_key)
 						del column_list[svs_var_inc_indx]
 						column_list.insert(0,svs_var_inc_key)
+
+
 
 					header = list(generate_headers_ngx_table(column_list))
 					
@@ -1383,35 +1390,55 @@ def generate_curated_json(project_path, project_name, sample_id, capture_id, scr
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
 		return {'data':[], 'status': False}, 400
 
-def build_icpm_sample_details(cfdna_id, normal_id):
+def build_ipcm_sample_details(cfdna_id, normal_id):
 	
 	## tissue cfdna
 	cfdna = re.sub(r'[a-zA-Z]', '', cfdna_id)
-	sql = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
+	sql = "select rf.pnr, rf.cdk  from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
 	res = create_db_session('ipcmLeaderboard', sql)
 	res_data = generate_list_to_dict(res)
 
 	## normal cfdna
-	sql2 = "select rf.pnr from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_id, normal_id, normal_id, normal_id, normal_id)
+	sql2 = "select rf.pnr, rf.cdk  from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_id, normal_id, normal_id, normal_id, normal_id)
 	res_normal = create_db_session('ipcmLeaderboard', sql2)
 	res_normal_data = generate_list_to_dict(res_normal)
 
-	result = ''
 	t_pnr = res_data[0]['pnr'] if len(res_data) else ''
+	t_cdk = res_data[0]['cdk'] if len(res_data) else ''
+
 	n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) else''
+	n_cdk = res_normal_data[0]['cdk'] if len(res_normal_data) else ''
 
 	## Compare two pnr number
-	pnr = n_pnr if (t_pnr == n_pnr or t_pnr == '') else t_pnr
 
-	if(pnr):
-		dob = pnr[0:8]
-		#sql3 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.pnr='{}'".format(pnr)
-		sql3="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') limit 1 ;".format(dob)
-		res2 = create_db_session('ipcmLeaderboard', sql3)
-		res_data2 = generate_list_to_dict(res2)
-		if(res_data2):
-			result = res_data2[0]
-	
+	# pnr = n_pnr if (t_pnr == n_pnr or t_pnr == '') else t_pnr
+
+	# if(pnr):
+	# 	dob = pnr[0:8]
+	# 	#sql3 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.pnr='{}'".format(pnr)
+	# 	sql3="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') limit 1 ;".format(dob)
+	# 	res2 = create_db_session('ipcmLeaderboard', sql3)
+	# 	res_data2 = generate_list_to_dict(res2)
+	# 	if(res_data2):
+	# 		result = res_data2[0]
+
+	result = ''
+	if (t_pnr == n_pnr or t_pnr == ''):
+		study_id = n_cdk
+		dob = n_pnr[0:8]
+		query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
+		res_ecrf = create_db_session('ipcmLeaderboard', query_ecrf)
+		res_ecrd_data = generate_list_to_dict(res_ecrf)
+		if res_ecrd_data:
+			result = res_ecrd_data[0]
+	else:
+		dob = t_pnr[0:8]
+		query_ecrf_2="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD')".format(dob)
+		res_ecrf_2 = create_db_session('ipcmLeaderboard', query_ecrf_2)
+		res_ecrd_data_2 = generate_list_to_dict(res_ecrf_2)
+		if res_ecrd_data_2:
+			result = res_ecrd_data_2[0]
+
 	return result
 
 
@@ -1485,7 +1512,7 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 
 	try:
 		if(project_name == "IPCM" or capture_format == "iPCM"):
-			sample_details_json = build_icpm_sample_details(cfdna_id, normal_id)
+			sample_details_json = build_ipcm_sample_details(cfdna_id, normal_id)
 		else:
 			sample_details_json = build_sample_details(project_name, cfdna)
 
