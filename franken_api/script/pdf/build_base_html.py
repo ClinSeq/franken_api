@@ -152,6 +152,13 @@ def build_basic_html(sample_id, capture_id):
 	specimen_assay_html = ''
 	genome_wide_html = ''
 	summary_txt = ''
+	sample_txt = ''
+	study_code = 'None'
+	disease = 'None'
+	tumörcellsandel = 'None'
+	tumörmutationsbörda = 'None'
+	msi_status = 'None'
+	potentiellt_ärftliga = 'None'
 
 	sql = "SELECT study_code, study_site, dob, disease, specimen_assay, genome_wide, summary_txt from genomic_profile_summary WHERE sample_id='{}' and capture_id='{}'".format(sample_id, capture_id)
 	res_data = fetch_sql_query('curation', sql)
@@ -165,7 +172,6 @@ def build_basic_html(sample_id, capture_id):
 
 		# summary_txt = '<tr><td>'+res_data[0]['summary_txt']+'</td></tr>'
 		summary_txt = res_data[0]['summary_txt']
-
 
 		patient_info_html += '<tr><th>STUDY ID</th><td>{}</td></tr>'.format(study_code)
 		patient_info_html += '<tr><th>PERSONAL NUMBER</th><td>{}</td></tr>'.format(dob)
@@ -216,7 +222,28 @@ def build_basic_html(sample_id, capture_id):
 					genome_wide_html += '<td>'+genome_wide_json[j]["comment"]+'</td>'
 				genome_wide_html += '</tr>'
 
-	return patient_info_html, specimen_assay_html, genome_wide_html, summary_txt
+				### Generate a clinical report txt 
+				title = genome_wide_json[j]['title']
+				if (title == "FRACTION OF CANCER DNA"):
+					tumörcellsandel = genome_wide_json[j]['result']
+				elif (title == "TUMOR MUTATIONAL BURDEN"):
+					tumörmutationsbörda = genome_wide_json[j]['result']
+				elif (title == "MSI STATUS"):
+					msi_status = genome_wide_json[j]['result']
+				elif (title == "PATHOGENIC GERMLINE VARIANTS"):
+					potentiellt_ärftliga = genome_wide_json[j]['result']
+		
+
+	### Generate a clinical report txt 
+	sample_txt = 'Genomisk karaktärisering av solid cancer - Implementation of Personalized Cancer Medicine (iPCM)\n'
+	sample_txt += '"STUDIENUMMER"\t"{}"\n"TUMÖRTYP"\t"{}"\n'.format(study_code, disease)
+	sample_txt += '\nSEKVENSERAT MATERIAL:"\n'
+	sample_txt += '"TUMÖRCELLSANDEL"\t"{}"\n'.format(tumörcellsandel)
+	sample_txt += '"TUMÖRMUTATIONSBÖRDA (TMB)" \t"{}"\n'.format(tumörmutationsbörda)
+	sample_txt += '"MMR/MSI-status" \t"{}"\n'.format(msi_status)
+	sample_txt += '"KONSTITUTIONELLA (POTENTIELLT ÄRFTLIGA) VARIANTER"\t"{}"\n\n'.format(potentiellt_ärftliga)
+
+	return patient_info_html, specimen_assay_html, genome_wide_html, summary_txt, sample_txt, study_code
 
 
 # ### Build a Small variant Json (Somatic & Germline)
@@ -227,12 +254,12 @@ def build_small_variants(root_path):
 	regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
 
 	smt_variant_html = ''
+	smt_variant_txt = ''
 	for i in smv_file_list:
 		smv_filename = file_path + i
 		smv_df_data = pd.read_csv(smv_filename, delimiter = "\t")
 
 		if 'CALL' in smv_df_data.columns:
-
 			smv_df_call_filter = smv_df_data.loc[(smv_df_data['CALL'] == "S") | (smv_df_data['CALL'] == "G")]
 
 			if 'include_variant_report_pdf' in smv_df_call_filter.columns:
@@ -291,50 +318,63 @@ def build_small_variants(root_path):
 			else:
 				source_type ='somatic'
 
-			for index, row in smv_df_filter_data.iterrows():
+			if len(smv_df_filter_data):
+				smt_variant_txt += '"GENE"\t"Source"\t"Variant details"\t"Consequence"\t"Clonality"\t"Second Hit"\t"HGVSP"\t"ONCOKB-TIER"\n'
 
-				variant_det = "chr"+str(row['chr'])+":"+str(row['end'])+'; '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
-				if source_type == 'somatic':
-					clonality = row['clonality'] if 'clonality' in row else '-'
-				else:
-					clonality = row['zygosity'].upper() if 'zygosity' in row else '-'
-				# clonality = row['clonality'] if 'clonality' in row else '-'
-				transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
-				assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
+				for index, row in smv_df_filter_data.iterrows():
 
-				if 'RSID' in row:
-					rs_id_arr = ''
-					if re.findall("'\s*([^']*?)\s*'", row['RSID']):
-						rsId_arr = eval(row['RSID'])
-						for rsId_str in rsId_arr:
-							if 'rs' in rsId_str:
-								rs_id_arr += rsId_str+','
+					variant_det = "chr"+str(row['chr'])+":"+str(row['end'])+'; '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
+					if source_type == 'somatic':
+						clonality = row['clonality'] if 'clonality' in row else '-'
+					else:
+						clonality = row['zygosity'].upper() if 'zygosity' in row else '-'
+					# clonality = row['clonality'] if 'clonality' in row else '-'
+					transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
+					assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
 
-					rsID = rs_id_arr[:-1]
-				else: 
-					rsID = '' 
+					if 'RSID' in row:
+						rs_id_arr = ''
+						if re.findall("'\s*([^']*?)\s*'", row['RSID']):
+							rsId_arr = eval(row['RSID'])
+							for rsId_str in rsId_arr:
+								if 'rs' in rsId_str:
+									rs_id_arr += rsId_str+','
 
-				#rsID = row['RSID'] if 'RSID' in row else '-'
-				# rsID_url = "https://www.ncbi.nlm.nih.gov/snp/{}#clinical_significance".format(rsID) if 'RSID' in row else '-'
+						rsID = rs_id_arr[:-1]
+					else: 
+						rsID = '' 
 
-				HGVSp_org_rx = row['HGVSp_org'] if 'HGVSp_org' in row else '-'
-				HGVSp_org = HGVSp_org_rx.split("p.")[1] if 'p.' in HGVSp_org_rx else HGVSp_org_rx
-				second_hit = str(row['second_hit']) if 'second_hit' in row else '-'
+					#rsID = row['RSID'] if 'RSID' in row else '-'
+					# rsID_url = "https://www.ncbi.nlm.nih.gov/snp/{}#clinical_significance".format(rsID) if 'RSID' in row else '-'
 
-				smt_variant_html += '<tr>'
-				smt_variant_html +='<td>'+row['GENE']+'</td>'
-				smt_variant_html +='<td>'+source_type+'</td>'
-				smt_variant_html +='<td class="sm-var-dets"><p>'+variant_det+'</p></td>'
-				smt_variant_html +='<td>'+row['CONSEQUENCE']+'</td>'
-				smt_variant_html +='<td>'+clonality+'</td>'
-				smt_variant_html +='<td>'+second_hit+'</td>'
-				smt_variant_html +='<td>'+assessment+'</td>'
-				smt_variant_html +='<td>'+rsID+'</td>'
-				smt_variant_html +='<td>'+transcript+'</td>'
-				smt_variant_html +='<td>'+HGVSp_org+'</td>'
-				smt_variant_html += '</tr>'
+					HGVSp_org_rx = row['HGVSp_org'] if 'HGVSp_org' in row else '-'
+					HGVSp_org = HGVSp_org_rx.split("p.")[1] if 'p.' in HGVSp_org_rx else HGVSp_org_rx
+					second_hit = str(row['second_hit']) if 'second_hit' in row else '-'
+					consequence = row['CONSEQUENCE']
+									
+					smt_variant_html += '<tr>'
+					smt_variant_html +='<td>'+row['GENE']+'</td>'
+					smt_variant_html +='<td>'+source_type+'</td>'
+					smt_variant_html +='<td class="sm-var-dets"><p>'+variant_det+'</p></td>'
+					smt_variant_html +='<td>'+consequence+'</td>'
+					smt_variant_html +='<td>'+clonality+'</td>'
+					smt_variant_html +='<td>'+second_hit+'</td>'
+					smt_variant_html +='<td>'+assessment+'</td>'
+					smt_variant_html +='<td>'+rsID+'</td>'
+					smt_variant_html +='<td>'+transcript+'</td>'
+					smt_variant_html +='<td>'+HGVSp_org+'</td>'
+					smt_variant_html += '</tr>'
 
-	return smt_variant_html
+					smt_variant_txt += '"'+row['GENE']+'"\t'
+					smt_variant_txt += '"'+source_type+'"\t'
+					smt_variant_txt += '"'+variant_det+'"\t'
+					smt_variant_txt += '"'+consequence+'"\t'
+					smt_variant_txt += '"'+clonality+'"\t'
+					smt_variant_txt += '"'+second_hit+'"\t'
+					smt_variant_txt += '"'+HGVSp_org+'"\t'
+					smt_variant_txt += '\n'
+
+	return smt_variant_html, smt_variant_txt
 
 
 # ### Build a CNV Json (Somatic & Germline)
@@ -344,7 +384,8 @@ def build_cnv(root_path):
 	file_path = root_path + '/cnv/'
 	cnv_file_list = list(filter(lambda x: x.endswith('_curated.cns') and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))
 
-	cnv_html = '' 
+	cnv_html = ''
+	cnv_txt = '' 
 
 	if len(cnv_file_list) > 0:
 
@@ -357,6 +398,7 @@ def build_cnv(root_path):
 			column_dict = {'chromosome': 'chr'}
 
 			if 'ASSESSMENT' in cnv_df_data.columns:
+				cnv_txt += '"GENE"\t"Source"\t"Variant details"\t"Assessment"\n'
 				cnv_df_data = cnv_df_data.loc[(cnv_df_data['ASSESSMENT'].notnull())]
 
 				if 'include_variant_report_pdf' in cnv_df_data.columns:
@@ -395,8 +437,14 @@ def build_cnv(root_path):
 					cnv_html +='<td>'+str(copy_number)+'</td>'
 					cnv_html += '</tr>'
 
+					cnv_txt +='"'+gene_det+'"\t'
+					cnv_txt +='"'+source_type+'"\t'
+					cnv_txt +='"'+variant_det+'"\t'
+					cnv_txt +='"'+row['ASSESSMENT']+'"\t'
+					cnv_txt += '\n'
 
-	return cnv_html
+
+	return cnv_html, cnv_txt
 
 
 # ### Build a SVS Json
@@ -404,6 +452,7 @@ def build_svs(root_path):
 	file_path = root_path + '/svs/igv/'
 
 	svs_html = ''
+	svs_txt = ''
 	try:
 		svs_filename = file_path + list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+-sv-annotated.txt', x) or x.endswith('_annotate_combined_SV.txt')) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))[0]
 
@@ -420,6 +469,7 @@ def build_svs(root_path):
 				svs_filter = svs_filter.loc[(svs_filter['include_variant_report_pdf'] == "True") | (svs_filter['include_variant_report_pdf'] == True)]
 
 			if not svs_filter.empty:
+				svs_txt += '"GENE_A, GENE_B"\t"Source"\t"Variant details"\t"Consequence"\t"Clonality"\t"Second Hit"\n'
 				svs_filter = svs_filter[svs_filter['SAMPLE'].isin(sample_list)]
 
 				if 'CONSEQUENCE' in svs_filter.columns:
@@ -445,22 +495,35 @@ def build_svs(root_path):
 						variant_det = "chr"+str(row['CHROM_A'])+":"+str(int(row['START_A']))+"-"+str(int(row['END_A']))
 
 					gene_det = row['GENE_A']+","+ row['GENE_B']
+					sample_type = row['SAMPLE']
+					consequence = row['consequence']
+					clonality = row['CLONALITY']
+					secondHit = str(row['SECONDHIT'])
 
 					svs_html += '<tr>'
 					svs_html +='<td>'+row['GENE_A']+'</td>'
 					svs_html +='<td>'+row['GENE_B']+'</td>'
-					svs_html +='<td>'+row['SAMPLE']+'</td>'
+					svs_html +='<td>'+sample_type+'</td>'
 					svs_html +='<td>'+variant_det+'</td>'
-					svs_html +='<td>'+row['consequence']+'</td>'
-					svs_html +='<td>'+row['CLONALITY']+'</td>'
-					svs_html +='<td>'+str(row['SECONDHIT'])+'</td>'
+					svs_html +='<td>'+consequence+'</td>'
+					svs_html +='<td>'+clonality+'</td>'
+					svs_html +='<td>'+secondHit+'</td>'
 					svs_html += '</tr>'
+
+					svs_txt +='"'+gene_det+'"\t'
+					svs_txt +='"'+sample_type+'"\t'
+					svs_txt +='"'+variant_det+'"\t'
+					svs_txt +='"'+consequence+'"\t'
+					svs_txt +='"'+clonality+'"\t'
+					svs_txt +='"'+secondHit+'"\t'
+					svs_txt += '\n'
 
 	except Exception as e:
 		print("SVS Exception", str(e))
 		svs_html = ''
+		svs_txt = ''
 
-	return svs_html
+	return svs_html, svs_txt
 
 
 # ### Build a Technical Info from QC
@@ -563,29 +626,35 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 	print("Path : ", root_path, "/", file_name)
 
 	project_json = {}
+	report_txt = ''
 
 	# Patient, Specimen & assay and genome wide information 
 	logging.info('--- Patient, Specimen & assay and genome wide information started ---')
-	pat_html, specimen_html, genome_wide_html, summary_txt = build_basic_html(sample_id,capture_id)
+	pat_html, specimen_html, genome_wide_html, summary_txt, sample_details_txt, study_id = build_basic_html(sample_id,capture_id)
+
+	report_txt += sample_details_txt
 
 
 	# Small Variant (Somatic & Germline)
 	logging.info('--- Small Variant started ---')
-	small_variant_html = build_small_variants(root_path)
+	small_variant_html, small_variant_txt = build_small_variants(root_path)
+	report_txt += small_variant_txt
 	if(small_variant_html == ""):
 		small_variant_html = '<tr><td class="no-data" colspan="9">No relevant variants detected</td></tr>'
 	logging.info('--- Small Variant completed ---')
 
 	# SVS
 	logging.info('--- SVS started ---')
-	svs_html = build_svs(root_path)
+	svs_html, svs_txt = build_svs(root_path)
+	report_txt += "\n"+svs_txt
 	if(svs_html == ""):
 		svs_html = '<tr><td class="no-data" colspan="7">No relevant variants detected</td></tr>'
 	logging.info('--- SVS completed ---')
 
 	# CNVs
 	logging.info('--- CNVs started ---')
-	cnv_html = build_cnv(root_path)
+	cnv_html, cnv_txt = build_cnv(root_path)
+	report_txt += "\n"+cnv_txt
 	if(cnv_html == ""):
 		cnv_html = '<tr><td class="no-data" colspan="5">No relevant variants detected</td></tr>'
 	logging.info('--- CNVs completed ---')
@@ -651,6 +720,19 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 	# Create a new appendix html based on the appendix template
 	with open(appendix_name, "w", encoding = 'utf-8') as file1:
 		file1.write(str(appendix_text))
+
+	# create a clinical report txt file and store information
+	output_path = root_path+"/pdf"
+	file_name = output_path+"/autoseq_clinical_report_"+study_id+".txt"
+
+	report_txt += "\n"
+	report_txt += "\nESCAT TIER I - IV: A framework to rank genomic alterations as targets for cancer precision medicine: the ESMO Scale for Clinical Actionability of molecular Targets (ESCAT). Mateo J, et al. Ann Oncol. 2018 Sep 1;29(9):1895-1902. doi: 10.1093/annonc/mdy263. PMID: 30137196; PMCID: PMC6158764."
+	report_txt += "\nAMP TIER I - IV: Standards and Guidelines for the Interpretation and Reporting of Sequence Variants in Cancer: A Joint Consensus Recommendation of the Association for Molecular Pathology, American Society of Clinical Oncology, and College of American Pathologists. Li et al., J Mol Diagn. 2017 Jan;19(1):4-23. doi: 10.1016/j.jmoldx.2016.10.002. PMID: 27993330; PMCID: PMC5707196."
+	
+	final_report_txt = report_txt
+
+	with open(file_name, 'w') as f:
+		f.write(final_report_txt)
 
 	return 1
 
@@ -771,6 +853,9 @@ def main(nfs_path, project_name, sample_id, capture_id):
 
 	if(not os.path.exists(output_path)):
 		os.mkdir(output_path)
+	else:
+		for f in os.listdir(output_path):
+			os.remove(os.path.join(output_path, f))
 
 	capture_arr1 = capture_id.split("_")
 	specimen =  'cfDNA' if 'CFDNA' in capture_arr1[0] else ( 'FFPE' if 'T' in capture_arr1[0] else '')

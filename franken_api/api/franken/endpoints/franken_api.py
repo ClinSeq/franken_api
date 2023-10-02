@@ -6,7 +6,7 @@ from flask_restx import Resource
 from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments, update_curated_info_arguments, send_json_mtbp_arguments
 from franken_api.api.restplus import api
 from flask import jsonify
-from franken_api.api.franken.business import pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path, update_curated_info, send_json_mtbp_portal
+from franken_api.api.franken.business import pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path, update_curated_info, send_json_mtbp_portal, get_clinical_report_file
 from franken_api.api.franken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
 import io
 #import  franken_api.database.models
@@ -410,6 +410,27 @@ class GetJsonFile(Resource):
 			return result, errorcode
 		else:
 			return nfs_path,response_code
+		
+@ns.route('/get_clinical_report_txt')
+@api.response(200, 'Get the clinical report txt format')
+@api.response(400, 'Clinical report txt file not found')
+class GetClinicalReprotTxtFile(Resource):
+	@api.expect(json_urls_arguments, validate=True)
+	# @api.marshal_with(ploturl_list)
+	def get(self):
+		"""
+			Returns Json format
+
+		"""
+		args = json_urls_arguments.parse_args()
+		proj_name = args['project_name']
+		nfs_path,response_code = fetch_nfs_path(proj_name)
+		if response_code == 200:
+			result, errorcode = get_clinical_report_file(nfs_path, proj_name,  args['sdid'], args['capture_id'])
+			return result, errorcode
+		else:
+			return nfs_path,response_code
+
 
 
 @ns.route('/generate_json')
@@ -501,7 +522,7 @@ class ReportViewPDF(Resource):
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
 			result, errorcode = get_pdf_file(nfs_path, args['sdid'], args['capture_id'], args['pdf_name'])
-			return send_file(result, attachment_filename='report.png', mimetype='application/pdf')
+			return send_file(result, attachment_filename=proj_name+'_'+args['sdid']+'_report.pdf', mimetype='application/pdf')
 		else:
 			return nfs_path,response_code
 

@@ -151,7 +151,7 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 				identifier_name =  "MTBP_"+capture_format+"_"+res_data[key]["study_code"]+"_CFDNA"+cfdna
 				sample_data["identifier"] = identifier_name
 			if(res_data[key]["dob"] and res_data[key]["dob"] !='NA'):
-				sample_data["birthdate"] = datetime.strptime(res_data[key]["dob"], "%Y-%m-%d").date().strftime("%Y-%m-%d")
+				sample_data["birthdate"] = datetime.strptime(res_data[key]["dob"].strip(), "%Y-%m-%d").date().strftime("%Y-%m-%d")
 			if(res_data[key]["study_site"]):
 				sample_data["hospital"] = hospital_lookup[res_data[key]["study_site"]]
 

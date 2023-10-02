@@ -1364,6 +1364,23 @@ def update_pureCN_somatic_germline(project_path, sample_id, capture_id, variant_
 		return {'status': True, 'data': [], 'error': str(e)}, 400
 
 
+def get_clinical_report_file(project_path, project_name, sample_id, capture_id):
+	"return the txt format"
+
+	file_path = project_path + '/' + sample_id + '/' + capture_id + '/pdf/'
+	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
+	if status:
+		file_name = list(filter(lambda x: x.endswith('.txt') and not x.startswith('.'), os.listdir(file_path)))[0]
+		txt_file = file_path + file_name
+
+		if os.path.exists(txt_file):
+			f = open(txt_file)
+			file_contents = f.read()
+
+			return {'data':file_contents, 'file_name': file_name, 'status': True}, 200
+
+	return {'data':[], 'file_name': '', 'status': False}, 400
+
 def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 	"return the json format"
 
