@@ -220,7 +220,7 @@ def generate_headers_table_sv(headers):
 def generate_headers_ngx_table(headers):
 	columns= []
 	for each_head in headers:
-		  columns.append({ 'key': each_head,'title':each_head.upper().replace("_"," ")})
+		columns.append({ 'key': each_head,'title':each_head.upper().replace("_"," ")})
 	return columns
 
 
@@ -1855,3 +1855,38 @@ def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_
 
 	except subprocess.CalledProcessError as e:
 		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
+
+def get_table_fusion_inspector(project_path, sdid, capture_id, user_id, header='true'):
+	"return the txt format"
+
+	data = []
+	try:
+		file_path = project_path + '/' + sdid + '/fusioninspector/'
+
+		file_search_txt = 'fusions.tsv'
+		regex = '(.*)(CFDNA|T)-(.*)({})$'.format(file_search_txt)
+
+		file_list = list(filter(lambda x: (re.match(regex, x)) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
+
+		if len(file_list) > 0:
+			fusion_inspector_filename = file_path + file_list[0]
+			if os.path.exists(fusion_inspector_filename):
+				df_fusinsp = pd.read_csv(fusion_inspector_filename,sep = '\t')
+				df_fusinsp = df_fusinsp[['#FusionName', 'JunctionReadCount', 'SpanningFragCount', 'FFPM', 'LeftGene', 'LeftBreakpoint', 'RightBreakpoint', 'annots']]
+				
+				df_fusinsp.rename(columns={"#FusionName": "Fusion_Name", "JunctionReadCount":"Junction_Read_Count", "SpanningFragCount":"Spanning_Frag_Count", "LeftGene":"Left_Gene", "LeftBreakpoint":"Left_Break_point", "RightBreakpoint":"Right_Break_point", "annots": "Annotations", "FFPM": "Expr_Level_(FFPM)"},inplace=True,)
+
+				json_data = df_fusinsp.to_json(orient ='records')
+				data = json.loads(json_data)
+
+				column_list = list(df_fusinsp.columns.values)
+				header = list(generate_headers_ngx_table(column_list))
+
+				return {'header': header, 'data': data, 'filename': fusion_inspector_filename, 'status': True}, 200
+			else:	
+				return {'header': [], 'data': [], 'status': False, 'error': 'No File Found For Fusion Inspector'}, 400	
+		else:
+			return {'header': [], 'data': [], 'status': False, 'error': 'No File Found For Fusion Inspector'}, 400
+
+	except Exception as e:
+		return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
