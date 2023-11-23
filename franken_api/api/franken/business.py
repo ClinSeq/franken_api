@@ -144,7 +144,7 @@ def get_sample_ids(project_path):
 	try:
 		status, error = check_nfs_mount(project_path)
 		if status:
-			files = list(filter(lambda x: x.startswith('P-'), os.listdir(project_path)))
+			files = list(filter(lambda x: (x.startswith('P-') or x.startswith('RNA-')), os.listdir(project_path)))
 			files.sort(key=lambda x : os.path.getmtime(project_path + '/' + x), reverse=True)
 			return {'sidis': files, 'status': True}, error
 		else:
@@ -161,7 +161,7 @@ def check_franken_plot_link(url_list):
 			status = response.status_code
 			valid_url_list.append(url)
 		except requests.ConnectionError:
-		   print("Failed to connect : {}".format(url))
+			print("Failed to connect : {}".format(url))
 	return valid_url_list
 
 def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
@@ -825,9 +825,38 @@ def pdfs_files(variant_type, project_path, sdid, capture_id):
 
 	file_path = project_path + '/' + sdid + '/' + capture_id + '/' + variant_type 
 
-	pdf_file = list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.pdf$', x) or re.match('[-\w]+-(multiqc)+.html$', x) or x.endswith('.qc_overview.pdf')) and not x.startswith('.') and not x.endswith('.out'),
+	pdf_file = list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.pdf$', x) or re.match('[-\w]+-(multiqc)+.html$', x) or x.endswith('.qc_overview.pdf') or re.match('[-\w]+(_report)+.html$', x)) and not x.startswith('.') and not x.endswith('.out'),
 							   os.listdir(file_path)))[0]
+	if os.path.exists(file_path):
+		file_path = file_path + '/' + pdf_file
+		return file_path, 200
 
+	return file_path, 400
+
+
+def rna_html_files(report_type, file_format, project_path, sdid, capture_id):
+	rna_report_folder= {"qc": 'fastqc', "fusion":"fusionreport", "inspector":"fusioninspector"}
+
+	folder_name = rna_report_folder[report_type]
+
+	file_path = project_path + '/' + sdid + '/' + capture_id + folder_name
+
+	reg_pattern = '[-\w]+_({})+.html$'.format(file_format) if file_format != 'html' else '^(?:\w\w(?:\w\-){3}\d{4}\-\d{2}\.\w{20}|\w{5})\.\w{4}$'
+	
+	html_file = list(filter(lambda x: (re.match(reg_pattern, x)) and not x.startswith('.') and not x.endswith('.out'),
+								os.listdir(file_path)))[0]
+	if os.path.exists(file_path):
+		file_path = file_path + '/' + html_file
+		return file_path, 200
+
+	return file_path, 400
+
+def rna_pdf_files(variant_type, project_path, sdid, capture_id):
+
+	file_path = project_path + '/' + sdid + '/' + capture_id + '/arriba_visualisation'
+
+	pdf_file = list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.pdf$', x)) and not x.startswith('.') and not x.endswith('.out'),
+							   os.listdir(file_path)))[0]
 	if os.path.exists(file_path):
 		file_path = file_path + '/' + pdf_file
 		return file_path, 200
