@@ -1856,6 +1856,52 @@ def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_
 	except subprocess.CalledProcessError as e:
 		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
+def get_table_fusion_report(project_path, sdid, capture_id, user_id, header='true'):
+	"return the txt format"
+
+	data = []
+	try:
+		file_path = project_path + '/' + sdid + '/fusionreport/'
+
+		file_search_txt = 'fusions.csv'
+		regex = '(.*)(CFDNA|T)-(.*)({})$'.format(file_search_txt)
+
+		file_list = list(filter(lambda x: (re.match(regex, x)) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
+
+		if len(file_list) > 0:
+			fusion_report_filename = file_path + file_list[0]
+			if os.path.exists(fusion_report_filename):
+				df_fusion_report = pd.read_csv(fusion_report_filename,sep = ',')
+				df_fusion_report.drop(['Explained score'], axis=1)
+				df_fusion_report = df_fusion_report[['Fusion', 'Databases', 'Score', 'arriba', 'fusioncatcher', 'pizzly', 'squid', 'starfusion']]
+				df_fusion_report = df_fusion_report.fillna('')
+				
+				df_fusion_report['Databases'] = df_fusion_report['Databases'].apply(lambda x: x if x !='' else 'Not Found')
+				df_fusion_report['arriba'] = df_fusion_report['arriba'].apply(lambda x: True if x !='' else False)
+				df_fusion_report['fusioncatcher'] = df_fusion_report['fusioncatcher'].apply(lambda x: True if x !='' else False)
+				df_fusion_report['pizzly'] = df_fusion_report['pizzly'].apply(lambda x: True if x !='' else False)
+				df_fusion_report['squid'] = df_fusion_report['squid'].apply(lambda x: True if x !='' else False)
+				df_fusion_report['starfusion'] = df_fusion_report['starfusion'].apply(lambda x: True if x !='' else False)
+				df_fusion_report['Tools_Hits'] = df_fusion_report[['arriba','fusioncatcher', 'pizzly', 'squid', 'starfusion']].sum(axis=1)
+
+				df_fusion_report_sort = df_fusion_report.sort_values(["Score"], ascending = (False))
+
+
+				column_list = list(df_fusion_report_sort.columns.values)
+				header = list(generate_headers_ngx_table(column_list))
+				json_data = df_fusion_report_sort.to_json(orient ='records')
+				data = json.loads(json_data)
+
+
+				return {'header': header, 'data': data, 'filename': fusion_report_filename, 'status': True}, 200
+			else:	
+				return {'header': [], 'data': [], 'status': False, 'error': 'No File Found For Fusion Report'}, 400	
+		else:
+			return {'header': [], 'data': [], 'status': False, 'error': 'No File Found For Fusion Report'}, 400
+
+	except Exception as e:
+		return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
+
 def get_table_fusion_inspector(project_path, sdid, capture_id, user_id, header='true'):
 	"return the txt format"
 
