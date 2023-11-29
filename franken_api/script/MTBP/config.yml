@@ -27,3 +27,6 @@ tableName:
     PROBIO: probio_bloodreferrals
     PSFF: psff_bloodreferrals
     sample_status: sample_status_t
+
+pipeline:
+    path : /nfs/PIPELINE/autoseq-snakemake/

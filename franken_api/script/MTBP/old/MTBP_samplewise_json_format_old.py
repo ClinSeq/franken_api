@@ -25,8 +25,6 @@ import argparse
 import sys
 from datetime import date, datetime
 import math
-from decimal import Decimal
-
 
 # ### Get the current directory path
 def path():
@@ -61,13 +59,11 @@ def fetch_sql_query(section, sql):
 def json_serial(obj):
 	if isinstance(obj, (datetime, date)):
 		return obj.isoformat()
-	elif isinstance(obj, Decimal):
-		return float(obj)
 	raise TypeError("Type %s not serializable" % type(obj))
 
 
 # ### Fetch the sample information from ipcm referral table
-def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, seq_date):
+def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type):
 
 	identifier_status = False
 	res_json_data = []
@@ -92,7 +88,7 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 		if (t_pnr == n_pnr or t_pnr == ''):
 			study_id = n_cdk
 			pnr = n_pnr
-			query_ecrf = "SELECT CONCAT('MTBP_{}_', ec.study_id,'_{}{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as referral_date, '{}' as seq_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'NA' END as cancer_code, 'primary' as tissue_source, ec.tissue_type as tissue_type, CASE WHEN ec.cell_fraction !='' THEN ec.cell_fraction ELSE 'NA' END as pathology_ccf, to_number(ec.germline_dna::text, '9'::text)::integer as germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}' and ec.study_id='{}' limit 1 ".format(capture_format, sample_type, cfdna, seq_date, pnr, study_id)
+			query_ecrf = "SELECT CONCAT('MTBP_{}_', ec.study_id,'_{}{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}' and ec.study_id='{}' limit 1 ".format(capture_format, sample_type, cfdna, pnr, study_id)
 			res_ecrd_data = fetch_sql_query('ipcmLeaderboard', query_ecrf)
 			if len(res_ecrd_data)>0:
 				res_json = json.dumps(res_ecrd_data, default = json_serial)
@@ -103,7 +99,7 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 				identifier_status = False
 		else:
 			pnr = t_pnr
-			query_ecrf_2 = "SELECT CONCAT('MTBP_{}_', ec.study_id,'_{}{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as referral_date, '{}' as seq_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'NA' END as cancer_code, 'primary' as tissue_source, ec.tissue_type as tissue_type, CASE WHEN ec.cell_fraction !='' THEN ec.cell_fraction ELSE 'NA' END as pathology_ccf, to_number(ec.germline_dna::text, '9'::text)::integer as germline_dna from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}'".format(capture_format, sample_type, cfdna, seq_date, pnr)
+			query_ecrf_2 = "SELECT CONCAT('MTBP_{}_', ec.study_id,'_{}{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}'".format(capture_format, sample_type, cfdna, pnr)
 			res_ecrd_data_2 = fetch_sql_query('ipcmLeaderboard', query_ecrf_2)
 			if len(res_ecrd_data_2) > 0:
 				res_json_2 = json.dumps(res_ecrd_data_2, default = json_serial)
@@ -113,6 +109,19 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 			else:
 				identifier_status = False
 
+		# pnr = n_pnr if (t_pnr == n_pnr or t_pnr == '') else t_pnr
+		# if(pnr):
+		# 	# dob = pnr[0:8]
+		# 	sql3 = "SELECT CONCAT('MTBP_iPCM_', ec.study_id,'_CFDNA{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as sample_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) END as cancer_code,  CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'N/A' END as cancer_sub_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as tissue_type, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}'".format(cfdna, pnr)
+		# 	res_data2 = fetch_sql_query('ipcmLeaderboard', sql3)
+		# 	if len(res_data2)>0:
+		# 		res_json = json.dumps(res_data2, default = json_serial)
+		# 		identifier_status = True
+		# 		json_data = json.loads(res_json)
+		# 		res_json_data = json_data[0]
+		# 	else:
+		# 		identifier_status = False
+
 		return res_json_data, identifier_status
 	
 	except Exception as e:
@@ -121,7 +130,7 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 
 
 # ### Fetch the genomic profile information
-def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date):
+def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_id, capture_format, sample_type):
 
 	hospital_lookup = { "Karolinska": "KS", "Karolinska Sjukhuset": "KS", "Södersjukhuset": "SO", "St Göran": "ST" }
 
@@ -131,16 +140,16 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 
 	sample_data = {}
 
-	sample_data["identifier"] = "NA"
-	sample_data["referral_date"] = "NA"
-	sample_data["seq_date"] = seq_date
-	sample_data["birthdate"] = "NA"
-	sample_data["hospital"] = "NA"
-	sample_data["cancer_taxonomy"] = "NA"
-	sample_data["tissue"] = "NA"
-	sample_data["cancer_code"] = "NA"
-	sample_data["tissue_source"] = "NA"
-	sample_data["tissue_type"] = "NA"
+	sample_data["identifier"] = "N/A"
+	sample_data["sample_date"] = "N/A"
+	sample_data["birthdate"] = "N/A"
+	sample_data["hospital"] = "N/A"
+	sample_data["seq_date"] = "N/A"
+	sample_data["cancer_taxonomy"] = "N/A"
+	sample_data["cancer_code"] = "N/A"
+	sample_data["cancer_sub_code"] = "N/A"
+	sample_data["tissue_source"] = "N/A"
+	sample_data["tissue_type"] = "N/A"
 
 
 	if(res_data):
@@ -160,34 +169,34 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 				sample_data["hospital"] = hospital_lookup[study_site]
 
 			if(disease != ""):
-				sample_data["tissue"] = disease
+				sample_data["cancer_code"] = disease
 				sample_data["tissue_type"] = disease
 
-	sample_data["pathology_ccf"] = "NA"
-	sample_data["germline_dna"] = "NA"
+	sample_data["pathology_ccf"] = "N/A"
+	sample_data["bioinf_ccf"] = "N/A"
+	sample_data["germline_dna"] = "N/A"
 
 	return sample_data
 
 
 # ### Fetch the sample information from biobank referral table
-def build_sample_details(project_name, cfdna,  capture_format, sample_type, seq_date):
+def build_sample_details(project_name, cfdna,  capture_format, sample_type):
 
 	sample_data = {}
 
 	identifier_status = False
 
-	sample_data["identifier"] = "NA"
-	sample_data["referral_date"] = "NA"
-	sample_data["seq_date"] = seq_date
-	sample_data["birthdate"] = "NA"
-	sample_data["hospital"] = "NA"
+	sample_data["identifier"] = "N/A"
+	sample_data["sample_date"] = "N/A"
+	sample_data["birthdate"] = "N/A"
+	sample_data["hospital"] = "N/A"
 
 	sql = "SELECT pnr, CAST(datum AS VARCHAR) as datum, rid, tid from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
 	res_data = fetch_sql_query('referral', sql)
 
 	if(res_data):
 		sample_data["identifier"] = "MTBP_"+capture_format+"_"+res_data[0]['tid']+"_"+sample_type+cfdna
-		sample_data["referral_date"] = res_data[0]["datum"]
+		sample_data["sample_date"] = res_data[0]["datum"]
 		pnr = res_data[0]["pnr"][0:8]
 		sample_data["birthdate"] =  datetime.strptime(pnr, "%Y%m%d").date().strftime("%Y-%m-%d")
 		identifier_status = True
@@ -210,56 +219,39 @@ def build_sample_details(project_name, cfdna,  capture_format, sample_type, seq_
 				sample_data["birthdate"] = glb_data_2[0]["dob"]
 				sample_data["hospital"] = glb_data_2[0]["site_name"]
 
-	sample_data["cancer_taxonomy"] = "NA"
-	sample_data["tissue"] = "NA"
-	sample_data["“cancer_code”"] = "NA"
-	sample_data["“tissue_source”"] = "NA"
-	sample_data["tissue_type"] = "NA"
-	sample_data["pathology_ccf"] = "NA"
-	sample_data["germline_dna"] = "NA"
+	sample_data["seq_date"] = "N/A"
+	sample_data["cancer_taxonomy"] = "N/A"
+	sample_data["cancer_code"] = "N/A"
+	sample_data["tissue_source"] = "N/A"
+	sample_data["tissue_type"] = "N/A"
+	sample_data["pathology_ccf"] = "N/A"
+	sample_data["bioinf_ccf"] = "N/A"
+	sample_data["germline_dna"] = "N/A"
 
 	return sample_data, identifier_status
 
 
 # ### Fetch MSI & TMB from genomic profile information
 def build_penotypes(project_name, sample_id, capture_id):
-	msi_status = "NA"
-	tumörmutationsbörda = 'NA'
-	pathogenic_gDNA_variant = 'NA'
+	msi_status = "N/A"
+	tumörmutationsbörda = 'N/A'
 
 	sql = "SELECT genome_wide FROM genomic_profile_summary where project_name='{}' and sample_id='{}' and capture_id='{}'".format(project_name, sample_id, capture_id)
 	res_data = fetch_sql_query('curation', sql)
-	if(len(res_data) > 0):
-		genome_wide = res_data[0]['genome_wide'].replace("\'", "\"")
-		genome_wide_json = json.loads(genome_wide)
+	genome_wide = res_data[0]['genome_wide'].replace("\'", "\"")
+	genome_wide_json = json.loads(genome_wide)
 
-		for j in genome_wide_json:
-			title = genome_wide_json[j]['title']
-			if (title == "TUMOR MUTATIONAL BURDEN"):
-				tumörmutationsbörda = genome_wide_json[j]['result']
-			elif (title == "MSI STATUS"):
-				msi_status = genome_wide_json[j]['result']
-			elif (title == "PATHOGENIC GERMLINE VARIANTS"):
-				pathogenic_gDNA_variant = genome_wide_json[j]['result']
+	for j in genome_wide_json:
+		title = genome_wide_json[j]['title']
+		if (title == "TUMOR MUTATIONAL BURDEN"):
+			tumörmutationsbörda = genome_wide_json[j]['result']
+		elif (title == "MSI STATUS"):
+			msi_status = genome_wide_json[j]['result']
 
-	return msi_status, tumörmutationsbörda, pathogenic_gDNA_variant
-
-# ### Fetch the pipeline version from autoseq-snakemake folder
-def fetch_pipeline_version():
-	params = readConfig('pipeline')
-	dir_path = params['path']
-	if os.path.exists(dir_path):
-		file_path = dir_path + '.bumpversion.cfg'
-		config = ConfigParser()
-		config.read_file(open(r'{}'.format(file_path)))
-		curr_version = config.get('bumpversion', 'current_version')
-		return curr_version
-	else:
-		return ''
-
+	return msi_status, tumörmutationsbörda
 
 # ### Build a QC Json 
-def build_qc(root_path, ecrf_tissue_type):
+def build_qc(root_path):
 	file_path = root_path + '/qc/'
 
 	msi_list = ''
@@ -278,7 +270,7 @@ def build_qc(root_path, ecrf_tissue_type):
 				column_list.append('Overall_QC')
 				column_dict['Overall_QC'] = 'overall'
 
-			msi_list = "NA"
+			msi_list = "N/A"
 			if 'msing_score' in qc_df_data.columns:
 				msi_arr = qc_df_data['msing_score'].dropna().tolist()
 				msi_list = msi_arr[0] if len(msi_arr) > 0 else 'NA'
@@ -289,7 +281,6 @@ def build_qc(root_path, ecrf_tissue_type):
 			qc_df_data["contamination"] = qc_df_data["contamination"] / 100
 
 			qc_df_data["coverage"] = qc_df_data["coverage"].round(0).astype(int)
-			qc_df_data["tissue_type"] = ecrf_tissue_type
 
 			qc_df_data.fillna('NA', inplace=True)
 
@@ -309,8 +300,8 @@ def build_ploidy(root_path):
 
 	regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.csv'
 
-	ploidy_list = "NA"
-	purity_list = "NA"
+	ploidy_list = "N/A"
+	purity_list = "N/A"
 
 	try:
 		purecn_filename = file_path + list(filter(lambda x: (re.match(regex, x) ),os.listdir(file_path)))[0]
@@ -345,21 +336,17 @@ def build_small_variants(root_path):
 
 			if 'CALL' in smv_df_data.columns:
 
-				column_list = ['CHROM', 'END', 'REF', 'ALT']
+				column_list = ['CHROM', 'START', 'END', 'REF', 'ALT']
 				if(re.match(regex, i) or re.match(regex2, i)):
-					reads_column_list = ['N_DP', 'N_ALT']
-					column_dict = {'CHROM': 'chr', 'END': 'pos', 'REF' : 'ref', 'ALT' : 'alt', 'N_DP' : 'ref_reads',  'N_ALT' : 'alt_reads'}
+					reads_column_list = ['N_DP', 'N_ALT', 'N_VAF']
+					column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt', 'N_DP' : 'ref_reads',  'N_ALT' : 'alt_reads', 'N_VAF' : 'vaf'}
 				else:
-					reads_column_list = ['T_DP', 'T_ALT']
-					column_dict = {'CHROM': 'chr', 'END': 'pos', 'REF' : 'ref', 'ALT' : 'alt', 'T_DP' : 'ref_reads',  'T_ALT' : 'alt_reads'}
+					reads_column_list = ['T_DP', 'T_ALT', 'T_VAF']
+					column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt', 'T_DP' : 'ref_reads',  'T_ALT' : 'alt_reads', 'T_VAF' : 'vaf'}
 
 				column_list.extend(reads_column_list)
 
 				smv_df_data = smv_df_data.loc[(smv_df_data['CALL'] == "S") | (smv_df_data['CALL'] == "G")]
-				#smv_df_data["CHROM"] = smv_df_data["CHROM"].map(int)
-				#smv_df_data["CHROM"] =  smv_df_data['CHROM'].astype(str).str.isdigit().map(int)
-				smv_df_data['CHROM'] = pd.to_numeric(smv_df_data['CHROM'], errors='coerce')
-
 
 				if 'CLONALITY' in smv_df_data.columns:
 					column_list.append('CLONALITY')
@@ -416,7 +403,6 @@ def build_cnv(root_path):
 
 				if 'ASSESSMENT' in cnv_df_data.columns:
 					cnv_df_data = cnv_df_data.loc[(cnv_df_data['ASSESSMENT'].notnull())]
-					cnv_df_data['chromosome'] = pd.to_numeric(cnv_df_data['chromosome'], errors='coerce')
 
 					if(re.match(regex, i)):
 						cnv_df_data['origin'] = "Germline"
@@ -491,7 +477,7 @@ def build_svs(root_path):
 					column_list.append('VARIANT_STRING')
 					column_dict['VARIANT_STRING'] = 'variant_string'
 				else:
-					svs_filter["variant_string"] = "NA"
+					svs_filter["variant_string"] = "N/A"
 
 				svs_filter = svs_filter[column_list]
 				svs_filter = svs_filter.rename(columns=column_dict)
@@ -512,7 +498,7 @@ def build_svs(root_path):
 
 
 # ## Build Json from output files
-def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date):
+def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_id, capture_format, sample_type):
 
 	print("--- MTBP Json Format Started ---\n")
 
@@ -522,42 +508,38 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	logging.info('--- Sample fetching started ---')
 	itendifiter_status = True
 	if(project_name == "IPCM" or capture_format == "iPCM"):
-		sample_details_json, itendifiter_status = build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, seq_date)
+		sample_details_json, itendifiter_status = build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type)
 	else:
-		sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna, capture_format, sample_type, seq_date)
+		sample_details_json, itendifiter_status = build_sample_details(project_name, cfdna, capture_format, sample_type)
 
 	if(sample_details_json and itendifiter_status):
 		project_json["sample"] = sample_details_json
 	else:
-		sample_details_json = build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date)
+		sample_details_json = build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_id, capture_format, sample_type)
 		project_json["sample"] = sample_details_json
 
-	if sample_details_json["identifier"] == "NA" :
+	if sample_details_json["identifier"] == "N/A" :
 		identifier_study_id = sample_id
 	else:
 		identifier_study_id = sample_details_json["identifier"].split("_")[2]
-	
-	ecrf_tissue_type = sample_details_json['tissue_type']
-
+		
 	logging.info('--- Sample fetching completed ---')
 
 	# Pipeline
-	curr_version = fetch_pipeline_version()
-	piln_version = curr_version if curr_version != '' else '3.2.0'
-	project_json["pipeline"] = { "genome_reference": "hg19", "version": piln_version}
+	project_json["pipeline"] = { "genome_reference": "hg19", "version": "1.0"}
 
 	# QC
 	logging.info('--- QC started ---')
-	msi_val, qc_json = build_qc(root_path, ecrf_tissue_type)
-	project_json["qc"] =  "NA" if qc_json == "" else json.loads(qc_json)
+	msi_val, qc_json = build_qc(root_path)
+	project_json["qc"] =  "N/A" if qc_json == "" else json.loads(qc_json)
 	logging.info('--- QC completed ---')
 
 	# Get the Ploidy value
 	purity_val, ploidy_val = build_ploidy(root_path)
 
 	# Phenotype
-	msi, tmb, pathogenic_gDNA_variant = build_penotypes(project_name, sample_id, capture_id)
-	project_json["phenotypes"] = {"purity" : purity_val ,"ploidy": ploidy_val, "msi": msi, "tmb": tmb, "td": "NA", "pathogenic_gDNA_variant": pathogenic_gDNA_variant}
+	msi, tmb = build_penotypes(project_name, sample_id, capture_id)
+	project_json["phenotypes"] = {"purity" : purity_val ,"ploidy": ploidy_val, "msi": msi,  "hrrd":"N/A",  "tmb": tmb, "td": "N/A"}
 
 
 	# Small Variant (Somatic & Germline)
@@ -612,8 +594,6 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	cfdna = re.sub(r'[a-zA-Z]', '', cfdna_id)
 
 	capture_format = capture_arr[0]
-	seq_date_str = re.findall(r'\d+', capture_arr[-1])[0]
-	seq_date = datetime.strptime(seq_date_str, "%Y%m%d").date().strftime("%Y-%m-%d")
 
 	log_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_"+sample_type+cfdna+".log"
 
@@ -630,7 +610,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	logging.info("Sample Id : {} || Capture Id : {} ".format(sample_id,capture_id))
 
 	try:
-		build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date)
+		build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_id, capture_format, sample_type)
 	except Exception as e:
 		print("Main Exception", str(e))
 		logging.error("Failed : {}".format(str(e)))
