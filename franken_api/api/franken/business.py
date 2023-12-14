@@ -1779,7 +1779,6 @@ def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 
 	regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
 	regex2 = '(.*)-(CFDNA|T)-(\w.*)(somatic-igvnav-input).*txt$'
-
 	try:
 		igv_nav_file = list(filter(lambda x: (re.match(regex2, x) if ('-somatic-' in x or '-germline-' in x) else re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))[0]
 		igv_nav_file = file_path + '/' + igv_nav_file
@@ -1799,11 +1798,11 @@ def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 		df_sm.to_csv(igv_nav_file,index = False, header=True, sep='\t')
 
 		if tb_record:
-			for tr in tb_record:
-				rslt_df = df_sm.loc[(df_sm['CHROM'] == int(tr['CHROM'])) & (df_sm['START'] == int(tr['START']))  & (df_sm['END'] == int(tr['END']))  & (df_sm['REF'] == tr['REF'])  & (df_sm['ALT'] == tr['ALT'])]
-				tb_record = rslt_df.to_dict('records')
-				tr['CLONALITY'] = tb_record[0]['CLONALITY']
-				tr['SECONDHIT'] = tb_record[0]['SECONDHIT']
+			for idx,tr in enumerate(tb_record):
+				rslt_df = df_sm.loc[(df_sm['CHROM'] == tr['CHROM']) & (df_sm['START'] == int(tr['START']))  & (df_sm['END'] == int(tr['END']))  & (df_sm['REF'] == tr['REF'])  & (df_sm['ALT'] == tr['ALT'])]
+				tb_record_new = rslt_df.to_dict('records')
+				tr['CLONALITY'] = tb_record[idx]['CLONALITY']
+				tr['SECONDHIT'] = tb_record[idx]['SECONDHIT']
 				post_curation(tr, 'somatic')
 
 		return {'status': True, 'message': 'Somatic Curation updated based on ctdna fraction'}, 200
