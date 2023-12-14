@@ -32,7 +32,7 @@ def subprocess_cmd(command):
 	process = subprocess.Popen(command,stdout=subprocess.PIPE, shell=True)
 	proc_stdout = process.communicate()[0].strip()
 	for line in proc_stdout.decode().split('\n'):
-		print("Subprocess : ", line)
+		logging.info("Subprocess : ", line)
 
 
 # ### Read a DB information from yml file
@@ -57,7 +57,7 @@ def fetch_sql_query(section, sql):
 		cur.close()
 		return data
 	except (Exception, psycopg2.DatabaseError) as error:
-		print("Fetch SQL Exception", error)
+		logging.error("Fetch SQL Exception : {}".format(str(error)))
 	finally:
 		if conn is not None:
 			conn.close()
@@ -65,38 +65,41 @@ def fetch_sql_query(section, sql):
 
 # ### Fetch the sample information from ipcm referral table
 def build_ipcm_sample_details(cfdna, normal_cfdna):
-
-	## tissue cfdna
-	cfdna = re.sub(r'[a-zA-Z]', '', cfdna)
-	sql = "select rf.pnr, rf.cdk from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
-	res_data = fetch_sql_query('ipcmLeaderboard', sql)
-
-	## normal cfdna
-	sql2 = "select rf.pnr, rf.cdk from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna)
-	res_normal_data = fetch_sql_query('ipcmLeaderboard', sql2)
-
-	t_pnr = res_data[0]['pnr'] if len(res_data) else ''
-	t_cdk = res_data[0]['cdk'] if len(res_data) else ''
-
-	n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) else''
-	n_cdk = res_normal_data[0]['cdk'] if len(res_normal_data) else ''
-
-	## Compare two pnr number
 	result = ''
-	if (t_pnr == n_pnr or t_pnr == ''):
-		study_id = n_cdk
-		dob = n_pnr[0:8]
-		query_ecrf="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
-		res_ecrd_data = fetch_sql_query('ipcmLeaderboard', query_ecrf)
-		if res_ecrd_data:
-			result = res_ecrd_data[0]            
-	else:
-		dob = t_pnr[0:8]
-		query_ecrf_2="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD')".format(dob)
-		res_ecrd_data_2 = fetch_sql_query('ipcmLeaderboard', query_ecrf_2)
-		if res_ecrd_data_2:
-			result = res_ecrd_data_2[0]
 
+	try:
+		## tissue cfdna
+		cfdna = re.sub(r'[a-zA-Z]', '', cfdna)
+		sql = "select rf.pnr, rf.cdk from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(cfdna, cfdna, cfdna, cfdna, cfdna)
+		res_data = fetch_sql_query('ipcmLeaderboard', sql)
+
+		## normal cfdna
+		sql2 = "select rf.pnr, rf.cdk from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna)
+		res_normal_data = fetch_sql_query('ipcmLeaderboard', sql2)
+
+		t_pnr = res_data[0]['pnr'] if len(res_data) else ''
+		t_cdk = res_data[0]['cdk'] if len(res_data) else ''
+
+		n_pnr = res_normal_data[0]['pnr'] if len(res_normal_data) else''
+		n_cdk = res_normal_data[0]['cdk'] if len(res_normal_data) else ''
+
+		## Compare two pnr number
+		if (t_pnr == n_pnr or t_pnr == ''):
+			study_id = n_cdk
+			dob = n_pnr[0:8]
+			query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN ec.cancer_type_code != '' THEN get_cancer_info(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
+			res_ecrd_data = fetch_sql_query('ipcmLeaderboard', query_ecrf)
+			if res_ecrd_data:
+				result = res_ecrd_data[0]            
+		else:
+			dob = t_pnr[0:8]
+			query_ecrf_2="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN ec.cancer_type_code != '' THEN get_cancer_info(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD')".format(dob)
+			res_ecrd_data_2 = fetch_sql_query('ipcmLeaderboard', query_ecrf_2)
+			if res_ecrd_data_2:
+				result = res_ecrd_data_2[0]
+		
+	except Exception as e:
+		logging.error("Build iPCM Sample Details SQL Exception : {}".format(str(e)))
 	return result
 
 
@@ -105,54 +108,57 @@ def build_sample_details(cfdna):
 
 	sample_data = {}
 
-	sample_data["identifier"] = ""
-	sample_data["sample_date"] = ""
-	sample_data["birthdate"] = ""
-	sample_data["hospital"] = ""
-	sample_data["disease_name"] = ""
+	try:
+		sample_data["identifier"] = ""
+		sample_data["sample_date"] = ""
+		sample_data["birthdate"] = ""
+		sample_data["hospital"] = ""
+		sample_data["disease_name"] = ""
 
-	sql = "SELECT pnr, datum, rid, tid, cdk from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
-	res_data = fetch_sql_query('referral', sql)
+		sql = "SELECT pnr, datum, rid, tid, cdk from probio_bloodreferrals WHERE cf_dna1 like '%{}%' OR cf_dna2 like '%{}%' or cf_dna3 like '%{}%' or kommentar like '%{}%'".format(cfdna, cfdna, cfdna, cfdna)
+		res_data = fetch_sql_query('referral', sql)
 
-	if(res_data):
-		tid = res_data[0]["tid"]
-		cdk_1 = res_data[0]["cdk"]
-		cdk =  cdk_1.strip() if cdk_1 != None else cdk_1
-		sample_data["identifier"] =  cdk if cdk != "" else cdk
-		sample_data["sample_date"] = res_data[0]["datum"]
-		pnr_1 = res_data[0]["pnr"]
-		pnr = pnr_1[0:8] if pnr_1 != None else pnr_1
+		if(res_data):
+			tid = res_data[0]["tid"]
+			cdk_1 = res_data[0]["cdk"]
+			cdk =  cdk_1.strip() if cdk_1 != None else cdk_1
+			sample_data["identifier"] =  cdk if cdk != "" else cdk
+			sample_data["sample_date"] = res_data[0]["datum"]
+			pnr_1 = res_data[0]["pnr"]
+			pnr = pnr_1[0:8] if pnr_1 != None else pnr_1
 
-		sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)
-		glb_data_1 = fetch_sql_query('leaderboard', sql)
-		if(glb_data_1):
-			sample_data["birthdate"] = glb_data_1[0]["dob"]
-			sample_data["hospital"] = glb_data_1[0]["site_name"]
-	else:
-		cfdna_rid = re.sub("^0+(?!$)", "", cfdna)
-		sql = "SELECT DISTINCT rid, subjectid from biobank_t WHERE regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}' or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}'  or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') IN ('{}') or regexp_replace(rid, '[^a-zA-Z0-9]+', '','g') IN('{}')".format(cfdna, cfdna, cfdna, cfdna_rid)
-		bio_data = fetch_sql_query('leaderboard', sql)
-		if(bio_data):
-			subject_id = bio_data[0]['subjectid'] 
-			sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', 'P-', '','g') or regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', '-', '','g')".format(subject_id, subject_id)
-			glb_data_2 = fetch_sql_query('leaderboard', sql)
+			sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)
+			glb_data_1 = fetch_sql_query('leaderboard', sql)
+			if(glb_data_1):
+				sample_data["birthdate"] = glb_data_1[0]["dob"]
+				sample_data["hospital"] = glb_data_1[0]["site_name"]
+		else:
+			cfdna_rid = re.sub("^0+(?!$)", "", cfdna)
+			sql = "SELECT DISTINCT rid, subjectid from biobank_t WHERE regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}' or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') like '{}'  or regexp_replace(referenceID, '[^a-zA-Z0-9]+', '','g') IN ('{}') or regexp_replace(rid, '[^a-zA-Z0-9]+', '','g') IN('{}')".format(cfdna, cfdna, cfdna, cfdna_rid)
+			bio_data = fetch_sql_query('leaderboard', sql)
+			if(bio_data):
+				subject_id = bio_data[0]['subjectid'] 
+				sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', 'P-', '','g') or regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', '-', '','g')".format(subject_id, subject_id)
+				glb_data_2 = fetch_sql_query('leaderboard', sql)
 
-			if(glb_data_2):
-				sample_data["birthdate"] = glb_data_2[0]["dob"]
-				sample_data["hospital"] = glb_data_2[0]["site_name"]
+				if(glb_data_2):
+					sample_data["birthdate"] = glb_data_2[0]["dob"]
+					sample_data["hospital"] = glb_data_2[0]["site_name"]
 
-
+	except Exception as e:
+		logging.error("Build Sample Details Exception : {}".format(str(e)))
 	return sample_data
 
 
 # ### Build a patient, specimen & assay and genome wide information
-def build_basic_html(sample_id, capture_id):
+def build_basic_html(sample_id, capture_id, study_id, disease_name):
 
 	patient_info_html = ''
 	specimen_assay_html = ''
 	genome_wide_html = ''
 	summary_txt = ''
 	sample_txt = ''
+
 	study_code = 'None'
 	disease = 'None'
 	tumörcellsandel = 'None'
@@ -160,47 +166,48 @@ def build_basic_html(sample_id, capture_id):
 	msi_status = 'None'
 	potentiellt_ärftliga = 'None'
 
-	sql = "SELECT study_code, study_site, dob, disease, specimen_assay, genome_wide, summary_txt from genomic_profile_summary WHERE sample_id='{}' and capture_id='{}'".format(sample_id, capture_id)
-	res_data = fetch_sql_query('curation', sql)
+	try:
+		sql = "SELECT study_code, study_site, dob, disease, specimen_assay, genome_wide, summary_txt from genomic_profile_summary WHERE sample_id='{}' and capture_id='{}'".format(sample_id, capture_id)
+		res_data = fetch_sql_query('curation', sql)
 
-	if(res_data):
+		if(res_data):
 
-		study_code = res_data[0]['study_code']
-		study_site = res_data[0]['study_site']
-		dob = res_data[0]['dob']
-		disease = res_data[0]['disease']
+			study_code = res_data[0]['study_code'] if study_id =='' else study_id
+			study_site = res_data[0]['study_site']
+			dob = res_data[0]['dob']
+			disease = res_data[0]['disease'] if disease_name =='' else disease_name
 
-		# summary_txt = '<tr><td>'+res_data[0]['summary_txt']+'</td></tr>'
-		summary_txt = res_data[0]['summary_txt']
+			# summary_txt = '<tr><td>'+res_data[0]['summary_txt']+'</td></tr>'
+			summary_txt = res_data[0]['summary_txt']
 
-		patient_info_html += '<tr><th>STUDY ID</th><td>{}</td></tr>'.format(study_code)
-		patient_info_html += '<tr><th>PERSONAL NUMBER</th><td>{}</td></tr>'.format(dob)
-		patient_info_html += '<tr><th>DISEASE</th><td>{}</td></tr>'.format(disease)
-		patient_info_html += '<tr><th>HOSPITAL</th><td>{}</td></tr>'.format(study_site)
+			patient_info_html += '<tr><th>STUDY ID</th><td>{}</td></tr>'.format(study_code)
+			patient_info_html += '<tr><th>PERSONAL NUMBER</th><td>{}</td></tr>'.format(dob)
+			patient_info_html += '<tr><th>DISEASE</th><td>{}</td></tr>'.format(disease)
+			patient_info_html += '<tr><th>HOSPITAL</th><td>{}</td></tr>'.format(study_site)
 
-		specimen_assay = res_data[0]['specimen_assay'].replace("\'", "\"")
+			specimen_assay = res_data[0]['specimen_assay'].replace("\'", "\"")
 
-		specimen_assay_json = json.loads(specimen_assay)
+			specimen_assay_json = json.loads(specimen_assay)
 
-		for i in specimen_assay_json:
+			for i in specimen_assay_json:
 
-			quality ='' 
-			if 'quality' in specimen_assay_json[i]:
-				quality = specimen_assay_json[i]['quality'] if isinstance(specimen_assay_json[i]['quality'], str) else ''
+				quality ='' 
+				if 'quality' in specimen_assay_json[i]:
+					quality = specimen_assay_json[i]['quality'] if isinstance(specimen_assay_json[i]['quality'], str) else ''
 
-			specimen_assay_html += '<tr>'
-			specimen_assay_html += '<th>'+specimen_assay_json[i]["specimen"]+'</th>'
-			specimen_assay_html += '<td>'+specimen_assay_json[i]["analyte"]+'</td>'
-			specimen_assay_html += '<td>'+specimen_assay_json[i]["assay"]+'</td>'
-			specimen_assay_html += '<td>'+quality+'</td>'
-			specimen_assay_html += '</tr>'
+				specimen_assay_html += '<tr>'
+				specimen_assay_html += '<th>'+specimen_assay_json[i]["specimen"]+'</th>'
+				specimen_assay_html += '<td>'+specimen_assay_json[i]["analyte"]+'</td>'
+				specimen_assay_html += '<td>'+specimen_assay_json[i]["assay"]+'</td>'
+				specimen_assay_html += '<td>'+quality+'</td>'
+				specimen_assay_html += '</tr>'
 
-		genome_wide = res_data[0]['genome_wide'].replace("\'", "\"")
+			genome_wide = res_data[0]['genome_wide'].replace("\'", "\"")
 
-		genome_wide_json = json.loads(genome_wide)
+			genome_wide_json = json.loads(genome_wide)
 
-		for j in genome_wide_json:
-				
+			for j in genome_wide_json:
+					
 				if 'CHIP' not in genome_wide_json[j]["title"]:
 					result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else ''
 				else:
@@ -231,17 +238,19 @@ def build_basic_html(sample_id, capture_id):
 				elif (title == "MSI STATUS"):
 					msi_status = genome_wide_json[j]['result']
 				elif (title == "PATHOGENIC GERMLINE VARIANTS"):
-					potentiellt_ärftliga = genome_wide_json[j]['result']
-		
+					potentiellt_ärftliga = genome_wide_json[j]['result']	
+	
+	except Exception as e:
+		logging.error("Build Base HTML Exception : {}".format(str(e)))
 
 	### Generate a clinical report txt 
 	sample_txt = 'Genomisk karaktärisering av solid cancer - Implementation of Personalized Cancer Medicine (iPCM)\n'
-	sample_txt += '"STUDIENUMMER"\t"{}"\n"TUMÖRTYP"\t"{}"\n'.format(study_code, disease)
-	sample_txt += '\nSEKVENSERAT MATERIAL:"\n'
-	sample_txt += '"TUMÖRCELLSANDEL"\t"{}"\n'.format(tumörcellsandel)
-	sample_txt += '"TUMÖRMUTATIONSBÖRDA (TMB)" \t"{}"\n'.format(tumörmutationsbörda)
-	sample_txt += '"MMR/MSI-status" \t"{}"\n'.format(msi_status)
-	sample_txt += '"KONSTITUTIONELLA (POTENTIELLT ÄRFTLIGA) VARIANTER"\t"{}"\n\n'.format(potentiellt_ärftliga)
+	sample_txt += 'STUDIENUMMER\t{}\nTUMÖRTYP\t{}\n'.format(study_code, disease)
+	sample_txt += '\nSEKVENSERAT MATERIAL:\n'
+	sample_txt += 'TUMÖRCELLSANDEL: \t{}\n'.format(tumörcellsandel)
+	sample_txt += 'TUMÖRMUTATIONSBÖRDA (TMB): \t{}\n'.format(tumörmutationsbörda)
+	sample_txt += 'MMR/MSI-status: \t{}\n'.format(msi_status)
+	sample_txt += 'KONSTITUTIONELLA (POTENTIELLT ÄRFTLIGA) VARIANTER: \t{}\n\n'.format(potentiellt_ärftliga)
 
 	return patient_info_html, specimen_assay_html, genome_wide_html, summary_txt, sample_txt, study_code
 
@@ -249,200 +258,214 @@ def build_basic_html(sample_id, capture_id):
 # ### Build a Small variant Json (Somatic & Germline)
 def build_small_variants(root_path):
 
-	file_path = root_path + '/'
-	smv_file_list = list(filter(lambda x: x.endswith('-igvnav-input.txt') and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))
-	regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
-
 	smt_variant_html = ''
 	smt_variant_txt = ''
-	for i in smv_file_list:
-		smv_filename = file_path + i
-		smv_df_data = pd.read_csv(smv_filename, delimiter = "\t")
+	try:
+		file_path = root_path + '/'
+		smv_file_list = list(filter(lambda x: x.endswith('-igvnav-input.txt') and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))
+		regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
 
-		if 'CALL' in smv_df_data.columns:
-			smv_df_call_filter = smv_df_data.loc[(smv_df_data['CALL'] == "S") | (smv_df_data['CALL'] == "G")]
+		for i in smv_file_list:
+			smv_filename = file_path + i
+			smv_df_data = pd.read_csv(smv_filename, delimiter = "\t")
 
-			if 'include_variant_report_pdf' in smv_df_call_filter.columns:
-				smv_df_call_filter = smv_df_call_filter.loc[(smv_df_call_filter['include_variant_report_pdf'] == "True") | (smv_df_call_filter['include_variant_report_pdf'] == True)]
+			if 'CALL' in smv_df_data.columns:
+				smv_df_call_filter = smv_df_data.loc[(smv_df_data['CALL'] == "S") | (smv_df_data['CALL'] == "G")]
 
-			column_list = ['CHROM', 'START', 'END', 'REF', 'ALT', 'GENE', 'CONSEQUENCE', 'HGVSp']
-			column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt'}
+				if 'include_variant_report_pdf' in smv_df_call_filter.columns:
+					smv_df_call_filter = smv_df_call_filter.loc[(smv_df_call_filter['include_variant_report_pdf'] == "True") | (smv_df_call_filter['include_variant_report_pdf'] == True)]
 
-			clonality_boolean = False
+				column_list = ['CHROM', 'START', 'END', 'REF', 'ALT', 'GENE', 'CONSEQUENCE', 'HGVSp']
+				column_dict = {'CHROM': 'chr', 'START': 'start', 'END': 'end', 'REF' : 'ref', 'ALT' : 'alt'}
 
-			if 'CLONALITY' in smv_df_call_filter.columns:
-				column_list.append('CLONALITY')
-				column_dict['CLONALITY'] = 'clonality'
-				clonality_boolean = True
+				clonality_boolean = False
 
-			if 'SECONDHIT' in smv_df_call_filter.columns:
-				column_list.append('SECONDHIT')
-				column_dict['SECONDHIT'] = 'second_hit'
+				if 'CLONALITY' in smv_df_call_filter.columns:
+					column_list.append('CLONALITY')
+					column_dict['CLONALITY'] = 'clonality'
+					clonality_boolean = True
 
-			if 'HGVSp_org' in smv_df_call_filter.columns:
-				column_list.append('HGVSp_org')
-				column_dict['HGVSp_org'] = 'HGVSp_org'
+				if 'SECONDHIT' in smv_df_call_filter.columns:
+					column_list.append('SECONDHIT')
+					column_dict['SECONDHIT'] = 'second_hit'
 
-			if 'TRANSCRIPT' in smv_df_call_filter.columns:
-				column_list.append('TRANSCRIPT')
-				column_dict['TRANSCRIPT'] = 'TRANSCRIPT'
+				if 'HGVSp_org' in smv_df_call_filter.columns:
+					column_list.append('HGVSp_org')
+					column_dict['HGVSp_org'] = 'HGVSp_org'
 
-			if 'ASSESSMENT' in smv_df_call_filter.columns:
-				column_list.append('ASSESSMENT')
-				column_dict['ASSESSMENT'] = 'ASSESSMENT'
+				if 'TRANSCRIPT' in smv_df_call_filter.columns:
+					column_list.append('TRANSCRIPT')
+					column_dict['TRANSCRIPT'] = 'TRANSCRIPT'
 
-			if 'zygosity' in smv_df_call_filter.columns:
-				column_list.append('zygosity')
-				column_dict['zygosity'] = 'zygosity'
+				if 'ASSESSMENT' in smv_df_call_filter.columns:
+					column_list.append('ASSESSMENT')
+					column_dict['ASSESSMENT'] = 'ASSESSMENT'
 
-			if 'RSID' in smv_df_call_filter.columns:
-				column_list.append('RSID')
-				column_dict['RSID'] = 'RSID'
+				if 'zygosity' in smv_df_call_filter.columns:
+					column_list.append('zygosity')
+					column_dict['zygosity'] = 'zygosity'
 
-			smv_df_call_filter = smv_df_call_filter[column_list]
-			smv_df_filter_data = smv_df_call_filter.rename(columns=column_dict)
+				if 'RSID' in smv_df_call_filter.columns:
+					column_list.append('RSID')
+					column_dict['RSID'] = 'RSID'
 
-			sort_arr = ["GENE"]
+				smv_df_call_filter = smv_df_call_filter[column_list]
+				smv_df_filter_data = smv_df_call_filter.rename(columns=column_dict)
 
-			if clonality_boolean : 
-				sort_arr = ["clonality", "GENE"]
+				sort_arr = ["GENE"]
 
-			smv_df_filter_data = smv_df_filter_data.sort_values(sort_arr, ascending = True)
+				if clonality_boolean : 
+					sort_arr = ["clonality", "GENE"]
 
-			smv_df_filter_data.fillna('-', inplace=True)
+				smv_df_filter_data = smv_df_filter_data.sort_values(sort_arr, ascending = True)
 
-			source_type = ''
+				smv_df_filter_data.fillna('-', inplace=True)
 
-			if(re.match(regex, i)):
-				source_type ='germline'
-			else:
-				source_type ='somatic'
+				source_type = ''
 
-			if len(smv_df_filter_data):
-				smt_variant_txt += '"GENE"\t"Source"\t"Variant details"\t"Consequence"\t"Clonality"\t"Second Hit"\t"HGVSP"\t"ONCOKB-TIER"\n'
+				if(re.match(regex, i)):
+					source_type ='germline'
+				else:
+					source_type ='somatic'
 
-				for index, row in smv_df_filter_data.iterrows():
+				if len(smv_df_filter_data):
+					smt_variant_txt += '\nGENE\tSource\tVariant-details\tConsequence\tClonality\tSecond-Hit\tHGVSP\tONCOKB-TIER\n'
 
-					variant_det = "chr"+str(row['chr'])+":"+str(row['end'])+'; '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
-					if source_type == 'somatic':
-						clonality = row['clonality'] if 'clonality' in row else '-'
-					else:
-						clonality = row['zygosity'].upper() if 'zygosity' in row else '-'
-					# clonality = row['clonality'] if 'clonality' in row else '-'
-					transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
-					assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
+					for index, row in smv_df_filter_data.iterrows():
 
-					if 'RSID' in row:
-						rs_id_arr = ''
-						if re.findall("'\s*([^']*?)\s*'", row['RSID']):
-							rsId_arr = eval(row['RSID'])
-							for rsId_str in rsId_arr:
-								if 'rs' in rsId_str:
-									rs_id_arr += rsId_str+','
+						variant_det = "chr"+str(row['chr'])+":"+str(row['end'])+'; '+row['ref']+'>'+row['alt'].lstrip('[').rstrip(']')
+						if source_type == 'somatic':
+							clonality = row['clonality'] if 'clonality' in row else '-'
+						else:
+							clonality = row['zygosity'].upper() if 'zygosity' in row else '-'
+						# clonality = row['clonality'] if 'clonality' in row else '-'
+						transcript = row['TRANSCRIPT'] if 'TRANSCRIPT' in row else '-'
+						assessment = row['ASSESSMENT'] if 'ASSESSMENT' in row else '-'
 
-						rsID = rs_id_arr[:-1]
-					else: 
-						rsID = '' 
+						if 'RSID' in row:
+							rs_id_arr = ''
+							if re.findall("'\s*([^']*?)\s*'", row['RSID']):
+								rsId_arr = eval(row['RSID'])
+								for rsId_str in rsId_arr:
+									if 'rs' in rsId_str:
+										rs_id_arr += rsId_str+','
 
-					#rsID = row['RSID'] if 'RSID' in row else '-'
-					# rsID_url = "https://www.ncbi.nlm.nih.gov/snp/{}#clinical_significance".format(rsID) if 'RSID' in row else '-'
+							rsID = rs_id_arr[:-1]
+						else: 
+							rsID = '' 
 
-					HGVSp_org_rx = row['HGVSp_org'] if 'HGVSp_org' in row else '-'
-					HGVSp_org = HGVSp_org_rx.split("p.")[1] if 'p.' in HGVSp_org_rx else HGVSp_org_rx
-					second_hit = str(row['second_hit']) if 'second_hit' in row else '-'
-					consequence = row['CONSEQUENCE']
-									
-					smt_variant_html += '<tr>'
-					smt_variant_html +='<td>'+row['GENE']+'</td>'
-					smt_variant_html +='<td>'+source_type+'</td>'
-					smt_variant_html +='<td class="sm-var-dets"><p>'+variant_det+'</p></td>'
-					smt_variant_html +='<td>'+consequence+'</td>'
-					smt_variant_html +='<td>'+clonality+'</td>'
-					smt_variant_html +='<td>'+second_hit+'</td>'
-					smt_variant_html +='<td>'+assessment+'</td>'
-					smt_variant_html +='<td>'+rsID+'</td>'
-					smt_variant_html +='<td>'+transcript+'</td>'
-					smt_variant_html +='<td>'+HGVSp_org+'</td>'
-					smt_variant_html += '</tr>'
+						#rsID = row['RSID'] if 'RSID' in row else '-'
+						# rsID_url = "https://www.ncbi.nlm.nih.gov/snp/{}#clinical_significance".format(rsID) if 'RSID' in row else '-'
 
-					smt_variant_txt += '"'+row['GENE']+'"\t'
-					smt_variant_txt += '"'+source_type+'"\t'
-					smt_variant_txt += '"'+variant_det+'"\t'
-					smt_variant_txt += '"'+consequence+'"\t'
-					smt_variant_txt += '"'+clonality+'"\t'
-					smt_variant_txt += '"'+second_hit+'"\t'
-					smt_variant_txt += '"'+HGVSp_org+'"\t'
-					smt_variant_txt += '\n'
+						HGVSp_org_rx = row['HGVSp_org'] if 'HGVSp_org' in row else '-'
+						HGVSp_org = HGVSp_org_rx.split("p.")[1] if 'p.' in HGVSp_org_rx else HGVSp_org_rx
+						second_hit = str(row['second_hit']) if 'second_hit' in row else '-'
+						consequence = row['CONSEQUENCE']
+						HGVSp_one_cod = row['HGVSp']
+										
+						smt_variant_html += '<tr>'
+						smt_variant_html +='<td>'+row['GENE']+'</td>'
+						smt_variant_html +='<td>'+source_type+'</td>'
+						smt_variant_html +='<td class="sm-var-dets"><p>'+variant_det+'</p></td>'
+						smt_variant_html +='<td>'+consequence+'</td>'
+						smt_variant_html +='<td>'+clonality+'</td>'
+						smt_variant_html +='<td>'+second_hit+'</td>'
+						smt_variant_html +='<td>'+assessment+'</td>'
+						smt_variant_html +='<td>'+rsID+'</td>'
+						smt_variant_html +='<td>'+transcript+'</td>'
+						smt_variant_html +='<td>'+HGVSp_org+'</td>'
+						smt_variant_html += '</tr>'
+
+						smt_variant_txt += row['GENE']+'\t'
+						smt_variant_txt += source_type+'\t'
+						smt_variant_txt += variant_det+'\t'
+						smt_variant_txt += consequence+'\t'
+						smt_variant_txt += clonality+'\t'
+						smt_variant_txt += second_hit+'\t'
+						smt_variant_txt += HGVSp_one_cod+'\t'
+						smt_variant_txt += '-\t'
+						smt_variant_txt += '\n'
+
+	
+	except Exception as e:	
+		smt_variant_html = ''
+		smt_variant_txt = ''
+		logging.error("Small Variants Exception : {}".format(str(e)))
 
 	return smt_variant_html, smt_variant_txt
 
 
 # ### Build a CNV Json (Somatic & Germline)
 def build_cnv(root_path):
-
-	cnv_df = pd.DataFrame()
-	file_path = root_path + '/cnv/'
-	cnv_file_list = list(filter(lambda x: x.endswith('_curated.cns') and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))
-
 	cnv_html = ''
 	cnv_txt = '' 
 
-	if len(cnv_file_list) > 0:
+	try:
+		cnv_df = pd.DataFrame()
+		file_path = root_path + '/cnv/'
+		cnv_file_list = list(filter(lambda x: x.endswith('_curated.cns') and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))
 
-		regex = '^(?:(?!-(CFDNA|T)).)*_curated.cns$'
-		for i in cnv_file_list:
-			cnv_filename = file_path + i
-			cnv_df_data = pd.read_csv(cnv_filename, delimiter = "\t")
 
-			column_list = ['chromosome', 'start', 'end', 'gene', 'ASSESSMENT']
-			column_dict = {'chromosome': 'chr'}
+		if len(cnv_file_list) > 0:
 
-			if 'ASSESSMENT' in cnv_df_data.columns:
-				cnv_txt += '"GENE"\t"Source"\t"Variant details"\t"Assessment"\n'
-				cnv_df_data = cnv_df_data.loc[(cnv_df_data['ASSESSMENT'].notnull())]
+			regex = '^(?:(?!-(CFDNA|T)).)*_curated.cns$'
+			for i in cnv_file_list:
+				cnv_filename = file_path + i
+				cnv_df_data = pd.read_csv(cnv_filename, delimiter = "\t")
 
-				if 'include_variant_report_pdf' in cnv_df_data.columns:
-					cnv_df_data = cnv_df_data.loc[(cnv_df_data['include_variant_report_pdf'] == "True") | (cnv_df_data['include_variant_report_pdf'] == True)]
+				column_list = ['chromosome', 'start', 'end', 'gene', 'ASSESSMENT']
+				column_dict = {'chromosome': 'chr'}
 
-				if(re.match(regex, i)):
-					source_type = "germline"
-				else:
-					source_type = "somatic"
+				if 'ASSESSMENT' in cnv_df_data.columns:
+					cnv_txt += 'GENE\tSource\tVariant-details\tAssessment\n'
+					cnv_df_data = cnv_df_data.loc[(cnv_df_data['ASSESSMENT'].notnull())]
 
-				if 'COPY_NUMBER' in cnv_df_data.columns:
-					column_list.append('COPY_NUMBER')
-					column_dict['COPY_NUMBER'] = 'copy_number'
-				else:
-					column_list.append('copy_number')
-					cnv_df_data['copy_number'] = '-'
+					if 'include_variant_report_pdf' in cnv_df_data.columns:
+						cnv_df_data = cnv_df_data.loc[(cnv_df_data['include_variant_report_pdf'] == "True") | (cnv_df_data['include_variant_report_pdf'] == True)]
 
-				cnv_df_data = cnv_df_data[column_list]
-				cnv_df_data = cnv_df_data.rename(columns=column_dict)
+					if(re.match(regex, i)):
+						source_type = "germline"
+					else:
+						source_type = "somatic"
 
-				cnv_df_data.fillna('-', inplace=True)
+					if 'COPY_NUMBER' in cnv_df_data.columns:
+						column_list.append('COPY_NUMBER')
+						column_dict['COPY_NUMBER'] = 'copy_number'
+					else:
+						column_list.append('copy_number')
+						cnv_df_data['copy_number'] = '-'
 
-				for index, row in cnv_df_data.iterrows():
+					cnv_df_data = cnv_df_data[column_list]
+					cnv_df_data = cnv_df_data.rename(columns=column_dict)
 
-					variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+"-"+str(row['end'])
+					cnv_df_data.fillna('-', inplace=True)
 
-					gene_det = row['gene']
+					for index, row in cnv_df_data.iterrows():
 
-					copy_number = row['copy_number'] if isinstance(row['copy_number'],str) else int(row['copy_number'])
+						variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+"-"+str(row['end'])
 
-					cnv_html += '<tr>'
-					cnv_html +='<td>'+gene_det+'</td>'
-					cnv_html +='<td>'+source_type+'</td>'
-					cnv_html +='<td>'+variant_det+'</td>'
-					cnv_html +='<td>'+row['ASSESSMENT']+'</td>'
-					cnv_html +='<td>'+str(copy_number)+'</td>'
-					cnv_html += '</tr>'
+						gene_det = re.sub(r'\s', '', row['gene'])
 
-					cnv_txt +='"'+gene_det+'"\t'
-					cnv_txt +='"'+source_type+'"\t'
-					cnv_txt +='"'+variant_det+'"\t'
-					cnv_txt +='"'+row['ASSESSMENT']+'"\t'
-					cnv_txt += '\n'
+						copy_number = row['copy_number'] if isinstance(row['copy_number'],str) else int(row['copy_number'])
 
+						cnv_html += '<tr>'
+						cnv_html +='<td>'+gene_det+'</td>'
+						cnv_html +='<td>'+source_type+'</td>'
+						cnv_html +='<td>'+variant_det+'</td>'
+						cnv_html +='<td>'+row['ASSESSMENT']+'</td>'
+						cnv_html +='<td>'+str(copy_number)+'</td>'
+						cnv_html += '</tr>'
+
+						cnv_txt +=gene_det+'\t'
+						cnv_txt +=source_type+'\t'
+						cnv_txt +=variant_det+'\t'
+						cnv_txt +=row['ASSESSMENT']+'\t'
+						cnv_txt += '\n'
+
+	except Exception as e:	
+		cnv_html = ''
+		cnv_txt = ''
+		logging.error("CNV Exception : {}".format(str(e)))
 
 	return cnv_html, cnv_txt
 
@@ -469,7 +492,7 @@ def build_svs(root_path):
 				svs_filter = svs_filter.loc[(svs_filter['include_variant_report_pdf'] == "True") | (svs_filter['include_variant_report_pdf'] == True)]
 
 			if not svs_filter.empty:
-				svs_txt += '"GENE_A, GENE_B"\t"Source"\t"Variant details"\t"Consequence"\t"Clonality"\t"Second Hit"\n'
+				svs_txt += 'GENE_A,GENE_B\tSource\tVariant-details\tConsequence\tClonality\tSecond-Hit\n'
 				svs_filter = svs_filter[svs_filter['SAMPLE'].isin(sample_list)]
 
 				if 'CONSEQUENCE' in svs_filter.columns:
@@ -510,18 +533,18 @@ def build_svs(root_path):
 					svs_html +='<td>'+secondHit+'</td>'
 					svs_html += '</tr>'
 
-					svs_txt +='"'+gene_det+'"\t'
-					svs_txt +='"'+sample_type+'"\t'
-					svs_txt +='"'+variant_det+'"\t'
-					svs_txt +='"'+consequence+'"\t'
-					svs_txt +='"'+clonality+'"\t'
-					svs_txt +='"'+secondHit+'"\t'
+					svs_txt +=gene_det+'\t'
+					svs_txt +=sample_type+'\t'
+					svs_txt +=variant_det+'\t'
+					svs_txt +=consequence+'\t'
+					svs_txt +=clonality+'\t'
+					svs_txt +=secondHit+'\t'
 					svs_txt += '\n'
 
-	except Exception as e:
-		print("SVS Exception", str(e))
+	except Exception as e:	
 		svs_html = ''
 		svs_txt = ''
+		logging.error("SVS Exception : {}".format(str(e)))
 
 	return svs_html, svs_txt
 
@@ -560,8 +583,6 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 			tech_html +='<td>Prostate cancer comprehensive panel v2</td>'
 			tech_html +='<td>Prostate cancer comprehensive panel v2</td>'
 		else:
-#             tech_html +='<td>Pan-cancer comprehensive panel (GMCK) v1</td>'
-#             tech_html +='<td>Pan-cancer comprehensive panel (GMCK) v1</td>'
 			tech_html +='<td>ProBio comprehensive panel v2</td>'
 			tech_html +='<td>ProBio comprehensive panel v2</td>'
 
@@ -613,24 +634,24 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 
 
 	except Exception as e:
-		print("TECHNICAL VALIDATION Exception", str(e))
+		logging.error("TECHNICAL VALIDATION Exception : {}".format(str(e)))
 
 
 	return tech_html, tech_header_html
 
 
 # ### Build HTML from output files
-def build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name):
+def build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name, study_id, disease_name):
 
-	print("--- MTBP Json Format Started ---\n")
-	print("Path : ", root_path, "/", file_name)
+	logging.info("--- MTBP Json Format Started ---\n")
+	logging.info("Path : ", root_path, "/", file_name)
 
 	project_json = {}
 	report_txt = ''
 
 	# Patient, Specimen & assay and genome wide information 
 	logging.info('--- Patient, Specimen & assay and genome wide information started ---')
-	pat_html, specimen_html, genome_wide_html, summary_txt, sample_details_txt, study_id = build_basic_html(sample_id,capture_id)
+	pat_html, specimen_html, genome_wide_html, summary_txt, sample_details_txt, study_id = build_basic_html(sample_id,capture_id, study_id, disease_name)
 
 	report_txt += sample_details_txt
 
@@ -867,11 +888,13 @@ def main(nfs_path, project_name, sample_id, capture_id):
 		sample_details_json = build_sample_details(cfdna)
 
 	sample_date = '-'
+	study_id = ''
+	disease_name = ''
 
 	if(sample_details_json):
 		sample_date = sample_details_json["sample_date"]
-	
-	print("sample_details_json",sample_details_json)
+		study_id = sample_details_json["identifier"]
+		disease_name = sample_details_json["disease_name"]
 
 	## Change the logo based on the project  
 	change_header_logo(html_root_path, tml_header_page, project_name, header_page, specimen, sample_date)
@@ -883,7 +906,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
 
 	try:
-		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id, capture_id, appendix_page, appendix_name)
+		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id, capture_id, appendix_page, appendix_name, study_id, disease_name)
 		if html_result:
 			# --enable-external-links --keep-relative-links --resolve-relative-links
 			# toc 
@@ -892,7 +915,6 @@ def main(nfs_path, project_name, sample_id, capture_id):
 			logging.info("PDF Generated")
 
 	except Exception as e:
-		print("Main Exception", str(e))  
 		logging.error("Failed : {}".format(str(e)))
 		logging.error('--- Generated Json format Failed ---\n')
 		raise

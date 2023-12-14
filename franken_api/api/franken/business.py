@@ -823,7 +823,8 @@ def pdfs_files(variant_type, project_path, sdid, capture_id):
 	if variant_type not in ['qc', 'multiqc', 'purecn']:
 		return '', 400
 
-	file_path = project_path + '/' + sdid + '/' + capture_id + '/' + variant_type 
+	fold_path =  capture_id + '/' + variant_type  if capture_id != '' else variant_type
+	file_path = project_path + '/' + sdid + '/' + fold_path
 
 	pdf_file = list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.pdf$', x) or re.match('[-\w]+-(multiqc)+.html$', x) or x.endswith('.qc_overview.pdf') or re.match('[-\w]+(_report)+.html$', x)) and not x.startswith('.') and not x.endswith('.out'),
 							   os.listdir(file_path)))[0]
@@ -839,7 +840,7 @@ def rna_html_files(report_type, file_format, project_path, sdid, capture_id):
 
 	folder_name = rna_report_folder[report_type]
 
-	file_path = project_path + '/' + sdid + '/' + capture_id + folder_name
+	file_path = project_path + '/' + sdid + '/' + folder_name
 
 	reg_pattern = '[-\w]+_({})+.html$'.format(file_format) if file_format != 'html' else '^(?:\w\w(?:\w\-){3}\d{4}\-\d{2}\.\w{20}|\w{5})\.\w{4}$'
 	
@@ -1203,6 +1204,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 						each_row = dict(each_row)
 						each_row['indexs'] = i
 						gene_list = each_row['gene'].split(",")
+						each_row['PLOIDY_TYPE'] = each_row['PLOIDY_TYPE'] if ('PLOIDY_TYPE' in each_row and each_row['PLOIDY_TYPE'] != '') else 'Diploid'
 						
 						if 'COPY_NUMBER' in each_row.keys() and each_row["COPY_NUMBER"] != '':
 							copy_number = each_row["COPY_NUMBER"]
@@ -1429,6 +1431,7 @@ def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 def generate_curated_json(project_path, project_name, sample_id, capture_id, script_path):
 
 	python_cmd = "python3 {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
 		return {'data': 'Json File Generated', 'status': True}, 200
@@ -1457,29 +1460,18 @@ def build_ipcm_sample_details(cfdna_id, normal_id):
 
 	## Compare two pnr number
 
-	# pnr = n_pnr if (t_pnr == n_pnr or t_pnr == '') else t_pnr
-
-	# if(pnr):
-	# 	dob = pnr[0:8]
-	# 	#sql3 = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(rf.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON CAST(rf.cdk as VARCHAR) = ec.study_id WHERE rf.pnr='{}'".format(pnr)
-	# 	sql3="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') limit 1 ;".format(dob)
-	# 	res2 = create_db_session('ipcmLeaderboard', sql3)
-	# 	res_data2 = generate_list_to_dict(res2)
-	# 	if(res_data2):
-	# 		result = res_data2[0]
-
 	result = ''
 	if (t_pnr == n_pnr or t_pnr == ''):
 		study_id = n_cdk
 		dob = n_pnr[0:8]
-		query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
+		query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN ec.cancer_type_code != '' THEN get_tissue_subtype_name(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
 		res_ecrf = create_db_session('ipcmLeaderboard', query_ecrf)
 		res_ecrd_data = generate_list_to_dict(res_ecrf)
 		if res_ecrd_data:
 			result = res_ecrd_data[0]
 	else:
 		dob = t_pnr[0:8]
-		query_ecrf_2="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, get_tissue_name(ec.cancer_type_id, ec.cancer_type_code) as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD')".format(dob)
+		query_ecrf_2="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN ec.cancer_type_code != '' THEN get_tissue_subtype_name(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD')".format(dob)
 		res_ecrf_2 = create_db_session('ipcmLeaderboard', query_ecrf_2)
 		res_ecrd_data_2 = generate_list_to_dict(res_ecrf_2)
 		if res_ecrd_data_2:
@@ -1574,6 +1566,7 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
 
 	python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
 		return {'data': 'PDF File Generated', 'status': True}, 200
@@ -1845,9 +1838,14 @@ def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_
 				json_file_path = file_path + file_name[0]
 				curl_cmd = "curl -k --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
 				# curl_cmd = "ls -l"
-				proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+				proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=True, text=True)
 				output= proc.stdout
-				return {'status': True, 'message': 'Json upload to MTBP Portal successfully'}, 200
+				res_error = proc.stderr
+				res_status_code = proc.returncode
+				if res_status_code:
+					return {'status': False, 'message': str(res_error)}, 200
+				else:
+					return {'status': True, 'message': 'Json upload to MTBP Portal successfully'}, 200
 			else:
 				return {'status': False, 'message': 'Json File not generated'}, 200
 		else:
@@ -1885,7 +1883,6 @@ def get_table_fusion_report(project_path, sdid, capture_id, user_id, header='tru
 				df_fusion_report['Tools_Hits'] = df_fusion_report[['arriba','fusioncatcher', 'pizzly', 'squid', 'starfusion']].sum(axis=1)
 
 				df_fusion_report_sort = df_fusion_report.sort_values(["Score"], ascending = (False))
-
 
 				column_list = list(df_fusion_report_sort.columns.values)
 				header = list(generate_headers_ngx_table(column_list))
@@ -1936,3 +1933,15 @@ def get_table_fusion_inspector(project_path, sdid, capture_id, user_id, header='
 
 	except Exception as e:
 		return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
+
+
+# Get Cancer tissue type list
+def get_cancer_type():
+
+	try:
+		sql = "SELECT t_id as index, tissue_code FROM ipcm_tissue_type order by tissue_name asc"
+		res = create_db_session('ipcmLeaderboard', sql)
+		row = generate_list_to_dict(res)
+		return {'status': True, 'data': row, 'error': '' }, 200
+	except Exception as e:
+		return {'status': True, 'data': [], 'error': str(e) }, 400
