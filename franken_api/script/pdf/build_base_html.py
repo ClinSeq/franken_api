@@ -32,7 +32,7 @@ def subprocess_cmd(command):
 	process = subprocess.Popen(command,stdout=subprocess.PIPE, shell=True)
 	proc_stdout = process.communicate()[0].strip()
 	for line in proc_stdout.decode().split('\n'):
-		logging.info("Subprocess : ", line)
+		logging.info("Subprocess : {}".format(line))
 
 
 # ### Read a DB information from yml file
@@ -62,11 +62,18 @@ def fetch_sql_query(section, sql):
 		if conn is not None:
 			conn.close()
 
+def json_serial(obj):
+	if isinstance(obj, (datetime, date)):
+		return obj.isoformat()
+	elif isinstance(obj, Decimal):
+		return float(obj)
+	raise TypeError("Type %s not serializable" % type(obj))
+
 
 # ### Fetch the sample information from ipcm referral table
 def build_ipcm_sample_details(cfdna, normal_cfdna):
 	result = ''
-
+	identifier_status = False
 	try:
 		## tissue cfdna
 		cfdna = re.sub(r'[a-zA-Z]', '', cfdna)
@@ -90,24 +97,26 @@ def build_ipcm_sample_details(cfdna, normal_cfdna):
 			query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN ec.cancer_type_code != '' THEN get_cancer_info(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
 			res_ecrd_data = fetch_sql_query('ipcmLeaderboard', query_ecrf)
 			if res_ecrd_data:
-				result = res_ecrd_data[0]            
+				result = res_ecrd_data[0]
+				identifier_status = True      
 		else:
 			dob = t_pnr[0:8]
 			query_ecrf_2="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN ec.cancer_type_code != '' THEN get_cancer_info(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD')".format(dob)
 			res_ecrd_data_2 = fetch_sql_query('ipcmLeaderboard', query_ecrf_2)
 			if res_ecrd_data_2:
 				result = res_ecrd_data_2[0]
+				identifier_status = True
 		
 	except Exception as e:
 		logging.error("Build iPCM Sample Details SQL Exception : {}".format(str(e)))
-	return result
+	return result, identifier_status
 
 
 # ### Fetch the sample information from biobank referral table
 def build_sample_details(cfdna):
 
 	sample_data = {}
-
+	identifier_status = False
 	try:
 		sample_data["identifier"] = ""
 		sample_data["sample_date"] = ""
@@ -122,6 +131,7 @@ def build_sample_details(cfdna):
 			tid = res_data[0]["tid"]
 			cdk_1 = res_data[0]["cdk"]
 			cdk =  cdk_1.strip() if cdk_1 != None else cdk_1
+			identifier_status = True
 			sample_data["identifier"] =  cdk if cdk != "" else cdk
 			sample_data["sample_date"] = res_data[0]["datum"]
 			pnr_1 = res_data[0]["pnr"]
@@ -140,15 +150,55 @@ def build_sample_details(cfdna):
 				subject_id = bio_data[0]['subjectid'] 
 				sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', 'P-', '','g') or regexp_replace(subject_id, '[^a-zA-Z0-9]+', '','g') like regexp_replace('{}', '-', '','g')".format(subject_id, subject_id)
 				glb_data_2 = fetch_sql_query('leaderboard', sql)
-
+				sample_data["identifier"] = subject_id
+				identifier_status = True
 				if(glb_data_2):
 					sample_data["birthdate"] = glb_data_2[0]["dob"]
 					sample_data["hospital"] = glb_data_2[0]["site_name"]
 
 	except Exception as e:
 		logging.error("Build Sample Details Exception : {}".format(str(e)))
-	return sample_data
+	return sample_data, identifier_status
 
+
+def build_genomic_profile_sample_details(project_name, sample_id, capture_id):
+
+	hospital_lookup = { "Karolinska": "KS", "Karolinska Sjukhuset": "KS", "Södersjukhuset": "SO", "St Göran": "ST" }
+
+	sql = "SELECT study_code, study_site, dob, disease FROM genomic_profile_summary where project_name='{}' and sample_id='{}' and capture_id='{}'".format(project_name, sample_id, capture_id)
+	res_data = fetch_sql_query('curation', sql)
+	res_json = json.dumps(res_data, default = json_serial)
+	sample_data = {}
+
+	capture_arr = capture_id.split("-")
+	seq_date_str = re.findall(r'\d+', capture_arr[5])[0]
+	seq_date = datetime.strptime(seq_date_str, "%Y%m%d").date().strftime("%Y-%m-%d")
+
+	sample_data["identifier"] = "NA"
+	sample_data["sample_date"] = seq_date
+	sample_data["birthdate"] = "NA"
+	sample_data["hospital"] = "NA"
+	sample_data["disease_name"] = "NA"
+	
+	if(res_data):
+		for key, val in enumerate(res_data):
+			disease = res_data[key]["disease"]
+			study_code = res_data[key]["study_code"]
+			dob = res_data[key]["dob"]
+			study_site = res_data[key]["study_site"]
+		
+			if(study_code):
+				sample_data["identifier"] = study_code
+			if(dob and dob !='NA'):
+				sample_data["birthdate"] = datetime.strptime(dob.strip(), "%Y-%m-%d").date().strftime("%Y-%m-%d")
+
+			if(study_site):
+				sample_data["hospital"] = hospital_lookup[study_site]
+
+			if(disease != ""):
+				sample_data["disease_name"] = disease
+
+	return sample_data
 
 # ### Build a patient, specimen & assay and genome wide information
 def build_basic_html(sample_id, capture_id, study_id, disease_name):
@@ -642,9 +692,8 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 
 # ### Build HTML from output files
 def build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name, study_id, disease_name):
-
-	logging.info("--- MTBP Json Format Started ---\n")
-	logging.info("Path : ", root_path, "/", file_name)
+	logging.info("--- MTBP Json Format Started ---")
+	logging.info("Path : {} / {}".format(root_path,file_name))
 
 	project_json = {}
 	report_txt = ''
@@ -882,16 +931,22 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	specimen =  'cfDNA' if 'CFDNA' in capture_arr1[0] else ( 'FFPE' if 'T' in capture_arr1[0] else '')
 
 	# Sample Information
+	itendifiter_status = True
 	if(project_name == "IPCM" or capture_format == "iPCM"):
-		sample_details_json = build_ipcm_sample_details(cfdna, normal_cfdna)
+		sample_details_json, itendifiter_status = build_ipcm_sample_details(cfdna, normal_cfdna)
 	else:
-		sample_details_json = build_sample_details(cfdna)
+		sample_details_json, itendifiter_status = build_sample_details(cfdna)
 
 	sample_date = '-'
 	study_id = ''
 	disease_name = ''
 
-	if(sample_details_json):
+	if(sample_details_json["identifier"] != "NA" and itendifiter_status):
+		sample_date = sample_details_json["sample_date"]
+		study_id = sample_details_json["identifier"]
+		disease_name = sample_details_json["disease_name"]
+	else:
+		sample_details_json = build_genomic_profile_sample_details(project_name, sample_id, capture_id)
 		sample_date = sample_details_json["sample_date"]
 		study_id = sample_details_json["identifier"]
 		disease_name = sample_details_json["disease_name"]
@@ -912,7 +967,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 			# toc 
 			cmd = 'wkhtmltopdf  --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_name, appendix_header_page, footer_page, pdf_file_name)
 			subprocess_cmd(cmd)
-			logging.info("PDF Generated")
+			logging.info("---- PDF Generated ----")
 
 	except Exception as e:
 		logging.error("Failed : {}".format(str(e)))
