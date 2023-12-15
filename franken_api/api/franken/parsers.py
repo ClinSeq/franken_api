@@ -252,7 +252,6 @@ cancer_hotspot_arguments.add_argument('gene' , type=str, required=True, help="")
 cancer_hotspot_arguments.add_argument('HGVSp' , type=str, required=False, help="")
 cancer_hotspot_arguments.add_argument('position' , type=str, required=False, help="")
 
-
 update_curated_info_arguments = common_arguments.copy()
 update_curated_info_arguments.add_argument('ctdna_val', type=str, required=True, help="ctdna value")
 update_curated_info_arguments.add_argument('ctdna_opt',  type=str, required=True, help="ctdna option")
@@ -260,3 +259,8 @@ update_curated_info_arguments.add_argument('ctdna_opt',  type=str, required=True
 send_json_mtbp_arguments = common_arguments.copy()
 send_json_mtbp_arguments.add_argument('user_name', type=str, required=True, help="ctdna value")
 send_json_mtbp_arguments.add_argument('user_pwd',  type=str, required=True, help="ctdna option")
+
+rna_common_arguments = reqparse.RequestParser()
+rna_common_arguments.add_argument('project_name', required=True,
+                              help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC','CHEERS', 'ULLEN', 'CRC_REFLEX','IPCM', 'EVAL_SAMPLES'")
+rna_common_arguments.add_argument('sdid', type=str, required=True,  help='sdid example : P-00360714')

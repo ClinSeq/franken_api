@@ -1898,6 +1898,25 @@ def get_table_fusion_report(project_path, sdid, capture_id, user_id, header='tru
 	except Exception as e:
 		return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
 
+def get_rna_qc_status(project_path, sdid):
+	try:
+		rna_qc_status_data= []
+		rna_report_folder= {"fastqc": "false", "multiqc": "false"}
+		file_path = project_path + '/' + sdid
+		for idx, fold in enumerate(rna_report_folder):
+			dir_path = os.path.join(file_path, fold)
+			file_list = os.listdir(dir_path)
+			if(len(file_list) > 0):
+				rna_report_folder[fold] = "true"
+			else:
+				rna_report_folder[fold] = "false"
+
+		rna_qc_status_data.append(rna_report_folder)
+
+		return {'status': True, 'data': rna_qc_status_data, 'error': ''}, 200
+	except Exception as e:
+		return {'status': True, 'data': [], 'error': str(e) }, 400
+
 def get_table_fusion_inspector(project_path, sdid, capture_id, user_id, header='true'):
 	"return the txt format"
 
@@ -1936,7 +1955,6 @@ def get_table_fusion_inspector(project_path, sdid, capture_id, user_id, header='
 
 # Get Cancer tissue type list
 def get_cancer_type():
-
 	try:
 		sql = "SELECT t_id as index, tissue_code FROM ipcm_tissue_type order by tissue_name asc"
 		res = create_db_session('ipcmLeaderboard', sql)
