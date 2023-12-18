@@ -192,7 +192,7 @@ def build_genomic_profile_sample_details(project_name, sample_id, capture_id):
 			if(dob and dob !='NA'):
 				sample_data["birthdate"] = datetime.strptime(dob.strip(), "%Y-%m-%d").date().strftime("%Y-%m-%d")
 
-			if(study_site):
+			if(study_site and study_site != 'NA'):
 				sample_data["hospital"] = hospital_lookup[study_site]
 
 			if(disease != ""):
