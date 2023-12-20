@@ -162,7 +162,7 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 				sample_data["birthdate"] = datetime.strptime(dob.strip(), "%Y-%m-%d").date().strftime("%Y-%m-%d")
 
 			if(study_site and study_site != 'NA'):
-				sample_data["hospital"] = hospital_lookup[study_site]
+				sample_data["hospital"] = hospital_lookup[study_site] if (study_site in hospital_lookup) else study_site
 
 			if(disease != ""):
 				sample_data["tissue"] = disease
@@ -644,7 +644,9 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	cfdna = re.sub(r'[a-zA-Z]', '', cfdna_id)
 
 	capture_format = capture_arr[0]
-	seq_date_str = re.findall(r'\d+', capture_arr[-1])[0]
+	
+	capture_arr = capture_id.split("-")
+	seq_date_str = re.findall(r'\d+', capture_arr[5])[0]
 	seq_date = datetime.strptime(seq_date_str, "%Y%m%d").date().strftime("%Y-%m-%d")
 
 	log_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_"+sample_type+cfdna+".log"
