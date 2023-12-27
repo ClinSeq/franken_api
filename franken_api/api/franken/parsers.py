@@ -264,3 +264,7 @@ rna_common_arguments = reqparse.RequestParser()
 rna_common_arguments.add_argument('project_name', required=True,
                               help="valid Project names: 'PROBIO', 'PSFF', 'LARS_DUCTAL', 'AZ_RINGTRIAL', 'msHSPC', 'RESBIO', 'HD_C3', 'LPC','CHEERS', 'ULLEN', 'CRC_REFLEX','IPCM', 'EVAL_SAMPLES'")
 rna_common_arguments.add_argument('sdid', type=str, required=True,  help='sdid example : P-00360714')
+
+rna_html_arguments = rna_common_arguments.copy()
+rna_html_arguments.add_argument('file_name', type=str, required=True,  help='sdid example : P-00360714')
+
