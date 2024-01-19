@@ -1464,18 +1464,18 @@ def build_ipcm_sample_details(cfdna_id, normal_id):
 	if (t_pnr == n_pnr or t_pnr == ''):
 		study_id = n_cdk
 		dob = n_pnr[0:8]
-		query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN ec.cancer_type_code != '' THEN get_tissue_subtype_name(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
+		query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN (ec.cancer_type_code != '' AND ec.cancer_type_code != 'N/A' AND ec.cancer_type_code != 'NA') THEN get_tissue_subtype_name(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
 		res_ecrf = create_db_session('ipcmLeaderboard', query_ecrf)
-		res_ecrd_data = generate_list_to_dict(res_ecrf)
-		if res_ecrd_data:
-			result = res_ecrd_data[0]
+		res_ecrf_data = generate_list_to_dict(res_ecrf)
+		if res_ecrf_data:
+			result = res_ecrf_data[0]
 	else:
 		dob = t_pnr[0:8]
-		query_ecrf_2="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN ec.cancer_type_code != '' THEN get_tissue_subtype_name(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD')".format(dob)
+		query_ecrf_2="SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN (ec.cancer_type_code != '' AND ec.cancer_type_code != 'N/A' AND ec.cancer_type_code != 'NA') THEN get_tissue_subtype_name(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD')".format(dob)
 		res_ecrf_2 = create_db_session('ipcmLeaderboard', query_ecrf_2)
-		res_ecrd_data_2 = generate_list_to_dict(res_ecrf_2)
-		if res_ecrd_data_2:
-			result = res_ecrd_data_2[0]
+		res_ecrf_data_2 = generate_list_to_dict(res_ecrf_2)
+		if res_ecrf_data_2:
+			result = res_ecrf_data_2[0]
 
 	return result
 
