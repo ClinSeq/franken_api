@@ -66,6 +66,16 @@ def json_serial(obj):
 	raise TypeError("Type %s not serializable" % type(obj))
 
 
+def validate_tissue_type(ecrf_tissue_type, sample_type):
+	tissue_type = 'NA'
+	if ecrf_tissue_type == 'Cytology':
+		tissue_type = ecrf_tissue_type.lower()
+	elif  ecrf_tissue_type == 'FFPE|cfDNA':
+		tissue_type = 'FFPE' if sample_type == 'T' else 'cfdna'
+	else:
+		tissue_type = ecrf_tissue_type
+	return tissue_type
+
 # ### Fetch the sample information from ipcm referral table
 def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, seq_date, germline_dna):
 
@@ -99,7 +109,7 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 				json_data = json.loads(res_json)
 				identifier_status = True
 				res_json_data = json_data[0]
-				res_json_data['tissue_type'] = res_json_data['tissue_type'].lower() if res_json_data['tissue_type'] == 'Cytology' else res_json_data['tissue_type']
+				res_json_data['tissue_type'] = validate_tissue_type(res_json_data['tissue_type'], sample_type)
 			else:
 				identifier_status = False
 		else:
@@ -111,7 +121,7 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 				json_data_2 = json.loads(res_json_2)
 				identifier_status = True
 				res_json_data = json_data_2[0]
-				res_json_data['tissue_type'] = res_json_data['tissue_type'].lower() if res_json_data['tissue_type'] == 'Cytology' else res_json_data['tissue_type']
+				res_json_data['tissue_type'] = validate_tissue_type(res_json_data['tissue_type'], sample_type)
 			else:
 				identifier_status = False
 
@@ -252,13 +262,13 @@ def build_penotypes(project_name, sample_id, capture_id):
 		for j in genome_wide_json:
 			title = genome_wide_json[j]['title']
 			if (title == "TUMOR MUTATIONAL BURDEN"):
-				tumörmutationsbörda = genome_wide_json[j]['result']
+				tumörmutationsbörda = genome_wide_json[j]['result'] if 'result' in genome_wide_json[j] else ''
 			elif (title == "MSI STATUS"):
-				msi_status = genome_wide_json[j]['result']
+				msi_status = genome_wide_json[j]['result'] if 'result' in genome_wide_json[j] else ''
 			elif (title == "PATHOGENIC GERMLINE VARIANTS"):
-				pathogenic_gDNA_variant = genome_wide_json[j]['result']
+				pathogenic_gDNA_variant = genome_wide_json[j]['result'] if 'result' in genome_wide_json[j] else ''
 			elif (title == "OTHER GENOMIC PHENOTYPE"):
-				td = genome_wide_json[j]['result']
+				td = genome_wide_json[j]['result'] if 'result' in genome_wide_json[j] else ''
 
 	return msi_status, tumörmutationsbörda, td, pathogenic_gDNA_variant
 
@@ -277,7 +287,7 @@ def fetch_pipeline_version():
 
 
 # ### Build a QC Json 
-def build_qc(root_path, ecrf_tissue_type):
+def build_qc(root_path, ecrf_tissue_type, sample_type):
 	file_path = root_path + '/qc/'
 
 	msi_list = ''
@@ -314,18 +324,19 @@ def build_qc(root_path, ecrf_tissue_type):
 					qc_df_data.loc[idx,'tissue_type'] = "gDNA"
 				elif '-CFDNA-' in sample_name:
 					if ecrf_tissue_type != 'NA' and ecrf_tissue_type !='':
-						qc_df_data.loc[idx,'tissue_type'] = ecrf_tissue_type
+						qc_df_data.loc[idx,'tissue_type'] = validate_tissue_type(ecrf_tissue_type, sample_type)
 					else:
 						qc_df_data.loc[idx,'tissue_type'] =  "cfDNA"
 				elif '-T-' in sample_name:
 					if ecrf_tissue_type != 'NA' and ecrf_tissue_type !='':
-						qc_df_data.loc[idx,'tissue_type'] = ecrf_tissue_type
+						qc_df_data.loc[idx,'tissue_type'] = validate_tissue_type(ecrf_tissue_type, sample_type)
 					else:
 						qc_df_data.loc[idx,'tissue_type'] = 'NA'
 			
 			qc_df_data.fillna('NA', inplace=True)
 			
 			qc_json = qc_df_data.to_json(orient = 'index')
+			print(qc_json)
 
 			return msi_list, qc_json
 
@@ -494,7 +505,7 @@ def build_svs(root_path):
 		svs_filter = pd.read_csv(svs_filename, delimiter = "\t")
 
 		column_list = ['SAMPLE', 'SVTYPE', 'strand', 'vaf', 'GENE_A', 'IGV_COORD', 'GENE_B', 'CLONALITY', 'SECONDHIT']
-		column_dict = {'SAMPLE': 'origin', 'SVTYPE': 'sv_type', 'GENE_A': 'gene_a' , 'IGV_COORD' : 'variant', 'GENE_B' : 'gene_b', 'CLONALITY': 'clonality', 'SECONDHIT' : 'secondhit'}
+		column_dict = {'SAMPLE': 'origin', 'SVTYPE': 'sv_type', 'GENE_A': 'gene_a' , 'IGV_COORD' : 'variant', 'GENE_B' : 'gene_b', 'CLONALITY': 'clonality', 'SECONDHIT' : 'second_hit'}
 
 		if 'CALL' in svs_filter.columns:
 			svs_filter = svs_filter.loc[(svs_filter['CALL'] == True ) | (svs_filter['CALL'] == 'true')]
@@ -564,6 +575,8 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	else:
 		sample_details_json, itendifiter_status = build_sample_details(project_name, capture_id, cfdna, capture_format, sample_type, seq_date, germline_dna)
 
+	print(sample_details_json)
+
 	if(sample_details_json and itendifiter_status):
 		project_json["sample"] = sample_details_json
 	else:
@@ -586,7 +599,7 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 
 	# QC
 	logging.info('--- QC started ---')
-	msi_val, qc_json = build_qc(root_path, ecrf_tissue_type)
+	msi_val, qc_json = build_qc(root_path, ecrf_tissue_type, sample_type)
 	project_json["qc"] =  "NA" if qc_json == "" else json.loads(qc_json)
 	logging.info('--- QC completed ---')
 

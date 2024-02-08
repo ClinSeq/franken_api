@@ -1192,7 +1192,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 
 			if curated_file_status:
 				cnv_filename = save_to_cnv_file
-			
+		
 			if os.path.exists(cnv_filename):
 				has_rows = False
 				hide_header = ["ABSOLUTE_COPY_NUMBER", "COMMENT", "depth", "weight", "indexs"]
@@ -1835,16 +1835,16 @@ def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_
 			file_name = list(filter(lambda x: x.endswith('.json') and not x.startswith('.'), os.listdir(file_path)))
 			if len(file_name) > 0:
 				json_file_path = file_path + file_name[0]
-				curl_cmd = "curl -k --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
+				curl_cmd = "curl -sk --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
 				# curl_cmd = "ls -l"
-				proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=True, text=True)
+				proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=False, text=True)
 				output= proc.stdout
 				res_error = proc.stderr
 				res_status_code = proc.returncode
 				if res_status_code:
 					return {'status': False, 'message': str(res_error)}, 200
 				else:
-					return {'status': True, 'message': 'Json upload to MTBP Portal successfully'}, 200
+					return {'status': True, 'message': str(output)}, 200
 			else:
 				return {'status': False, 'message': 'Json File not generated'}, 200
 		else:

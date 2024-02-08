@@ -947,7 +947,8 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	study_id = ''
 	disease_name = ''
 
-	if(sample_details_json["identifier"] != "NA" and itendifiter_status):
+	# if(sample_details_json["identifier"] != "NA" and itendifiter_status):
+	if(itendifiter_status and sample_details_json != ''):
 		sample_date = sample_details_json["sample_date"]
 		study_id = sample_details_json["identifier"]
 		disease_name = sample_details_json["disease_name"]
