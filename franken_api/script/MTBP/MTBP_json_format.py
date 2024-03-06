@@ -10,9 +10,12 @@
 #     3405 - Patient Identifier
 #     CFDNA03884517 - sample type with ID number*
 
-## Usage : python3 MTBP_samplewise_json_format.py --path <nfs-output-path> --project <project-name>  --sample <sample-id> --capture <capture-id>
+## Usage : python3 MTBP_json_format.py --path <nfs-output-path> --project_name <project-name>  --capture_format <project-prefix-code>
 ## Eg: 
-# python3 MTBP_samplewise_json_format.py --path /data/demo/PROBIO/autoseq-output --project PROBIO  --sample P-00466944 --capture PB-P-00466944-CFDNA-04060034-KH20230228-C420230301_PB-P-00466944-N-04060031-KH20230228-C420230301
+# export user_name='<MTBP-UserName>'
+# export user_pwd='<MTBP-Password>' 
+# python3 MTBP_json_format.py --path /data/demo/PROBIO/autoseq-output --project_name PROBIO  --capture_format PB
+
 
 import os
 import pandas as pd
@@ -20,6 +23,7 @@ import numpy as np
 import json
 import re
 import logging
+from logging.handlers import QueueHandler
 import psycopg2
 import psycopg2.extras
 from sqlalchemy import create_engine
@@ -30,6 +34,17 @@ import sys
 from datetime import date, datetime
 import math
 from decimal import Decimal
+import subprocess
+from subprocess import Popen
+import csv
+
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s', '%Y-%m-%d %H:%M:%S')
+
+logger1 = logging.getLogger('MTBP Overall')
+logger1.setLevel(logging.INFO)
+
+logger2 = logging.getLogger('MTBP Samplewise')
+logger2.setLevel(logging.INFO)
 
 
 # ### Get the current directory path
@@ -145,8 +160,8 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 	
 	except Exception as e:
 		print("Build iPCM Exception", str(e))
-		return res_json_data, identifier_status
-
+		raise
+		#return res_json_data, identifier_status
 
 # ### Fetch the genomic profile information
 def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date, germline_dna):
@@ -324,8 +339,8 @@ def build_qc(root_path, ecrf_tissue_type, sample_type):
 			if len(qc_filename) > 0:
 				qc_df_data = pd.read_csv(qc_filename, delimiter = "\t")
 
-				column_list = ['SAMP', 'MEAN_TARGET_COVERAGE', 'contamination_%']
-				column_dict = {'SAMP': 'sample', 'MEAN_TARGET_COVERAGE': 'coverage', 'contamination_%': 'contamination'}
+				column_list = ['SAMP', 'contamination_%']
+				column_dict = {'SAMP': 'sample', 'contamination_%': 'contamination'}
 
 				if 'Overall_QC' in qc_df_data.columns:
 					column_list.append('Overall_QC')
@@ -334,9 +349,9 @@ def build_qc(root_path, ecrf_tissue_type, sample_type):
 					column_list.append('overall')
 					qc_df_data['overall'] = "Ok"
 
-				# if 'MEAN_TARGET_COVERAGE' in qc_df_data.columns:
-				# 	column_list.append('MEAN_TARGET_COVERAGE')
-				# 	column_dict['MEAN_TARGET_COVERAGE'] = 'coverage'
+				if 'MEAN_TARGET_COVERAGE' in qc_df_data.columns:
+					column_list.append('MEAN_TARGET_COVERAGE')
+					column_dict['MEAN_TARGET_COVERAGE'] = 'coverage'
 
 				msi_list = "NA"
 				if 'msing_score' in qc_df_data.columns:
@@ -382,6 +397,7 @@ def build_qc(root_path, ecrf_tissue_type, sample_type):
 
 	except Exception as e:
 		print("Build QC Exception", str(e))
+		raise
 
 	return msi_list, qc_df_data
 
@@ -409,6 +425,7 @@ def build_ploidy(root_path):
 
 	except Exception as e:
 		print("Build Polidy Exception", str(e))
+		raise
 
 	return purity_list, ploidy_list
 
@@ -481,6 +498,7 @@ def build_small_variants(root_path):
 
 	except Exception as e:
 		print("Build Small Variants Exception", str(e))
+		raise
 
 	return smv_df.to_json(orient = 'index')
 
@@ -506,9 +524,11 @@ def build_cnv(root_path):
 				if 'ASSESSMENT' in cnv_df_data.columns:
 					cnv_df_data = cnv_df_data.loc[(cnv_df_data['ASSESSMENT'].notnull())]
 					if cnv_df_data.empty:
+						# cnv_df = pd.concat([cnv_df_data, cnv_df])
 						print("CNV Data frame empty : {}".format(i))
 					else:
 						# cnv_df_data['chromosome'] = pd.to_numeric(cnv_df_data['chromosome'], errors='coerce')
+						#cnv_df_data.fillna('NA', inplace=True)
 
 						if(re.match(regex, i)):
 							cnv_df_data['origin'] = "Germline"
@@ -528,7 +548,7 @@ def build_cnv(root_path):
 						cnv_df_data['copy_number'] = cnv_df_data['copy_number'].fillna(0)
 
 						cnv_df_data['copy_number'] = cnv_df_data['copy_number'].round(0).astype(int,  errors='ignore')
-						# cnv_df_data['genes'] = cnv_df_data.genes.apply(lambda x: x.split(', '))
+						# cnv_df_data['genes'] = cnv_df_data.genes.apply(lambda x: 'NA' if x.isnull() else x.split(', '))
 						cnv_df_data['genes'] = cnv_df_data['genes'].apply(lambda x: 'NA' if pd.isna(x) else x.split(', '))
 
 						cnv_df = pd.concat([cnv_df_data, cnv_df])
@@ -539,6 +559,7 @@ def build_cnv(root_path):
 
 	except Exception as e:
 		print("Build CNV Exception", str(e))
+		raise
 
 	return cnv_df.to_json(orient = 'index')
 
@@ -604,13 +625,51 @@ def build_svs(root_path):
 
 	except Exception as e:
 		print("Build SVS Exception", str(e))
-		svs_filter = pd.DataFrame()
+		# svs_filter = pd.DataFrame()
+		raise
 
 	return svs_filter.to_json(orient = 'index')
 
 
+def upload_json_MTBP(nfs_path, json_file_path, project_name, sample_id, cfdna, identifier_study_id):
+
+	mtbp_file_name = nfs_path + "/MTBP_report_status.csv"
+
+	if os.path.isfile(mtbp_file_name) == False:
+		with open(mtbp_file_name, 'w', newline='', encoding='utf-8') as file:
+			writer = csv.writer(file)
+			writer.writerow(['PROJECT', 'SAMPLE_ID', 'BARCODE', 'STUDY_ID', 'MTBP_JSON_PATH', 'CURL_STATUS'])
+	
+	curl_res = ''
+
+	if os.path.isfile(json_file_path):
+		user_name = os.environ['user_name']
+		user_pwd = os.environ['user_pwd']
+		curl_cmd = "curl -sk --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
+		logger2.info("message : {}".format(curl_cmd))
+		logger1.info('Curl Command {}'.format(curl_cmd))
+		proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=False, text=True)
+		output= proc.stdout
+		res_error = proc.stderr
+		res_status_code = proc.returncode
+		if res_status_code:
+			logger2.error("message : {}".format(str(res_error)))
+			curl_res = str(res_error)
+		else:
+			logger2.info("message : {}".format(str(output)))
+			curl_res = str(res_error)
+
+		data= [project_name,  sample_id, cfdna, identifier_study_id, json_file_path, curl_res]
+		with open(mtbp_file_name, 'a+') as csvfile:
+			writer = csv.writer(csvfile)
+			writer.writerow(data)
+	else:
+		logger2.error("{} : Json File not generated".format(json_file_path))
+
+	return 0
+	
 # ## Build Json from output files
-def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date):
+def build_json(nfs_path, root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date, file_handler2):
 
 	print("--- MTBP Json Format Started ---\n")
 
@@ -623,7 +682,7 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	project_json = {}
 
 	# Sample Information
-	logging.info('--- Sample fetching started ---')
+	logger2.info('--- Sample fetching started ---')
 	itendifiter_status = True
 	if(project_name == "IPCM" or capture_format == "iPCM"):
 		sample_details_json, itendifiter_status = build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, seq_date, germline_dna)
@@ -642,8 +701,10 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 		identifier_study_id = sample_details_json["identifier"].split("_")[2]
 	
 	ecrf_tissue_type = sample_details_json['tissue_type']
+	logger1.info("Study id : {}".format(identifier_study_id))
+	logger1.info("Cancer code : {}".format(sample_details_json['cancer_code']))
 
-	logging.info('--- Sample fetching completed ---')
+	logger2.info('--- Sample fetching completed ---')
 
 	# Pipeline
 	curr_version = fetch_pipeline_version()
@@ -651,10 +712,10 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	project_json["pipeline"] = { "genome_reference": "hg19", "version": piln_version}
 
 	# QC
-	logging.info('--- QC started ---')
+	logger2.info('--- QC started ---')
 	msi_val, qc_json = build_qc(root_path, ecrf_tissue_type, sample_type)
 	project_json["qc"] =  "NA" if qc_json == "" else json.loads(qc_json)
-	logging.info('--- QC completed ---')
+	logger2.info('--- QC completed ---')
 
 	# Get the Ploidy value
 	#purity_val, ploidy_val = build_ploidy(root_path)
@@ -663,25 +724,26 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	purity_val, ploidy_val, msi, tmb, td, pathogenic_gDNA_variant = build_penotypes(project_name, sample_id, capture_id)
 	project_json["phenotypes"] = {"purity" : convert_to_numeric(purity_val) ,"ploidy": convert_to_numeric(ploidy_val), "msi": msi, "tmb": tmb, "td": td, "pathogenic_gDNA_variant": pathogenic_gDNA_variant}
 
+
 	# Small Variant (Somatic & Germline)
-	logging.info('--- Small Variant started ---')
+	logger2.info('--- Small Variant started ---')
 	small_variant_json = build_small_variants(root_path)
 	project_json["small_variants"] = json.loads(small_variant_json)
-	logging.info('--- Small Variant completed ---')
+	logger2.info('--- Small Variant completed ---')
 
 	# CNVs
-	logging.info('--- CNVs started ---')
+	logger2.info('--- CNVs started ---')
 	cnv_json = build_cnv(root_path)
 	project_json["cnas"] = json.loads(cnv_json)
-	logging.info('--- CNVs completed ---')
+	logger2.info('--- CNVs completed ---')
 
 	# SVS
-	logging.info('--- SVS started ---')
+	logger2.info('--- SVS started ---')
 	svs_json = build_svs(root_path)
 	project_json["gsr"] = json.loads(svs_json)
-	logging.info('--- SVS completed ---')
+	logger2.info('--- SVS completed ---')
 
-	final_json = json.dumps(project_json)
+	#final_json = json.dumps(project_json)
 
 	file_name = output_path+"/MTBP_"+capture_format+"_"+identifier_study_id+"_"+sample_type+cfdna+".json"
 
@@ -690,80 +752,115 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	with open(file_name, 'w') as f:
 		json.dump(project_json, f, indent=4)
 
-	logging.info('--- Generated Json format successfuly ---\n')
+	logger2.info('--- Generated Json format successfuly ---\n')
 
 	print("\n----  MTBP Json Format Completed -----\n")
+	upload_json_MTBP(nfs_path, file_name, project_name, sample_id, cfdna, identifier_study_id)
+	logger1.info('Sample {} Completed'.format(sample_id))
+	logger1.info('-------------------\n')
+	logger2.removeHandler(file_handler2)
 
-
-# ## Main Function
-def main(nfs_path, project_name, sample_id, capture_id):
-
-	root_path = os.path.join(nfs_path, sample_id, capture_id)
-
-	output_path = root_path+"/MTBP"
-
-	capture_arr = capture_id.split("-")
+def main(nfs_path, project_name, capture_format):
 	
-	normal_idx = capture_arr.index("N")
-	normal_cfdna = capture_arr[normal_idx+1]
+	regx_pat = '^P-.*[0-9]$'
+	regx_capture_pat = '^{}-P-.*[0-9]$'.format(capture_format)
 
-	cfdna_idx = capture_arr.index("T") if 'T' in capture_arr else capture_arr.index("CFDNA")
-	sample_type = capture_arr[cfdna_idx]
-	cfdna_id = capture_arr[cfdna_idx+1]
+	overall_log_name = nfs_path+"/MTBP_"+project_name+"_overall.log"
 
-	cfdna = re.sub(r'[a-zA-Z]', '', cfdna_id)
-
-	capture_format = capture_arr[0]
+	file_handler1 = logging.FileHandler(overall_log_name)
+	file_handler1.setLevel(logging.INFO)
+	file_handler1.setFormatter(formatter)
+	logger1.addHandler(file_handler1)
 	
-	capture_arr = capture_id.split("-")
-	seq_date_str = re.findall(r'\d+', capture_arr[5])[0]
-	seq_date = datetime.strptime(seq_date_str, "%Y%m%d").date().strftime("%Y-%m-%d")
+	# formatter = logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , datefmt="%Y-%m-%d %H:%M:%S")
+	logger1.info('Overall MTBP JSON')
+	for root, dirs, files in os.walk(nfs_path):
+		for d in dirs:
+			pat_check = re.match(regx_pat, d)
+			sample_id  = d
+			if pat_check:
+				logger1.info('Sample : {}'.format(sample_id))
+				dir_path = os.path.join(nfs_path,d)
+				inner_dir_list = os.listdir(dir_path)
+				if(len(inner_dir_list) > 0):
+					for indir in inner_dir_list:
+						capture_id = indir
+						logger1.info('Capture ID : {}'.format(capture_id))
+						capture_check = re.match(regx_capture_pat, capture_id)
+						if(capture_check):
+							cfdna = capture_id.split("-")[4]
+							root_path = os.path.join(dir_path,capture_id)
+							output_path = root_path+"/MTBP";
+							
+							capture_arr = capture_id.split("-")
+	
+							normal_idx = capture_arr.index("N")
+							normal_cfdna = capture_arr[normal_idx+1]
 
-	log_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_"+sample_type+cfdna+".log"
+							cfdna_idx = capture_arr.index("T") if 'T' in capture_arr else capture_arr.index("CFDNA")
+							sample_type = capture_arr[cfdna_idx]
+							cfdna_id = capture_arr[cfdna_idx+1]
 
-	if(not os.path.exists(output_path)):
-		os.mkdir(output_path)
-	else:
-		for f in os.listdir(output_path):
-			os.remove(os.path.join(output_path, f))
+							cfdna = re.sub(r'[a-zA-Z]', '', cfdna_id)
 
+							capture_format = capture_arr[0]
 
-	logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt="%Y-%m-%d %H:%M:%S")
-	logging.info('--- Generated Json format Started---')
+							capture_arr = capture_id.split("-")
+							seq_date_str = re.findall(r'\d+', capture_arr[5])[0]
 
-	logging.info("Sample Id : {} || Capture Id : {} ".format(sample_id,capture_id))
+							if len(seq_date_str) != 8:
+								seq_date_str = '20' + str(seq_date_str)
+							
+							seq_date = datetime.strptime(seq_date_str, "%Y%m%d").date().strftime("%Y-%m-%d")
+							
+							log_name = output_path+"/MTBP_"+project_name+"_"+sample_id+"_"+sample_type+cfdna+".log"
 
-	try:
-		build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date)
-	except Exception as e:
-		print("Main Exception", str(e))
-		logging.error("Failed : {}".format(str(e)))
-		logging.error('--- Generated Json format Failed ---\n')
-		raise
+							if(not os.path.exists(output_path)):
+								os.mkdir(output_path)
+							else:
+								for f in os.listdir(output_path):
+									os.remove(os.path.join(output_path, f))
+
+							file_handler2 = logging.FileHandler(log_name)
+							file_handler2.setLevel(logging.INFO)
+							file_handler2.setFormatter(formatter)
+							logger2.addHandler(file_handler2)
+
+							# formatter2 = logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO ,  datefmt="%Y-%m-%d %H:%M:%S")
+
+							logger2.info('--- Generated Json format Started---')
+
+							logger2.info("Sample Id : {} || Capture Id : {} ".format(sample_id,capture_id))
+							try:
+								print("Sample Id : {} || Capture Id : {} ".format(sample_id,capture_id))
+								build_json(nfs_path, root_path, output_path, project_name, normal_cfdna, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date, file_handler2)
+							except Exception as e:
+								print("Exception", str(e))
+								logger2.error("Failed : {}".format(str(e)))
+								logger2.error('--- Generated Json format Failed ---')
+								raise
+								# break
+				
 
 if __name__ == "__main__":
-
+		
 	# Create the parser
 	profile_parser = argparse.ArgumentParser(description='Generate MTBP Json')
 
 	# Add the arguments
-	profile_parser.add_argument('--path', type=str, help='Define the nfs path name',required=True)
-	profile_parser.add_argument('--project', type=str, help='Define the project name (eg: PROBIO, PSFF, IPCM )',required=True)
-	profile_parser.add_argument('--sample', type=str, help='Define the sample id (eg: P-00UZG3006 )',required=True)
-	profile_parser.add_argument('--capture', type=str, help='Define the capture id (eg: PB-P-00UZG3006-CFDNA-0328277-KH20201014-C320201014_PB-P-00UZG3006-N-0328277-KH20201014-C320201014 )',required=True)
-
+	profile_parser.add_argument('--path', metavar='nfs root path', type=str, help='define the sample autoseq-output path')
+	profile_parser.add_argument('--project_name', metavar='project name', type=str, help='define the project name (eg: PROBIO, PSFF, IPCM )')
+	profile_parser.add_argument('--capture_format', metavar='project name', type=str, help='define the capture name (eg: PB, PSFF, iPCM )')
+	
 	args = profile_parser.parse_args()
 
-	project_name = args.project
-	sample_id = args.sample
-	capture_id = args.capture
 	nfs_path = args.path
-
-	#nfs_path = "/nfs/{}/autoseq-output".format(project_name)
+	project_name = args.project_name
+	capture_format = args.capture_format
 
 	if not os.path.isdir(nfs_path):
-		print('The {}, path specified does not exist'.format(nfs_path))
+		print('The path specified does not exist')
 		sys.exit()
 	else:
-		main(nfs_path, project_name, sample_id, capture_id)
-
+		main(nfs_path,project_name, capture_format)
+	
