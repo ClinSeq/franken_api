@@ -268,3 +268,6 @@ rna_common_arguments.add_argument('sdid', type=str, required=True,  help='sdid e
 rna_html_arguments = rna_common_arguments.copy()
 rna_html_arguments.add_argument('file_name', type=str, required=True,  help='sdid example : P-00360714')
 
+
+igv_html_arguments =  reqparse.RequestParser()
+igv_html_arguments.add_argument('file_name', type=str, required=True,  help='')

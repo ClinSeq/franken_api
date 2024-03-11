@@ -649,6 +649,9 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header=
 					else:
 						each_row['CGC_bool'] = 1
 
+					if 'SECONDHIT' in each_row:
+						each_row['SECONDHIT'] = each_row['SECONDHIT'] if each_row['SECONDHIT'] != 'nan' else 'NA'
+
 					gene = each_row['GENE']
 					if each_row['HGVSp'] and ':p.' in each_row['HGVSp']:
 						one_amino_code = get_three_to_one_amino_code(each_row['HGVSp'].split("p.")[1])
@@ -1795,6 +1798,7 @@ def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 			else:
 				df_sm["SECONDHIT"] = np.where(df_sm["CLONALITY"] == "SUBCLONAL", "NA", df_sm["SECONDHIT"])
 		
+		df_sm["SECONDHIT"].fillna("NA", inplace=True)
 		df_sm.to_csv(igv_nav_file,index = False, header=True, sep='\t')
 
 		if tb_record:
@@ -1960,5 +1964,20 @@ def get_cancer_type():
 		res = create_db_session('ipcmLeaderboard', sql)
 		row = generate_list_to_dict(res)
 		return {'status': True, 'data': row, 'error': '' }, 200
+	except Exception as e:
+		return {'status': True, 'data': [], 'error': str(e) }, 400
+	
+
+# Read the Igv session json file from Netapp-s3
+def read_igv_session_json(file_path):
+	try:
+
+		response = requests.get(file_path)
+		res_status = response.status_code
+		jsonResponse = response.json()
+		if res_status == 200:
+			return {'status': True, 'data': jsonResponse, 'error': '' }, 200
+		else:
+			return {'status': True, 'data': [], 'error': 'Error in the s3 file path' }, 200
 	except Exception as e:
 		return {'status': True, 'data': [], 'error': str(e) }, 400

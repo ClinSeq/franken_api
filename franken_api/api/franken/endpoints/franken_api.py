@@ -3,10 +3,10 @@ from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
 from flask_restx import Resource
 #from franken_api.api.franken.serializers import search_result
-from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments, update_curated_info_arguments, send_json_mtbp_arguments, rna_common_arguments, rna_html_arguments
+from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments, update_curated_info_arguments, send_json_mtbp_arguments, rna_common_arguments, rna_html_arguments, igv_html_arguments
 from franken_api.api.restplus import api
 from flask import jsonify
-from franken_api.api.franken.business import rna_html_files, rna_pdf_files, pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path, update_curated_info, send_json_mtbp_portal, get_clinical_report_file, get_rna_qc_status, get_table_fusion_inspector, get_table_fusion_report, get_cancer_type
+from franken_api.api.franken.business import rna_html_files, rna_pdf_files, pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path, update_curated_info, send_json_mtbp_portal, get_clinical_report_file, get_rna_qc_status, get_table_fusion_inspector, get_table_fusion_report, get_cancer_type, read_igv_session_json
 from franken_api.api.franken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
 import io
 #import  franken_api.database.models
@@ -717,4 +717,19 @@ class GenomicProfileCancerTypeList(Resource):
 		```
 		"""
 		result, errorcode = get_cancer_type()
+		return result, errorcode
+	
+
+@ns.route('/read_igv_json')
+@api.response(200, 'read the igv session json')
+@api.response(400, 'No data found')
+class ReadIGVSessionJsonFile(Resource):
+	@api.expect(igv_html_arguments, validate=True)
+	def get(self):
+		"""
+			Read the igv session json
+		"""
+		args = igv_html_arguments.parse_args()
+		file_path = args['file_name']
+		result, errorcode = read_igv_session_json(file_path)
 		return result, errorcode
