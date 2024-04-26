@@ -38,6 +38,8 @@ import requests
 from sqlalchemy import create_engine
 import math
 import hashlib
+import gzip
+import base64
 
 # check the string contains special character or not 
 def check_special_char(seq_str):
@@ -129,7 +131,7 @@ def get_sample_design_ids(project_path, sample_id):
 		if not status:
 			return {'sample_capture': [], 'status': False}, error
 
-		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('CPC-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-') or x.startswith('BM-')),os.listdir(capture_dir)))
+		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('CPC-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-') or x.startswith('BM-') or x.startswith('UM-')),os.listdir(capture_dir)))
 
 		if len(sample_capture_list) < 1:
 			return {'sample_capture': [], 'status': False}, 400
@@ -1831,6 +1833,21 @@ def update_curated_info(project_path, proj_name, sample_id, capture_id, ctdna_va
 	except Exception as e:
 		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
+def check_cancer_code(json_file_path, key, expected_value):
+	# Load JSON data from file
+	with open(json_file_path, 'r') as file:
+		data = json.load(file)
+	
+	cancer_code_status = False
+	if key in data['sample']:
+		# Check if the value for the key matches the expected value
+		if data['sample'][key] == expected_value:
+			cancer_code_status = False
+		else:
+			cancer_code_status = True
+
+	return cancer_code_status
+
 def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_name, user_pwd):
 	try:
 		file_path = project_path + '/' + sample_id + '/' + capture_id + '/MTBP/'
@@ -1839,16 +1856,22 @@ def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_
 			file_name = list(filter(lambda x: x.endswith('.json') and not x.startswith('.'), os.listdir(file_path)))
 			if len(file_name) > 0:
 				json_file_path = file_path + file_name[0]
-				curl_cmd = "curl -sk --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
-				# curl_cmd = "ls -l"
-				proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=False, text=True)
-				output= proc.stdout
-				res_error = proc.stderr
-				res_status_code = proc.returncode
-				if res_status_code:
-					return {'status': False, 'message': str(res_error)}, 200
+				key = 'cancer_code'
+				expected_value ='NA'
+				cancer_code_status = check_cancer_code(json_file_path, key, expected_value)
+				if cancer_code_status:
+					curl_cmd = "curl -sk --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
+					# curl_cmd = "ls -l"
+					proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=False, text=True)
+					output= proc.stdout
+					res_error = proc.stderr
+					res_status_code = proc.returncode
+					if res_status_code:
+						return {'status': False, 'message': str(res_error)}, 200
+					else:
+						return {'status': True, 'message': str(output)}, 200
 				else:
-					return {'status': True, 'message': str(output)}, 200
+					return {'status': False, 'message': 'Cancer Code NA, Please check in the iPCM Leaderboard'}, 200
 			else:
 				return {'status': False, 'message': 'Json File not generated'}, 200
 		else:
@@ -1969,9 +1992,26 @@ def get_cancer_type():
 	
 
 # Read the Igv session json file from Netapp-s3
-def read_igv_session_json(file_path):
+def read_igv_session_json(project_path, sample_id, capture_id, igv_type):
 	try:
+		json_file_name = 'igv_session_sv.json' if igv_type =='sv' else 'igv_session_snps.json'
 
+		json_file_path = project_path + '/' + sample_id + '/'+ capture_id +'/IGVnav/' +json_file_name
+
+		if os.path.isfile(json_file_path):
+
+			with open(json_file_path) as f:
+				data = json.load(f)
+
+			return {'status': True, 'data': data, 'error': '' }, 200
+		else:
+			return {'status': False, 'data': [], 'error': 'IGV Json file was not found' }, 200
+		
+	except Exception as e:
+		return {'status': True, 'data': [], 'error': str(e) }, 400
+	
+def read_json_file(file_path):
+	try:
 		response = requests.get(file_path)
 		res_status = response.status_code
 		jsonResponse = response.json()
@@ -1981,3 +2021,34 @@ def read_igv_session_json(file_path):
 			return {'status': True, 'data': [], 'error': 'Error in the s3 file path' }, 200
 	except Exception as e:
 		return {'status': True, 'data': [], 'error': str(e) }, 400
+	
+# Read the Igv session XML file from nfs / NetApp S3
+def read_igv_session_xml(file_path):
+	try:
+		response = requests.get(file_path)
+
+		if response.status_code == 200:
+			xml_content = response.text
+
+			compressed_data = gzip.compress(xml_content.encode())
+			base64_encoded_data = base64.b64encode(compressed_data).decode()
+			data_uri = f'data:application/gzip;base64,{base64_encoded_data}'
+
+			return {'status': True, 'data': data_uri, 'error': '' }, 200
+		else:
+			return {'status': True, 'data': [], 'error': 'Failed to fetch XML content' }, 200
+	except Exception as e:
+		return {'status': True, 'data': [], 'error': str(e) }, 400
+
+# Read the session XML bam, mut and bedGraph files 
+def read_xml_session_files(project_path, sdid, capture_id):
+
+	file_path = project_path + '/' + sdid + '/' + capture_id + '/IGVnav'
+
+	pdf_file = list(filter(lambda x: (re.match('[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.pdf$', x)) and not x.startswith('.') and not x.endswith('.out'),
+							   os.listdir(file_path)))[0]
+	if os.path.exists(file_path):
+		file_path = file_path + '/' + pdf_file
+		return file_path, 200
+
+	return file_path, 400

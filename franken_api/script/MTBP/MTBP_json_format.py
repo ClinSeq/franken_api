@@ -630,6 +630,20 @@ def build_svs(root_path):
 
 	return svs_filter.to_json(orient = 'index')
 
+def check_cancer_code(json_file_path, key, expected_value):
+	# Load JSON data from file
+	with open(json_file_path, 'r') as file:
+		data = json.load(file)
+	
+	cancer_code_status = False
+	if key in data['sample']:
+		# Check if the value for the key matches the expected value
+		if data['sample'][key] == expected_value:
+			cancer_code_status = False
+		else:
+			cancer_code_status = True
+
+	return cancer_code_status
 
 def upload_json_MTBP(nfs_path, json_file_path, project_name, sample_id, cfdna, identifier_study_id):
 
@@ -645,19 +659,26 @@ def upload_json_MTBP(nfs_path, json_file_path, project_name, sample_id, cfdna, i
 	if os.path.isfile(json_file_path):
 		user_name = os.environ['user_name']
 		user_pwd = os.environ['user_pwd']
-		curl_cmd = "curl -sk --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
-		logger2.info("message : {}".format(curl_cmd))
-		logger1.info('Curl Command {}'.format(curl_cmd))
-		proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=False, text=True)
-		output= proc.stdout
-		res_error = proc.stderr
-		res_status_code = proc.returncode
-		if res_status_code:
-			logger2.error("message : {}".format(str(res_error)))
-			curl_res = str(res_error)
+		key = 'cancer_code'
+		expected_value ='NA'
+		cancer_code_status = check_cancer_code(json_file_path, key, expected_value)
+		if cancer_code_status:
+			curl_cmd = "curl -sk --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
+			logger2.info("message : {}".format(curl_cmd))
+			logger1.info('Curl Command {}'.format(curl_cmd))
+			proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=False, text=True)
+			output= proc.stdout
+			res_error = proc.stderr
+			res_status_code = proc.returncode
+			if res_status_code:
+				logger2.error("message : {}".format(str(res_error)))
+				curl_res = str(res_error)
+			else:
+				logger2.info("message : {}".format(str(output)))
+				curl_res = str(res_error)
 		else:
-			logger2.info("message : {}".format(str(output)))
-			curl_res = str(res_error)
+			curl_res = 'Cancer Code NA, Please check in the iPCM Leaderboard'
+			logger2.info("message : {}".format(str(curl_res)))
 
 		data= [project_name,  sample_id, cfdna, identifier_study_id, json_file_path, curl_res]
 		with open(mtbp_file_name, 'a+') as csvfile:
@@ -755,7 +776,7 @@ def build_json(nfs_path, root_path, output_path, project_name, normal_cfdna, cfd
 	logger2.info('--- Generated Json format successfuly ---\n')
 
 	print("\n----  MTBP Json Format Completed -----\n")
-	upload_json_MTBP(nfs_path, file_name, project_name, sample_id, cfdna, identifier_study_id)
+	# upload_json_MTBP(nfs_path, file_name, project_name, sample_id, cfdna, identifier_study_id)
 	logger1.info('Sample {} Completed'.format(sample_id))
 	logger1.info('-------------------\n')
 	logger2.removeHandler(file_handler2)

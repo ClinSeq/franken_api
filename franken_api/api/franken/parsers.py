@@ -269,5 +269,16 @@ rna_html_arguments = rna_common_arguments.copy()
 rna_html_arguments.add_argument('file_name', type=str, required=True,  help='sdid example : P-00360714')
 
 
-igv_html_arguments =  reqparse.RequestParser()
-igv_html_arguments.add_argument('file_name', type=str, required=True,  help='')
+igv_session_arguments = reqparse.RequestParser()
+igv_session_arguments.add_argument('project_name', required=True, help="valid Project names: 'PROBIO', 'PSFF'")
+igv_session_arguments.add_argument('sdid', type=str, required=True,  help='sdid example : P-00360714')
+igv_session_arguments.add_argument('capture_id' , type=str, required=True, help="")
+
+igv_json_arguments = igv_session_arguments.copy()
+igv_json_arguments.add_argument('igv_type', type=str, required=True,  help='')
+
+igv_file_arguments = igv_session_arguments.copy()
+igv_file_arguments.add_argument('file_name', type=str, required=True,  help='sdid example : P-00360714')
+
+igv_xml_arguments = reqparse.RequestParser()
+igv_xml_arguments.add_argument('file_name', type=str, required=True,  help='sdid example : P-00360714')
