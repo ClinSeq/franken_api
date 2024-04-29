@@ -229,8 +229,12 @@ def build_sample_details(project_name, capture_id, cfdna, capture_format, sample
 	if(res_data):
 		sample_data["identifier"] = "MTBP_"+capture_format+"_"+res_data[0]['tid']+"_"+sample_type+cfdna
 		sample_data["referral_date"] = res_data[0]["datum"]
-		pnr = res_data[0]["pnr"][0:8]
-		sample_data["birthdate"] =  datetime.strptime(pnr, "%Y%m%d").date().strftime("%Y-%m-%d")
+		if res_data[0]["pnr"] != None :
+			pnr = res_data[0]["pnr"][0:8]
+			sample_data["birthdate"] =  datetime.strptime(pnr, "%Y%m%d").date().strftime("%Y-%m-%d")
+		else:
+			pnr='NA'
+			sample_data["birthdate"] ='NA'
 		identifier_status = True
 
 		sql = "SELECT subject_id, CAST(dob as VARCHAR), site_name from sample_status_t WHERE pnr like '%{}%'".format(pnr)

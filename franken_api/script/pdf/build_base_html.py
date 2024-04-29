@@ -320,6 +320,7 @@ def build_small_variants(root_path):
 		file_path = root_path + '/'
 		smv_file_list = list(filter(lambda x: x.endswith('-igvnav-input.txt') and not x.startswith('.') and not x.endswith('.out'), os.listdir(file_path)))
 		regex = '^(?:(?!-(CFDNA|T)).)*igvnav-input.txt$'
+		regex2 = '(.*)-(CFDNA|T)-(\w.*)(germline-igvnav-input).*txt$'
 
 		for i in smv_file_list:
 			smv_filename = file_path + i
@@ -379,7 +380,7 @@ def build_small_variants(root_path):
 
 				source_type = ''
 
-				if(re.match(regex, i)):
+				if(re.match(regex, i) or re.match(regex2, i)):
 					source_type ='germline'
 				else:
 					source_type ='somatic'
