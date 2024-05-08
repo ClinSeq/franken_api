@@ -41,6 +41,7 @@ import hashlib
 import gzip
 import base64
 
+
 # check the string contains special character or not 
 def check_special_char(seq_str):
 	result = any(not c.isalnum() for c in seq_str)
@@ -1469,7 +1470,9 @@ def build_ipcm_sample_details(cfdna_id, normal_id):
 	if (t_pnr == n_pnr or t_pnr == ''):
 		study_id = n_cdk
 		dob = n_pnr[0:8]
-		query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN (ec.cancer_type_code != '' AND ec.cancer_type_code != 'N/A' AND ec.cancer_type_code != 'NA') THEN get_tissue_subtype_name(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') and ec.study_id='{}' limit 1 ;".format(dob, study_id)
+		extra_cond = "" if study_id in ['None', ''] else " and ec.study_id='{}'".format(study_id)
+
+		query_ecrf = "SELECT ec.study_id as identifier, to_date(rf.datum::text, 'YYYYMMDD') as sample_date, to_date(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_name(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy,  ec.cancer_type_code as cancer_code, 'primary' as tissue_source, CASE WHEN (ec.cancer_type_code != '' AND ec.cancer_type_code != 'N/A' AND ec.cancer_type_code != 'NA') THEN get_tissue_subtype_name(ec.cancer_type_id, ec.cancer_type_code) ELSE get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) END as disease_name, ec.cell_fraction as pathology_ccf, ec.germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON to_date(rf.date_birth::text, 'YYYYMMDD') = ec.birth_date WHERE ec.birth_date=to_date('{}', 'YYYYMMDD') {} limit 1 ;".format(dob, extra_cond)
 		res_ecrf = create_db_session('ipcmLeaderboard', query_ecrf)
 		res_ecrf_data = generate_list_to_dict(res_ecrf)
 		if res_ecrf_data:
