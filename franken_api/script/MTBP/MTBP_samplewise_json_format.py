@@ -116,7 +116,10 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 		if (t_pnr == n_pnr or t_pnr == ''):
 			study_id = n_cdk
 			pnr = n_pnr
-			query_ecrf = "SELECT CONCAT('MTBP_{}_', ec.study_id,'_{}{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as referral_date, '{}' as seq_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'NA' END as cancer_code, 'primary' as tissue_source, CASE WHEN ec.tissue_type ='' THEN 'NA' ELSE ec.tissue_type END as tissue_type, CASE WHEN cell_fraction <> '' THEN CAST(cell_fraction AS FLOAT) ELSE NULL END AS pathology_ccf, CASE WHEN ec.germline_dna = '0' THEN {} ELSE to_number(ec.germline_dna::text, '9'::text)::integer END as germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}' and ec.study_id='{}' limit 1 ".format(capture_format, sample_type, cfdna, seq_date, germline_dna, pnr, study_id)
+
+			extra_cond = "" if study_id in ['None', ''] else " and ec.study_id='{}'".format(study_id)
+
+			query_ecrf = "SELECT CONCAT('MTBP_{}_', ec.study_id,'_{}{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as referral_date, '{}' as seq_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'NA' END as cancer_code, 'primary' as tissue_source, CASE WHEN ec.tissue_type ='' THEN 'NA' ELSE ec.tissue_type END as tissue_type, CASE WHEN cell_fraction <> '' THEN CAST(cell_fraction AS FLOAT) ELSE NULL END AS pathology_ccf, CASE WHEN ec.germline_dna = '0' THEN {} ELSE to_number(ec.germline_dna::text, '9'::text)::integer END as germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}' {} limit 1 ".format(capture_format, sample_type, cfdna, seq_date, germline_dna, pnr, extra_cond)
 			res_ecrd_data = fetch_sql_query('ipcmLeaderboard', query_ecrf)
 			if len(res_ecrd_data)>0:
 				res_json = json.dumps(res_ecrd_data, default = json_serial)
@@ -205,6 +208,16 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 	sample_data["germline_dna"] = germline_dna
 
 	return sample_data
+
+# ### Fetch cancer code in the genomic profile 
+def fetch_cancer_code(project_name,  sample_id, capture_id):
+	cancer_code = ''
+	sql = "SELECT study_code, disease FROM genomic_profile_summary where project_name='{}' and sample_id='{}' and capture_id='{}' limit 1".format(project_name, sample_id, capture_id)
+	res_data = fetch_sql_query('curation', sql)
+	if len(res_data) > 0:
+		cancer_code = res_data[0]["disease"]
+	return cancer_code
+
 
 # ### Fetch the sample information from biobank referral table
 def build_sample_details(project_name, capture_id, cfdna, capture_format, sample_type, seq_date, germline_dna):
@@ -532,7 +545,7 @@ def build_cnv(root_path):
 						cnv_df_data['copy_number'] = cnv_df_data['copy_number'].fillna(0)
 
 						cnv_df_data['copy_number'] = cnv_df_data['copy_number'].round(0).astype(int,  errors='ignore')
-						# cnv_df_data['genes'] = cnv_df_data.genes.apply(lambda x: x.split(', '))
+						# cnv_df_data['genes'] = cnv_df_data.genes.apply(lambda x: 'NA' if x.isnull() else x.split(', '))
 						cnv_df_data['genes'] = cnv_df_data['genes'].apply(lambda x: 'NA' if pd.isna(x) else x.split(', '))
 
 						cnv_df = pd.concat([cnv_df_data, cnv_df])
@@ -644,6 +657,11 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 		identifier_study_id = sample_id
 	else:
 		identifier_study_id = sample_details_json["identifier"].split("_")[2]
+
+	if sample_details_json["cancer_code"] == "NA" :
+		cancer_code = fetch_cancer_code(project_name, sample_id, capture_id)
+		if cancer_code != '':
+			sample_details_json["cancer_code"] = cancer_code
 	
 	ecrf_tissue_type = sample_details_json['tissue_type']
 
