@@ -167,6 +167,17 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 		print("Build iPCM Exception", str(e))
 		return res_json_data, identifier_status
 
+def fetch_cancer_type_code(disease):
+	cancer_code = 'NA'
+	tissue = 'NA'
+	sql = "SELECT ts.sub_type_code as cancer_code, tt.tissue_name  FROM ipcm_tissue_subtype as ts INNER JOIN ipcm_tissue_type as tt ON tt.t_id=ts.t_id where ts.sub_type_name ~* '^({})$' order by ts.sub_type_level asc limit 1".format(disease)
+	res_data = fetch_sql_query('ipcmLeaderboard', sql)
+	if(res_data):
+		cancer_code = res_data[0]["cancer_code"]
+		tissue = res_data[0]["tissue_name"]
+	else:
+		tissue = disease
+	return tissue, cancer_code
 
 # ### Fetch the genomic profile information
 def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date, germline_dna):
@@ -217,8 +228,9 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 				sample_data["hospital"] = hospital_lookup[study_site] if (study_site in hospital_lookup) else study_site
 
 			if(disease != ""):
-				sample_data["tissue"] = disease
-				#sample_data["tissue_type"] = disease
+				tissue, cancer_code = fetch_cancer_type_code(disease)
+				sample_data["tissue"] = tissue
+				sample_data["cancer_code"] = cancer_code
 
 	sample_data["tissue_type"] = tissue_type
 	sample_data["pathology_ccf"] = "NA"
@@ -232,7 +244,8 @@ def fetch_cancer_code(project_name,  sample_id, capture_id):
 	sql = "SELECT study_code, disease FROM genomic_profile_summary where project_name='{}' and sample_id='{}' and capture_id='{}' limit 1".format(project_name, sample_id, capture_id)
 	res_data = fetch_sql_query('curation', sql)
 	if len(res_data) > 0:
-		cancer_code = res_data[0]["disease"]
+		disease = res_data[0]["disease"]
+		cancer_code = disease
 	return cancer_code
 
 

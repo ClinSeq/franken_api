@@ -1986,7 +1986,7 @@ def get_table_fusion_inspector(project_path, sdid, capture_id, user_id, header='
 # Get Cancer tissue type list
 def get_cancer_type():
 	try:
-		sql = "SELECT t_id as index, tissue_code FROM ipcm_tissue_type order by tissue_name asc"
+		sql = "SELECT t_id as index, sub_type_name as name FROM ipcm_tissue_subtype order by t_id asc"
 		res = create_db_session('ipcmLeaderboard', sql)
 		row = generate_list_to_dict(res)
 		return {'status': True, 'data': row, 'error': '' }, 200
