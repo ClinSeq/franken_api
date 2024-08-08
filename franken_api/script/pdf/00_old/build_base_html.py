@@ -22,7 +22,6 @@ from bs4 import BeautifulSoup
 import subprocess
 from datetime import date, datetime
 import math
-from decimal import Decimal
 
 def path():
 	return os.path.dirname(os.path.realpath(__file__))
@@ -236,6 +235,7 @@ def build_basic_html(project_name, sample_id, capture_id, study_id, disease_name
 			dob = res_data[0]['dob']
 			disease = res_data[0]['disease'] if disease_name =='' else disease_name
 
+			# summary_txt = '<tr><td>'+res_data[0]['summary_txt']+'</td></tr>'
 			summary_txt = res_data[0]['summary_txt']
 
 			patient_info_html += '<tr><th>STUDY ID</th><td>{}</td></tr>'.format(study_code)
@@ -249,21 +249,15 @@ def build_basic_html(project_name, sample_id, capture_id, study_id, disease_name
 
 			for i in specimen_assay_json:
 
-				quality =''
-				quality_str = ''
+				quality ='' 
 				if 'quality' in specimen_assay_json[i]:
 					quality = specimen_assay_json[i]['quality'] if isinstance(specimen_assay_json[i]['quality'], str) else ''
-					if quality =='Pass':
-						quality_str= '<span class="pass"></span>'
-					elif quality == 'Fail':
-						quality_str= '<span class="fail"></span>'
-				
 
 				specimen_assay_html += '<tr>'
 				specimen_assay_html += '<th>'+specimen_assay_json[i]["specimen"]+'</th>'
 				specimen_assay_html += '<td>'+specimen_assay_json[i]["analyte"]+'</td>'
 				specimen_assay_html += '<td>'+specimen_assay_json[i]["assay"]+'</td>'
-				specimen_assay_html += '<td class="quality">'+quality_str+'</td>'
+				specimen_assay_html += '<td>'+quality+'</td>'
 				specimen_assay_html += '</tr>'
 
 			genome_wide = res_data[0]['genome_wide'].replace("\'", "\"")
@@ -271,8 +265,9 @@ def build_basic_html(project_name, sample_id, capture_id, study_id, disease_name
 			genome_wide_json = json.loads(genome_wide)
 
 			for j in genome_wide_json:
+					
 				if 'CHIP' not in genome_wide_json[j]["title"]:
-					result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else '-'
+					result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else ''
 				else:
 					result_data = genome_wide_json[j]["result"] if 'result' in genome_wide_json[j] and  isinstance(genome_wide_json[j]["result"], str) else ''
 
@@ -295,18 +290,13 @@ def build_basic_html(project_name, sample_id, capture_id, study_id, disease_name
 				### Generate a clinical report txt 
 				title = genome_wide_json[j]['title']
 				if (title == "FRACTION OF CANCER DNA"):
-					tumörcellsandel = result_data
+					tumörcellsandel = genome_wide_json[j]['result']
 				elif (title == "TUMOR MUTATIONAL BURDEN"):
-					tumörmutationsbörda = result_data
+					tumörmutationsbörda = genome_wide_json[j]['result']
 				elif (title == "MSI STATUS"):
-					msi_status = result_data
+					msi_status = genome_wide_json[j]['result']
 				elif (title == "PATHOGENIC GERMLINE VARIANTS"):
-					potentiellt_ärftliga = result_data 
-		else:
-			patient_info_html += '<tr><th>STUDY ID</th><td>-</td></tr>'
-			patient_info_html += '<tr><th>PERSONAL NUMBER</th><td>-</td></tr>'
-			patient_info_html += '<tr><th>DISEASE</th><td>-</td></tr>'
-			patient_info_html += '<tr><th>HOSPITAL</th><td>-</td></tr>'
+					potentiellt_ärftliga = genome_wide_json[j]['result']	
 	
 	except Exception as e:
 		logging.error("Build Base HTML Exception : {}".format(str(e)))
@@ -423,6 +413,9 @@ def build_small_variants(root_path):
 						else: 
 							rsID = '' 
 
+						#rsID = row['RSID'] if 'RSID' in row else '-'
+						# rsID_url = "https://www.ncbi.nlm.nih.gov/snp/{}#clinical_significance".format(rsID) if 'RSID' in row else '-'
+
 						HGVSp_org_rx = row['HGVSp_org'] if 'HGVSp_org' in row else '-'
 						HGVSp_org = HGVSp_org_rx.split("p.")[1] if 'p.' in HGVSp_org_rx else HGVSp_org_rx
 						second_hit = str(row['second_hit']) if 'second_hit' in row else '-'
@@ -510,13 +503,12 @@ def build_cnv(root_path):
 
 						variant_det = "chr"+str(row['chr'])+":"+str(row['start'])+"-"+str(row['end'])
 
-						# gene_det = re.sub(r'\s', ' ', row['gene'])
-						gene_det = " ".join(row['gene'].split())
+						gene_det = re.sub(r'\s', '', row['gene'])
 
 						copy_number = row['copy_number'] if isinstance(row['copy_number'],str) else int(row['copy_number'])
 
 						cnv_html += '<tr>'
-						cnv_html +='<td class="cp-gene">'+gene_det+'</td>'
+						cnv_html +='<td>'+gene_det+'</td>'
 						cnv_html +='<td>'+source_type+'</td>'
 						cnv_html +='<td>'+variant_det+'</td>'
 						cnv_html +='<td>'+row['ASSESSMENT']+'</td>'
@@ -708,10 +700,11 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 
 
 # ### Build HTML from output files
-def build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, study_id, disease_name, header_txt, sub_header_txt):
+def build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id,capture_id, appendix_page, appendix_name, study_id, disease_name):
 	logging.info("--- MTBP Json Format Started ---")
 	logging.info("Path : {} / {}".format(root_path,file_name))
 
+	project_json = {}
 	report_txt = ''
 
 	# Patient, Specimen & assay and genome wide information 
@@ -720,7 +713,8 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 
 	report_txt += sample_details_txt
 
-	# # Small Variant (Somatic & Germline)
+
+	# Small Variant (Somatic & Germline)
 	logging.info('--- Small Variant started ---')
 	small_variant_html, small_variant_txt = build_small_variants(root_path)
 	report_txt += small_variant_txt
@@ -728,7 +722,7 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 		small_variant_html = '<tr><td class="no-data" colspan="9">No relevant variants detected</td></tr>'
 	logging.info('--- Small Variant completed ---')
 
-	# # SVS
+	# SVS
 	logging.info('--- SVS started ---')
 	svs_html, svs_txt = build_svs(root_path)
 	report_txt += "\n"+svs_txt
@@ -736,7 +730,7 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 		svs_html = '<tr><td class="no-data" colspan="7">No relevant variants detected</td></tr>'
 	logging.info('--- SVS completed ---')
 
-	# # CNVs
+	# CNVs
 	logging.info('--- CNVs started ---')
 	cnv_html, cnv_txt = build_cnv(root_path)
 	report_txt += "\n"+cnv_txt
@@ -744,55 +738,32 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 		cnv_html = '<tr><td class="no-data" colspan="5">No relevant variants detected</td></tr>'
 	logging.info('--- CNVs completed ---')
 
-	# ## Get Technical Validation for QC
+	## Get Technical Validation for QC
 	logging.info('--- Technical Validation started ---')
 	tech_valid_html, tech_header_html = build_tech_val_QC(root_path, project_name, capture_id)
 	if(tech_valid_html == ""):
 		tech_valid_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
 	logging.info('--- Technical Validation completed ---')
 
-	new_text = ""
-	# # Read a base html and replace the curated text based on ids
+
+	# Read a base html and replace the curated text based on ids
 	with open(base_html_path, 'r') as f:
 		contents = f.read()
 		soup = BeautifulSoup(contents, "html.parser")
 
-		for tag in soup.find_all(title="custom css"):
-			tag['href'] = os.path.join(html_root_path, tag['href'])
-
-		for tag in soup.find_all(id='header_ul_data'):
-			header_html = header_txt
-			tag.string.replace_with(header_html)
-
-		for tag in soup.find_all(id='header_ul_data2'):
-			sub_header_html = sub_header_txt
-			tag.string.replace_with(sub_header_html)
-
-		for images in soup.find_all(id='ki_logo_img'):
-			if 'PROBIO' in project_name or 'CLINPROST' in project_name:
-				img_path = html_root_path +'/static/img/logo/probio_logo.png'
-			else:
-				img_path = html_root_path +'/static/img/logo/KS_SE.svg'
-			images['src'] = images['src'].replace("#", img_path)
-
-		for images in soup.find_all(id='logo_img'):
-			if 'PROBIO' in project_name or 'CLINPROST' in project_name:
-				img_path = html_root_path +'/static/img/logo/probio_logo.png'
-			else:
-				img_path = html_root_path +'/static/img/logo/KS_logo.svg'
-			images['src'] = images['src'].replace("#", img_path)
-
+		for tag in soup.find_all(rel="stylesheet"):
+			tag['href'] = html_root_path + tag['href']
 
 		for tag in soup.find_all(id='patient_info_table_data'):
 			tag.string.replace_with(pat_html)
-			 
+
 		for tag in soup.find_all(id='specimen_assay_table_data'):
 			tag.string.replace_with(specimen_html)
 
 		for tag in soup.find_all(id='genome_wide_table_data'):
 			tag.string.replace_with(genome_wide_html)
 
-		for tag in soup.find_all(id='somatic_table_data'):
+		for tag in soup.find_all(id='point_table_data'):
 			tag.string.replace_with(small_variant_html)
 
 		for tag in soup.find_all(id='svs_table_data'):
@@ -801,23 +772,35 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 		for tag in soup.find_all(id='cnv_table_data'):
 			tag.string.replace_with(cnv_html)
 
-		for tag in soup.find_all(id='tech_val_table_header'):
-			tag.string.replace_with(tech_header_html)
-
-		for tag in soup.find_all(id='tech_val_table_data'):
-			tag.string.replace_with(tech_valid_html)
-
 		for tag in soup.find_all(id='summary_notes_data'):
-			tag.string.replace_with(summary_txt)          
-		
-		new_text = soup.prettify(formatter=None)
+			tag.string.replace_with(summary_txt)            
 
+		new_text = soup.prettify(formatter=None)
 
 	# Create a new html based on the base template
 	with open(file_name, "w", encoding = 'utf-8') as file:
 		file.write(str(new_text))
 
-	# # create a clinical report txt file and store information
+	with open(appendix_page, 'r') as f:
+		contents = f.read()
+		soup1 = BeautifulSoup(contents, "html.parser")
+
+		for tag in soup1.find_all(rel="stylesheet"):
+			tag['href'] = html_root_path + tag['href']
+
+		for tag in soup1.find_all(id='tech_val_table_header'):
+			tag.string.replace_with(tech_header_html)
+
+		for tag in soup1.find_all(id='tech_val_table_data'):
+			tag.string.replace_with(tech_valid_html)
+
+		appendix_text = soup1.prettify(formatter=None)
+
+	# Create a new appendix html based on the appendix template
+	with open(appendix_name, "w", encoding = 'utf-8') as file1:
+		file1.write(str(appendix_text))
+
+	# create a clinical report txt file and store information
 	output_path = root_path+"/pdf"
 	file_name = output_path+"/autoseq_clinical_report_"+study_id+".txt"
 
@@ -833,13 +816,92 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 	return 1
 
 
+# ### Change the header value
+def change_header_logo(html_root_path, header_html, project_name, output_header, specimen, sample_date):
+
+	report_date = date.today().strftime('%Y-%m-%d')
+	#sample_date = datetime.datetime.strptime(sample_date, '%Y%m%d').date()
+
+	with open(header_html, 'r') as f:
+		contents = f.read()
+		soup = BeautifulSoup(contents, "html.parser")
+
+		for tag in soup.find_all(id='specimen_data'):
+			specimen_html = specimen
+			tag.string.replace_with(specimen_html)
+
+		for tag in soup.find_all(id='recieved_date'):
+			sample_date_html = str(sample_date)
+			tag.string.replace_with(sample_date_html)
+
+		for tag in soup.find_all(id='epm_dnr_data'):
+			if 'PROBIO' in project_name:
+				epm_dnr_data_html = "2016/101-32"
+			else:
+				epm_dnr_data_html = "2021-00135"
+			tag.string.replace_with(epm_dnr_data_html)
+
+		for tag in soup.find_all(id='report_date'):
+			report_date_html = report_date
+			tag.string.replace_with(report_date_html)
+
+		for tag in soup.find_all(id='about_data'):
+			if 'PROBIO' in project_name:
+				about_date_html = 'The ProBio profile consists of a RUO next-generation sequencing assay, analysis pipeline and curation procedure.'
+			elif 'CLINPROST' in project_name:
+				about_date_html = 'ProBio Prostatacancer Assay, ackreditated at Karolinska University Hospital.'
+			else:
+				about_date_html = 'The iPCM profile consists of a RUO next-generation sequencing assay, analysis pipeline and curation procedure.'
+			tag.string.replace_with(about_date_html)
+		
+		if 'CLINPROST' in project_name:
+			for images in soup.find_all(id='ki_logo_img'):
+				img_path = html_root_path +'/static/img/KS_logo.png'
+				images['src'] = images['src'].replace("", img_path)
+			
+			for images in soup.find_all(id='project_logo_img'):
+				if 'PROBIO' in project_name or 'CLINPROST' in project_name:
+					img_path = html_root_path +'/static/img/probio_logo.png'
+				else:
+					img_path = html_root_path +'/static/img/iPCM.png'
+				images['src'] = images['src'].replace("", img_path)
+		else:
+			for images in soup.find_all(id='ki_logo_img'):
+				if 'PROBIO' in project_name or 'CLINPROST' in project_name:
+					img_path = html_root_path +'/static/img/probio_logo.png'
+				else:
+					img_path = html_root_path +'/static/img/iPCM.png'
+				images['src'] = images['src'].replace("", img_path)
+
+		new_text = soup.prettify(formatter=None)
+
+	with open(output_header, "w") as f_output:
+		f_output.write(str(new_text))
+
+
 # ### Main Function
 def main(nfs_path, project_name, sample_id, capture_id):
 
+	## PDF Tempalte Path
+	### Local Path 
+	#base_html_path = '/home/karthick/project/code/curator/pdf/base.html'
+	#appendix_page = '/home/karthick/project/code/curator/pdf/appendix_c4.html'
+
 	html_root_path = os.path.dirname(sys.argv[0])
+#	html_root_path = path()
 
 	### Serve Path 
 	base_html_path = html_root_path+'/base.html'
+	if 'CLINPROST' in project_name:
+		tml_header_page = html_root_path+'/layout/header_ks.html' 
+		tml_appendix_header_page = html_root_path+'/layout/appendix_header_ks.html' 
+	else:
+		tml_header_page = html_root_path+'/layout/header.html' 
+		tml_appendix_header_page = html_root_path+'/layout/appendix_header.html' 
+
+	footer_page = html_root_path+'/layout/footer.html'
+	appendix_page = html_root_path +'/appendix_c4.html'
+
 	root_path = os.path.join(nfs_path,sample_id,capture_id)
 
 	output_path = root_path+"/pdf"
@@ -849,7 +911,8 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	KN_value = capture_arr[6]
 
 	if "PN" in KN_value:
-		base_html_path = html_root_path+'/base_pn.html'
+		#appendix_page = '/home/karthick/project/code/curator/pdf/appendix_pn.html'
+		appendix_page = html_root_path+'/appendix_pn.html'
 
 	# cfdna = capture_arr[4]
 	normal_idx = capture_arr.index("N")
@@ -861,6 +924,9 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	capture_format = capture_arr[0]
 
 	file_name = output_path+"/base_"+project_name+"_"+sample_id+"_"+cfdna+".html"
+	appendix_name = output_path+"/appendix_"+project_name+"_"+sample_id+"_"+cfdna+".html" 
+	header_page = output_path+"/header_"+project_name+"_"+sample_id+"_"+cfdna+".html"
+	appendix_header_page = output_path+"/append_header_"+project_name+"_"+sample_id+"_"+cfdna+".html"
 	pdf_file_name = output_path+"/pdf_"+project_name+"_"+sample_id+"_"+cfdna+".pdf"
 	log_name = output_path+"/log_"+project_name+"_"+sample_id+"_"+cfdna+".log"
 
@@ -884,6 +950,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	study_id = ''
 	disease_name = ''
 
+	# if(sample_details_json["identifier"] != "NA" and itendifiter_status):
 	if(itendifiter_status and sample_details_json != ''):
 		sample_date = sample_details_json["sample_date"]
 		study_id = sample_details_json["identifier"]
@@ -894,24 +961,9 @@ def main(nfs_path, project_name, sample_id, capture_id):
 		study_id = sample_details_json["identifier"]
 		disease_name = sample_details_json["disease_name"]
 
-	report_date = date.today().strftime('%Y-%m-%d')
-
-	if 'PROBIO' in project_name:
-		epm_dnr_data_html = "2016/101-32"
-	else:
-		epm_dnr_data_html = "2021-00135"
-
-	# Build Header Information 
-	logging.info('--- Header information started ---')
-	header_txt = ''
-	header_txt = '<li><b>SPECIMENS</b><span>'+specimen+'</span></li>'
-	header_txt += '<li><b>EPM DNR</b><span>'+epm_dnr_data_html+'</span></li>'
-	header_txt += '<li><b>REPORT DATE</b><span>'+report_date+'</span></li>'
-	header_txt += '<li><b>RECIEVED DATE</b><span>'+sample_date+'</span></li>'
-
-
-	sub_header_txt = ''
-	sub_header_txt = '<li><b>REPORT DATE</b><span>'+report_date+'</span></li>'
+	## Change the logo based on the project  
+	change_header_logo(html_root_path, tml_header_page, project_name, header_page, specimen, sample_date)
+	change_header_logo(html_root_path, tml_appendix_header_page, project_name, appendix_header_page, specimen, sample_date)
 
 	logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt =  "%Y-%m-%d %H:%M:%S")
 	logging.info('--- Generated Json format Started---')
@@ -919,10 +971,11 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	logging.info("Sample Id : {} || Capture Id : {} || Outpue File Name : {} ".format(sample_id,capture_id, file_name))
 
 	try:
-		
-		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id, capture_id, study_id, disease_name, header_txt, sub_header_txt)
+		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id, capture_id, appendix_page, appendix_name, study_id, disease_name)
 		if html_result:
-			cmd ="weasyprint -e utf8 -vd --full-fonts {} {}".format(file_name, pdf_file_name)
+			# --enable-external-links --keep-relative-links --resolve-relative-links
+			# toc 
+			cmd = 'wkhtmltopdf  --enable-local-file-access {} --header-html {} --footer-line --footer-html {} {} --header-html {} --footer-line  --footer-html {} {}'.format(file_name, header_page, footer_page, appendix_name, appendix_header_page, footer_page, pdf_file_name)
 			subprocess_cmd(cmd)
 			logging.info("---- PDF Generated ----")
 
@@ -950,6 +1003,11 @@ if __name__ == "__main__":
 	capture_id = args.capture
 	nfs_path = args.path 
 
+	# project_name = "IPCM"
+	# sample_id = "P-00450700"
+	# capture_id = "iPCM-P-00450700-T-04078668-KH20220607-PN20220608_iPCM-P-00450700-N-04044425-KH20220913-PN20220914"
+	# nfs_path = "/sdata/{}/autoseq-output".format(project_name)
+	
 	if not os.path.isdir(nfs_path):
 		print('The {}, path specified does not exist'.format(nfs_path))
 		sys.exit()

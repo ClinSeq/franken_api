@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+	<meta name="pdfkit-page-size" content="Legal"/>
+    <meta name="pdfkit-orientation" content="Landscape"/>
+	<link rel="stylesheet" href="/static/css/bootstrap.min.css" >
+	<style>
+		* {
+			font-family: 'Roboto', sans-serif;
+			font-size: 12px;
+			margin: 0;
+			padding: 0;
+		}
+
+		section {
+			padding: 10px 0px 10px 10px;
+			page-break-inside:avoid;
+		}
+
+		table { page-break-after:auto }
+		tr    { page-break-inside:avoid; page-break-after:auto }
+		td    { page-break-inside:avoid; page-break-after:auto }
+		/* thead { display: table-row-group; }
+		tfoot { display:table-footer-group } */
+
+		.table-borderless > tbody > tr > td,
+		.table-borderless > tbody > tr > th,
+		.table-borderless > tfoot > tr > td,
+		.table-borderless > tfoot > tr > th,
+		.table-borderless > thead > tr > td,
+		.table-borderless > thead > tr > th {
+			border: 1px !important;
+			padding: 0px 10px 0px 0px;
+		}
+
+
+		table > thead > tr > th {
+			font-size: 11px;
+			background-color: #1DA1F2;
+			text-align: center;
+			color: #ffffff;
+		}
+		
+		table > tbody > tr > td {
+			word-spacing: 3px;
+			font-size: 9px;
+			color :#6b6b6b;
+			font-weight:600;
+		}
+
+		table > tbody > tr > th {
+			font-size: 10px;
+			font-weight: 600;
+			color :#000000;
+		}
+
+		.no-data{
+			font-size: 10px;
+			text-align: center;
+			color :#6b6b6b;
+		}
+
+		.table-bordered tr th, .table-bordered tr td {
+			border: 1px solid #D9E4EC;
+		}
+
+		.patient-block .patient-td {
+			width: 40%;
+		}
+
+		.patient-block .patient-specimen {
+			width: 60%;
+		}
+
+		.summary-block {
+			page-break-inside:avoid; 
+			page-break-after:auto;
+		}
+
+        .summary-block .boxed {
+            border: 1px solid #000000;
+            height: 250px;
+            padding: 20px 5px 10px 20px;   
+        }
+
+        .summary-block .boxed p {
+            word-spacing: 3px;
+            font-size: 10px;
+            color :#6b6b6b;
+            font-weight:800;
+        }
+
+		.patient-block h5,  .genome-wide-block h5, .point-mut-block h5, .svs-block h5, .copy-number-block h5, .summary-block h5{
+			font-weight: bold;
+			padding-bottom: 5px;
+			color: #B43218;
+			font-size: 14px;
+		}
+
+		/*.point-mut-block .table-bordered td {
+			font-size: 14px;
+		} */
+
+		/* .point-mut-block .point-tb th{
+			width: 100%;
+			border: 1px solid #D9E4EC;
+			font-size: 17px;
+		} */
+
+		/* .point-mut-block .point-tb td{
+			width: 100%;
+			border: 1px solid #D9E4EC;
+			font-size: 15px;
+		} */
+
+		.sm-var-dets {
+			/* width: 180px; */
+			display:block;
+		}
+		.sm-var-dets p{
+			font-size: 9px;
+			word-wrap: break-word;
+		}
+
+	</style>
+</head>
+<body>
+	<section class="patient-block">
+		<table class="table table-borderless">
+			<tr>
+				<td>
+					<h5 >PATIENT</h5>
+				</td>
+				<td>
+					<h5 >SPECIMEN AND ASSAY</h5>
+				</td>
+			</tr>
+			<tr>
+				<td class="patient-td">
+					<table class="table table-bordered">
+						<tbody id="patient_info_table_data">
+
+						</tbody>
+					</table>
+				</td>
+				<td class="patient-specimen">
+					<table class="table table-bordered">
+						<thead>
+							<tr>
+								<th>SPECIMEN</th>
+								<th>ANALYTE</th>
+								<th>ASSAY</th>
+								<th>QUALITY</th>
+							</tr>
+						</thead>
+						<tbody id="specimen_assay_table_data">
+
+						</tbody>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</section>
+
+	<section class="genome-wide-block">
+		<h5>GENOME-WIDE FINDINGS</h5>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th width="30%">CATEGORY</th>
+					<th width="10%">RESULT</th>
+					<th width="20%">ASSESSMENT POSSIBLE</th>
+					<th width="40%">COMMENT</th>
+				</tr>
+			</thead>
+			<tbody id="genome_wide_table_data">
+
+			</tbody>
+		</table>
+	</section>
+
+	<section class="point-mut-block">
+		<h5>SMALL VARIANTS</h5>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>GENE</th>
+					<th>SOURCE</th>
+					<th width="30%">VARIANT DETAILS</th>
+					<th>CONSEQUENCE</th>
+					<th>CLONALITY / ZYGOSITY</th>
+					<th>SECONDHIT</th>
+					<th>IMPACT</th>
+					<th>RSID</th>
+					<th>TRANSCRIPT ID</th>
+					<th>HGVSP</th>
+				</tr>
+			</thead>
+			<tbody id="point_table_data">
+
+			</tbody>
+		</table>
+	</section>
+	<section class="svs-block">
+		<h5 >STRUCTURAL REARRANGEMENTS</h5>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th>GENE 1</th>
+					<th>GENE 2</th>
+					<th>SOURCE</th>
+					<th>VARIANT DETAILS</th>
+					<th>CONSEQUENCE</th>
+					<th>CLONALITY</th>
+					<th>SECONDHIT</th>
+				</tr>
+			</thead>
+			<tbody id="svs_table_data">
+				
+			</tbody>
+		</table>
+	</section>
+	
+	<section class="copy-number-block">
+		<h5 >COPY NUMBER ALTERATIONS</h5>
+		<table class="table table-bordered">
+			<thead>
+				<tr>
+					<th width="40%">GENE</th>
+					<th>SOURCE</th>
+					<th>VARIANT DETAILS</th>
+					<th>CONSEQUENCE</th>
+					<th>COPY-NUMBER</th>
+				</tr>
+			</thead>
+			<tbody id="cnv_table_data">
+
+			</tbody>
+		</table>
+	</section>
+	<section class="summary-block">
+		<h5>ADDITIONAL NOTES</h5>
+        <div class="boxed">
+            <p id="summary_notes_data"> </p> 
+        </div>
+	</section>
+</body>
+</html>

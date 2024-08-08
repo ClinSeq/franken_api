@@ -1580,7 +1580,7 @@ def generate_curated_pdf(project_path, project_name, sample_id, capture_id, scri
 		return {'data': 'PDF File Generated', 'status': True}, 200
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-		return {'data':[], 'status': False}, 400
+		# return {'data':[], 'status': False}, 400
 
 
 def fetch_curated_pdf(project_path, project_name, sample_id, capture_id):

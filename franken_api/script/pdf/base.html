@@ -3,247 +3,386 @@
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
 	<meta name="pdfkit-page-size" content="Legal"/>
-    <meta name="pdfkit-orientation" content="Landscape"/>
-	<link rel="stylesheet" href="/static/css/bootstrap.min.css" >
-	<style>
-		* {
-			font-family: 'Roboto', sans-serif;
-			font-size: 12px;
-			margin: 0;
-			padding: 0;
-		}
+	<meta name="pdfkit-orientation" content="Landscape"/>
+	<meta http-equiv="Cache-control" content="no-cache">
+	<meta http-equiv="Expires" content="-1">
+	<link rel="icon" href="static/img/favicon.ico" type="image/x-icon" />
 
-		section {
-			padding: 10px 0px 10px 10px;
-			page-break-inside:avoid;
-		}
+	<title>Genomic Profiling Report</title>
+	<!-- Google Fonts -->
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
 
-		table { page-break-after:auto }
-		tr    { page-break-inside:avoid; page-break-after:auto }
-		td    { page-break-inside:avoid; page-break-after:auto }
-		/* thead { display: table-row-group; }
-		tfoot { display:table-footer-group } */
-
-		.table-borderless > tbody > tr > td,
-		.table-borderless > tbody > tr > th,
-		.table-borderless > tfoot > tr > td,
-		.table-borderless > tfoot > tr > th,
-		.table-borderless > thead > tr > td,
-		.table-borderless > thead > tr > th {
-			border: 1px !important;
-			padding: 0px 10px 0px 0px;
-		}
-
-
-		table > thead > tr > th {
-			font-size: 11px;
-			background-color: #1DA1F2;
-			text-align: center;
-			color: #ffffff;
-		}
-		
-		table > tbody > tr > td {
-			word-spacing: 3px;
-			font-size: 9px;
-			color :#6b6b6b;
-			font-weight:600;
-		}
-
-		table > tbody > tr > th {
-			font-size: 10px;
-			font-weight: 600;
-			color :#000000;
-		}
-
-		.no-data{
-			font-size: 10px;
-			text-align: center;
-			color :#6b6b6b;
-		}
-
-		.table-bordered tr th, .table-bordered tr td {
-			border: 1px solid #D9E4EC;
-		}
-
-		.patient-block .patient-td {
-			width: 40%;
-		}
-
-		.patient-block .patient-specimen {
-			width: 60%;
-		}
-
-		.summary-block {
-			page-break-inside:avoid; 
-			page-break-after:auto;
-		}
-
-        .summary-block .boxed {
-            border: 1px solid #000000;
-            height: 250px;
-            padding: 20px 5px 10px 20px;   
-        }
-
-        .summary-block .boxed p {
-            word-spacing: 3px;
-            font-size: 10px;
-            color :#6b6b6b;
-            font-weight:800;
-        }
-
-		.patient-block h5,  .genome-wide-block h5, .point-mut-block h5, .svs-block h5, .copy-number-block h5, .summary-block h5{
-			font-weight: bold;
-			padding-bottom: 5px;
-			color: #B43218;
-			font-size: 14px;
-		}
-
-		/*.point-mut-block .table-bordered td {
-			font-size: 14px;
-		} */
-
-		/* .point-mut-block .point-tb th{
-			width: 100%;
-			border: 1px solid #D9E4EC;
-			font-size: 17px;
-		} */
-
-		/* .point-mut-block .point-tb td{
-			width: 100%;
-			border: 1px solid #D9E4EC;
-			font-size: 15px;
-		} */
-
-		.sm-var-dets {
-			/* width: 180px; */
-			display:block;
-		}
-		.sm-var-dets p{
-			font-size: 9px;
-			word-wrap: break-word;
-		}
-
-	</style>
+    <link href="static/css/base.css" rel="stylesheet" title="custom css">
 </head>
-<body>
-	<section class="patient-block">
-		<table class="table table-borderless">
-			<tr>
-				<td>
-					<h5 >PATIENT</h5>
-				</td>
-				<td>
-					<h5 >SPECIMEN AND ASSAY</h5>
-				</td>
-			</tr>
-			<tr>
-				<td class="patient-td">
-					<table class="table table-bordered">
-						<tbody id="patient_info_table_data">
+	<body>
+		<header>
+			<div id="header">
+				<img src="#" class="probio-logo-img" id="ki_logo_img"/>
+				<h4>Genomic Profiling Report</h4>
+				<ul class="header-ul" id="header_ul_data">
+				</ul>
+			</div>
+		</header>
 
-						</tbody>
-					</table>
-				</td>
-				<td class="patient-specimen">
-					<table class="table table-bordered">
-						<thead>
-							<tr>
-								<th>SPECIMEN</th>
-								<th>ANALYTE</th>
-								<th>ASSAY</th>
-								<th>QUALITY</th>
-							</tr>
-						</thead>
-						<tbody id="specimen_assay_table_data">
+		<!-- Header for subsequent pages -->
+		<header>
+			<div id="header-common">
+				<img src="#" class="logo-img" id="logo_img"/>
+				<h4 class="leftBox">Genomic Profiling Report</h4>
+				<ul class="header-ul rightBox" id="header_ul_data2">
+				</ul>
+			</div>
+		</header>
 
-						</tbody>
-					</table>
-				</td>
-			</tr>
-		</table>
-	</section>
+		<section class="patient-block">
+			<div class="patient-info patient-flex-items">
+				<h5 class="heading_numberlist"> PATIENT </h5>
+				<table class="table table-borderless">
+					<tbody id="patient_info_table_data">
+					</tbody>
+				</table>
+			</div>
+			<div class="patient-flex-items patient-specimen">
+				<h5 class="heading_numberlist"> SPECIMEN AND ASSAY </h5>
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th> SPECIMEN </th>
+							<th> ANALYTE </th>
+							<th> ASSAY </th>
+							<th> QUALITY </th>
+						</tr>
+					</thead>
+					<tbody id="specimen_assay_table_data">
+					</tbody>
+				</table>
+			</div>
+		</section>
 
-	<section class="genome-wide-block">
-		<h5>GENOME-WIDE FINDINGS</h5>
-		<table class="table table-bordered">
-			<thead>
+		<!--GENOME-WIDE FINDING Block-->
+		<section class="genome-findings-block">
+			<h5 class="heading_numberlist"> GENOME-WIDE FINDINGS</h5>
+			<div>
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th> CATEGORY </th>
+							<th> RESULT </th>
+							<th> ASSESSMENT POSSIBLE </th>
+							<th> COMMENT </th>
+						</tr>
+					</thead>
+					<tbody id="genome_wide_table_data">
+						
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<!-- Small Somatic Variants Block-->
+		<section class="sm-findings-block">
+			<h5 class="heading_numberlist"> SMALL SOMATIC VARIANTS</h5>
+			<div>
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th>GENE</th>
+							<th>SOURCE</th>
+							<th width="30%">VARIANT DETAILS</th>
+							<th>CONSEQUENCE</th>
+							<th>CLONALITY / ZYGOSITY</th>
+							<th>SECONDHIT</th>
+							<th>IMPACT</th>
+							<th>RSID</th>
+							<th>TRANSCRIPT ID</th>
+							<th>HGVSP</th>
+						</tr>
+					</thead>
+					<tbody id="somatic_table_data">
+						
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<!-- Structural Variants Block-->
+		<section class="sv-findings-block">
+			<h5 class="heading_numberlist">STRUCTURAL REARRANGEMENTS</h5>
+			<div>
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th>GENE 1</th>
+							<th>GENE 2</th>
+							<th>SOURCE</th>
+							<th>VARIANT DETAILS</th>
+							<th>CONSEQUENCE</th>
+							<th>CLONALITY</th>
+							<th>SECONDHIT</th>
+						</tr>
+					</thead>
+					<tbody id="svs_table_data">
+						
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<!-- COPY Number Alterations Block-->
+		<section class="cp-findings-block">
+			<h5 class="heading_numberlist">COPY NUMBER ALTERATIONS</h5>
+			<div>
+				<table class="table table-bordered">
+					<thead>
+						<tr>
+							<th>GENE</th>
+							<th>SOURCE</th>
+							<th>VARIANT DETAILS</th>
+							<th>CONSEQUENCE</th>
+							<th>COPY-NUMBER</th>
+						</tr>
+					</thead>
+					<tbody id="cnv_table_data">
+						
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<!--Summary Block-->
+		<section class="summary-block">
+			<h5 class="heading_numberlist"> SUMMARY </h5>
+			<div class="summary-content">
+				<p id="summary_notes_data">
+				</p>
+			</div>
+		</section>
+
+		<!-- Appendix Page Started-->
+		<section class="technical-validation">
+			<h5 class="font-weight-bold"> TECHNICAL VALIDATION </h5>
+			<table class="table table-bordered">
+				<thead id="tech_val_table_header">
+					
+				</thead>
+				<tbody id="tech_val_table_data">
+					
+				</tbody>
+			</table>
+		</section>
+		
+		<section class="genomic-alteration">
+			<h5 class="font-weight-bold"> Categorization of analyzed genomic alterations </h5>
+			<table class="table table-bordered table-hover">
 				<tr>
-					<th width="30%">CATEGORY</th>
-					<th width="10%">RESULT</th>
-					<th width="20%">ASSESSMENT POSSIBLE</th>
-					<th width="40%">COMMENT</th>
+					<th colspan="2"> Small Somatic and Germline Alterations </th>
 				</tr>
-			</thead>
-			<tbody id="genome_wide_table_data">
-
-			</tbody>
-		</table>
-	</section>
-
-	<section class="point-mut-block">
-		<h5>SMALL VARIANTS</h5>
-		<table class="table table-bordered">
-			<thead>
 				<tr>
-					<th>GENE</th>
-					<th>SOURCE</th>
-					<th width="30%">VARIANT DETAILS</th>
-					<th>CONSEQUENCE</th>
-					<th>CLONALITY / ZYGOSITY</th>
-					<th>SECONDHIT</th>
-					<th>IMPACT</th>
-					<th>RSID</th>
-					<th>TRANSCRIPT ID</th>
-					<th>HGVSP</th>
+					<td> ALL CODING EXONS </td>
+					<td> 52 genes </td>
 				</tr>
-			</thead>
-			<tbody id="point_table_data">
-
-			</tbody>
-		</table>
-	</section>
-	<section class="svs-block">
-		<h5 >STRUCTURAL REARRANGEMENTS</h5>
-		<table class="table table-bordered">
-			<thead>
 				<tr>
-					<th>GENE 1</th>
-					<th>GENE 2</th>
-					<th>SOURCE</th>
-					<th>VARIANT DETAILS</th>
-					<th>CONSEQUENCE</th>
-					<th>CLONALITY</th>
-					<th>SECONDHIT</th>
+					<td> HOTSPOTS </td>
+					<td> 27 genes </td>
 				</tr>
-			</thead>
-			<tbody id="svs_table_data">
-				
-			</tbody>
-		</table>
-	</section>
-	
-	<section class="copy-number-block">
-		<h5 >COPY NUMBER ALTERATIONS</h5>
-		<table class="table table-bordered">
-			<thead>
 				<tr>
-					<th width="40%">GENE</th>
-					<th>SOURCE</th>
-					<th>VARIANT DETAILS</th>
-					<th>CONSEQUENCE</th>
-					<th>COPY-NUMBER</th>
+					<th colspan="2"> PHARMACOGENETIC VARIANTS </th>
 				</tr>
-			</thead>
-			<tbody id="cnv_table_data">
+				<tr>
+					<td> SNPs </td>
+					<td> 4 genes </td>
+				</tr>
+				<tr>
+					<th colspan="2"> COPY-NUMBER ALTERATIONS </th>
+				</tr>
+				<tr>
+					<td> TILED SNP FOR GENOME-WIDE CNV </td>
+					<td> 3128 SNPs </td>
+				</tr>
+				<tr>
+					<td> DIRECTED ANALYSIS TO INCREASE SENSITIVTY </td>
+					<td> 23 genes </td>
+				</tr>
+				<tr>
+					<th colspan="2"> STRUCTURAL VARIATION </th>
+				</tr>
+				<tr>
+					<td> GENE FUSION BY INTRONIC SEQUENCING </td>
+					<td> 3 genes </td>
+				</tr>
+				<tr>
+					<td> GENE-BODY SEQUENCING (E.G. BRCA1/2) </td>
+					<td> 4 genes </td>
+				</tr>
+				<tr>
+					<th colspan="2"> MICROSATELLITE INSTABILITY & TMB </th>
+				</tr>
+				<tr>
+					<td> MICROSATELLITES </td>
+					<td> 63 </td>
+				</tr>
+				<tr>
+					<td> HYPERMUTATION, ENTIRE DESIGN FOOTPRINT </td>
+					<td> YES </td>
+				</tr>
+				<tr>
+					<td> ASSOCIATED GENES </td>
+					<td> 6 </td>
+				</tr>
+				<tr>
+					<th colspan="2"> DNA REPAIR DEFICIENCY </th>
+				</tr>
+				<tr>
+					<td> ASSOCIATED GENES </td>
+					<td> 18 </td>
+				</tr>
+				<tr>
+					<td class="tot-title"> Total Size </td>
+					<td class="font-weight-bold"> 1.34 Mb </td>
+				</tr>
+			</table>
+		</section>
+		<section class="gene-panel">
+			<h5 class="font-weight-bold"> Exonic regions sequenced to detect small somatic and germline alterations </h5>
+			<ul>
+				<li> AKT1 </li>
+				<li> BRAF </li>
+				<li> CCND1 </li>
+				<li> CDK4 </li>
+				<li> CDK6 </li>
+				<li> CDKN1A </li>
+				<li> CDKN2A </li>
+				<li> CTNNB1 </li>
+				<li> CUL3 </li>
+				<li> DICER1 </li>
+				<li> FOXO1 </li>
+				<li> HRAS </li>
+				<li> IDH1 </li>
+				<li> KRAS </li>
+				<li> MED12 </li>
+				<li> NRAS </li>
+				<li> PIK3CA </li>
+				<li> PIK3CB </li>
+				<li> PIK3CD </li>
+				<li> PIK3R1 </li>
+				<li> PIK3R2 </li>
+				<li> POLD1 </li>
+				<li> POLE </li>
+				<li> SF3B1 </li>
+				<li> SPOP </li>
+				<li> U2AF1 </li>
+				<li> XPO1 </li>
+				<li> APC </li>
+				<li> AR </li>
+				<li> ATM </li>
+				<li> BRCA1 </li>
+				<li> BRCA2 </li>
+				<li> CDK12 </li>
+				<li> FOXA1 </li>
+				<li> KDM6A </li>
+				<li> KMT2A </li>
+				<li> KMT2C </li>
+				<li> KMT2D </li>
+				<li> PALB2 </li>
+				<li> PTEN </li>
+				<li> RB1 </li>
+				<li> TP53 </li>
+				<li> ARID1A </li>
+				<li> ARID2 </li>
+				<li> ATR </li>
+				<li> BARD1 </li>
+				<li> BRIP1 </li>
+				<li> CDH1 </li>
+				<li> CDKN1B </li>
+				<li> CHD1 </li>
+				<li> CHEK2 </li>
+				<li> FANCA </li>
+				<li> JAK1 </li>
+				<li> KEAP1 </li>
+				<li> MET </li>
+				<li> MGA </li>
+				<li> MLH1 </li>
+				<li> MLH3 </li>
+				<li> MRE11A </li>
+				<li> MSH2 </li>
+				<li> MSH3 </li>
+				<li> MSH6 </li>
+				<li> NBN </li>
+				<li> NCOR1 </li>
+				<li> NKX3-1 </li>
+				<li> PMS1 </li>
+				<li> PMS2 </li>
+				<li> RAD50 </li>
+				<li> RAD51 </li>
+				<li> RAD51B </li>
+				<li> RAD51C </li>
+				<li> RAD51D </li>
+				<li> RNF43 </li>
+				<li> SETD2 </li>
+				<li> SPEN </li>
+				<li> ZFHX3 </li>
+				<li> ZMYM3 </li>
+				<li> RAD54L </li>
+				<li> PIK3R1 </li>
+			</ul>
+		</section>
+		<hr class="hz-line" />
+		<section class="gene-panel">
+			<h5 class="font-weight-bold"> Intronic and intergenic regions sequenced to increase sensitivity to detect copy-number alterations </h5>
+			<ul>
+				<li> AR </li>
+				<li> AKT1 </li>
+				<li> AR_ENHANCER </li>
+				<li> ATM </li>
+				<li> BRCA2 </li>
+				<li> CCND1 </li>
+				<li> CDK12 </li>
+				<li> CDKN2A </li>
+				<li> CDKN2B </li>
+				<li> CHD1 </li>
+				<li> CHEK2 </li>
+				<li> ERG </li>
+				<li> FANCA </li>
+				<li> MYC </li>
+				<li> NKX3-1 </li>
+				<li> PIK3CA </li>
+				<li> PIK3CB </li>
+				<li> PIK3R1 </li>
+				<li> PTEN </li>
+				<li> RB1 </li>
+				<li> TMPRSS2 </li>
+				<li> TP53 </li>
+				<li> ZBTB16 </li>
+			</ul>
+		</section>
+		<hr class="hz-line" />
+		<section class="gene-panel">
+			<h5 class="font-weight-bold"> Intronic regions sequenced to detect fusions and structural rearrangements </h5>
+			<ul>
+				<li> AR </li>
+				<li> BRCA2 </li>
+				<li> ERG </li>
+				<li> ETV1 </li>
+				<li> PTEN </li>
+				<li> RB1 </li>
+				<li> TMPRSS2 </li>
+			</ul>
+		</section>
+		<hr class="hz-line" />
+		<section class="gene-panel">
+			<h5 class="font-weight-bold"> Pharmacogenomic SNPs analysed </h5>
+			<ul>
+				<li> COMT </li>
+				<li> DPYD </li>
+				<li> HSD3B1 </li>
+				<li> HOXB13 </li>
+			</ul>
+		</section>
 
-			</tbody>
-		</table>
-	</section>
-	<section class="summary-block">
-		<h5>ADDITIONAL NOTES</h5>
-        <div class="boxed">
-            <p id="summary_notes_data"> </p> 
-        </div>
-	</section>
-</body>
+
+		<footer>
+		</footer>
+	</body>
 </html>
