@@ -156,13 +156,13 @@ html {
 #header h4{
 	font-size: 1.25em;
 	text-transform: uppercase;
-	color: var(--tp-blue);
+	color: #0071c9;
 }
 
 #header ul{
 	list-style: none;
 	font-size: 0.6em;
-	color: var(--cm-red);
+	color: #9e1b34;
 	width: 35%;
 	/* display:block; */
 	display: flex;
@@ -171,12 +171,13 @@ html {
 }
 
 #header .header-ul li{
-	display: grid;
+    display: flex;
+    flex-direction: column;
 	/* display: inline-flex;
 	align-items: center;
 	justify-content:flex-start; */
 	text-transform: uppercase;
-	color: var(--cm-red);
+	color: #9e1b34;
 	padding-top: 5px;
 	padding-left: 10px;
 	text-align: center;
@@ -185,7 +186,7 @@ html {
 #header .header-ul li span{
 	text-transform: capitalize;
 	font-size: 1em;
-	color:var(--tp-grey);
+	color:#67696b;
 	padding-left: 0.31em;
 }
 
@@ -214,7 +215,7 @@ html {
 	padding: 2em 0em 0em 2em;
 	text-transform: uppercase;
 	display: block;
-	color: var(--tp-blue);
+	color: #0071c9;
 	flex-grow: 1;
 	flex-basis: 0;
 }
@@ -227,15 +228,16 @@ html {
 }
 
 #header-common .header-ul li{
-	display: grid;
+	display: flex;
+    flex-direction: column;
 	text-transform: uppercase;
-	color: var(--cm-red);
+	color: #9e1b34;
 }
 
 #header-common .header-ul li span{
 	text-transform: capitalize;
 	font-size: 1em;
-	color: var(--tp-grey);
+	color: #67696b;
 	text-align: right;
 }
 
@@ -281,14 +283,14 @@ footer {
 	text-transform: capitalize;
 	text-align: center;
 	font-size: 1em;
-	color: var(--tp-grey);
+	color: #67696b;
 } */
 
 /* Common CSS*/
 
 h5{
 	font-weight: bold;
-	color: var(--cm-red);
+	color: #9e1b34;
 	font-size: 0.7em;
 	padding: 0em 0em 1em 0em;
     margin: 0em;
@@ -307,12 +309,12 @@ td    { page-break-inside:avoid; page-break-after:auto } */
 .table {
 	/* font-size: 0.6em; */
 	font-size: 0.7em;
-	border: 1px solid var(--bs-dark-blue);
+	border: 1px solid #005883;
 	width: 100%;
 }
 
 .table thead {
-	background-color: var(--bs-dark-blue);
+	background-color: #005883;
 	color: #ffffff;
 	text-align: center;
 }
@@ -329,19 +331,19 @@ td    { page-break-inside:avoid; page-break-after:auto } */
 
 .table-bordered tbody > tr,
 .table-bordered tbody > tr > td{
-	border: 1px solid var(--bs-dark-blue);
+	border: 1px solid #005883;
 	padding: 5px;
-	color: var(--tp-grey);
+	color: #67696b;
 }
 
 .table-bordered thead > tr,
 .table-bordered thead > tr > td{
-	border: 1px solid var(--bs-dark-blue);
+	border: 1px solid #005883;
 	padding: 5px;
 }
 
 .table-bordered thead > tr > th{
-	border: 1px solid var(--bs-dark-blue);
+	border: 1px solid #005883;
 	padding: 5px;
 	font-size: 1em;
 	font-weight: 600;
@@ -387,8 +389,8 @@ h5.heading_numberlist::before {
 	border-radius: 50%;    
     padding: 2px 4px;
 
-    background: var(--cm-red);
-    border: 2px solid var(--cm-red);
+    background: #9e1b34;
+    border: 2px solid #9e1b34;
     color: #fff;
     text-align: center;
 	/* font-size: 10px; */
@@ -404,7 +406,7 @@ div:not(:first-of-type) {
 }
 
 .patient-block .patient-info .table tr > td {
-	color: var(--tp-grey);
+	color: #67696b;
 	padding: 1px 10px;
 }
 
@@ -418,7 +420,7 @@ div:not(:first-of-type) {
 }
 
 .patient-block .patient-specimen .table tbody tr > th {
-	color: var(--tp-black);
+	color: #000000;
 	font-size: 1.1em;
 	padding-left: 1em;
 }
@@ -456,7 +458,7 @@ div:not(:first-of-type) {
 
 .summary-block .summary-content{
 	font-size: 0.7em;
-	border: 1px solid var(--bs-dark-blue);
+	border: 1px solid #005883;
 	padding: 0px 5px;
 	height: 150px;
 }
@@ -473,7 +475,7 @@ div:not(:first-of-type) {
 
 .assay-findings-block .assay-content{
 	font-size: 0.7em;
-	border: 1px solid var(--bs-dark-blue);
+	border: 1px solid #005883;
 	padding: 0px 5px;
 }
 
@@ -547,7 +549,7 @@ div:not(:first-of-type) {
 	height:1px;
 	border-width:0;
 	color:#868B8E;
-	background-color:var(--bs-blue);
+	background-color:#00a3e0;
 	width: 100%;
 }
 
@@ -580,11 +582,11 @@ div:not(:first-of-type) {
 .genomic-alteration table tr th {
 	text-transform: uppercase;
 	/* font-weight: 600; */
-	color: var(--tp-blue);
+	color: #0071c9;
 }
 
 .genomic-alteration table tr td {
-	/* color: var(--tp-black); */
+	/* color: #000000; */
 	color: #6b6b6b;
 	text-transform: capitalize;
 	font-size: 0.9em;

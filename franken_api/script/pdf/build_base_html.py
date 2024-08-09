@@ -3,7 +3,7 @@
 
 # ### Fetch curated information into pdf 
 # 
-# * wkhtmltopdf 'output.html' --header-html '/nfs/IPCM/pdf/layout/header.html' --footer-line --footer-html '/nfs/IPCM/pdf/layout/footer.html' 'appendix.html' --header-html '/nfs/IPCM/pdf/layout/appendix_header.html' --footer-line  --footer-html '/nfs/IPCM/pdf/layout/footer.html' iPCM_test.pdf
+# weasyprint -e utf8 -vd --full-fonts <input.html> <ouput.pdf>
 # 
 
 import os
@@ -922,7 +922,7 @@ def main(nfs_path, project_name, sample_id, capture_id):
 		
 		html_result = build_html(root_path, html_root_path, file_name, project_name, cfdna, capture_format, base_html_path, sample_id, capture_id, study_id, disease_name, header_txt, sub_header_txt)
 		if html_result:
-			cmd ="weasyprint -e utf8 -vd --full-fonts {} {}".format(file_name, pdf_file_name)
+			cmd ="weasyprint -e utf8 -vd {} {}".format(file_name, pdf_file_name)
 			subprocess_cmd(cmd)
 			logging.info("---- PDF Generated ----")
 
