@@ -36,6 +36,7 @@
 		height: 1cm;
 		border-bottom: 3px solid #4472c4;
 		vertical-align: middle;
+		margin-bottom: 10px;
 	}
 
 	@bottom-left { 
@@ -117,7 +118,6 @@ html {
 	/* color: #393939; */
 	/* font-family: "Raleway", sans-serif; */
 	font-family: "Fira Sans", sans-serif;
-
 	font-size: 11pt;
 	line-height: 1.5;
 }
@@ -200,7 +200,6 @@ html {
 	align-items: center;
 	justify-content:space-between;
 	align-content: center;
-	/* border: 1px solid red; */
 }
 
 #header-common .logo-img {
@@ -311,6 +310,7 @@ td    { page-break-inside:avoid; page-break-after:auto } */
 	font-size: 0.7em;
 	border: 1px solid #005883;
 	width: 100%;
+	border-collapse: collapse;
 }
 
 .table thead {
@@ -327,6 +327,7 @@ td    { page-break-inside:avoid; page-break-after:auto } */
 .table-borderless > thead > tr > th {
 	border: 1px !important;
 	padding: 0px 10px 0px 0px;
+	word-wrap: break-word;
 }
 
 .table-bordered tbody > tr,
@@ -349,11 +350,6 @@ td    { page-break-inside:avoid; page-break-after:auto } */
 	font-weight: 600;
 }
 
-
-.table{
-	border-collapse: collapse;
-	width: 100%;
-}
 
 /* Patient block*/
 
@@ -493,16 +489,30 @@ div:not(:first-of-type) {
 	margin: 10px 0px 0px 0px;
 }
 
+.sm-findings-block .table {
+	overflow-wrap: break-word;
+	table-layout: fixed;
+}
+
+.sm-findings-block .table th:nth-child(3), .sm-findings-block .table td:nth-child(3) {
+	width: 15%; 
+}
+
+.sm-findings-block .table th:nth-child(4), .sm-findings-block .table td:nth-child(4) {
+	width: 10%; 
+}
+
+/* .sm-findings-block .table th:not(:nth-child(3)), .sm-findings-block .table td:not(:nth-child(3)) {
+	width: auto;
+} */
+
+
 .sm-findings-block h5.heading_numberlist::before {
 	content: '4';
 }
 
-/* .sm-var-dets {
-	display:block;
-}
-.sm-var-dets p{
-	font-size: 9px;
-	word-wrap: break-word;
+/* .sm-findings-block .sm-var-dets{
+	width: 15%;
 } */
 
 /* Somatic Structural Variants */
@@ -530,7 +540,8 @@ div:not(:first-of-type) {
 
 .cp-findings-block .cp-gene{
 	word-wrap: break-word; /* For older browsers */
-	width: 56%;
+	overflow-wrap: break-word;
+	width: 52%;
 }
 
 /* Pathogenic Germline Variants */
@@ -618,4 +629,11 @@ div:not(:first-of-type) {
 	font-size: 0.6em;
 	text-align: center;
 	/* font-weight: 500; */
+}
+
+
+.no-data {
+	font-size: 10px;
+	text-align: center;
+	color :#6b6b6b;
 }
