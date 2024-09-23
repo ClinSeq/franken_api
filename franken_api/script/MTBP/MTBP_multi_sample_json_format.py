@@ -101,6 +101,8 @@ def validate_tissue_type(ecrf_tissue_type, sample_type):
 		tissue_type = ecrf_tissue_type.lower()
 	elif  ecrf_tissue_type == 'FFPE|cfDNA':
 		tissue_type = 'FFPE' if sample_type == 'T' else 'cfdna'
+	elif  ecrf_tissue_type == 'FFPE|Cytology':
+		tissue_type = 'FFPE' if sample_type == 'T' else 'cfdna'
 	elif  ecrf_tissue_type == 'Cytology|cfDNA':
 		tissue_type = 'cytology' if sample_type == 'T' else 'cfdna'
 	else:
