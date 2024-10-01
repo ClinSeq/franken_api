@@ -819,6 +819,7 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 
 	# # create a clinical report txt file and store information
 	output_path = root_path+"/pdf"
+	study_id = sample_id if study_id == None else study_id
 	file_name = output_path+"/autoseq_clinical_report_"+study_id+".txt"
 
 	report_txt += "\n"
@@ -907,7 +908,8 @@ def main(nfs_path, project_name, sample_id, capture_id):
 	header_txt = '<li><b>SPECIMENS</b><span>'+specimen+'</span></li>'
 	header_txt += '<li><b>EPM DNR</b><span>'+epm_dnr_data_html+'</span></li>'
 	header_txt += '<li><b>REPORT DATE</b><span>'+report_date+'</span></li>'
-	header_txt += '<li><b>RECIEVED DATE</b><span>'+sample_date+'</span></li>'
+	# header_txt += '<li><b>RECIEVED DATE</b><span>'+sample_date+'</span></li>'
+	header_txt += '<li><b>RECIEVED DATE</b><span>'+str(sample_date)+'</span></li>'
 
 
 	sub_header_txt = ''
