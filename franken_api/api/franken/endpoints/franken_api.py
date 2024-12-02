@@ -3,10 +3,10 @@ from flask import current_app
 from flask import request, send_file, make_response, send_from_directory
 from flask_restx import Resource
 #from franken_api.api.franken.serializers import search_result
-from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments, update_curated_info_arguments, send_json_mtbp_arguments, rna_common_arguments, rna_html_arguments, igv_json_arguments, igv_file_arguments, igv_xml_arguments
+from franken_api.api.franken.parsers import pdf_arguments, table_cnv_arguments, search_arguments, capture_arguments, ploturls_arguments, staticplot_arguments, table_svs_arguments, project_arguments, table_igvnav_arguments, igv_save_file_arguments, table_qc_arguments, purecn_arguments, purecn_max_val_arguments, json_urls_arguments, fetch_patient_info_arguments, view_pdf_arguments, update_curated_info_arguments, send_json_mtbp_arguments, rna_common_arguments, rna_html_arguments, igv_json_arguments, igv_file_arguments, igv_xml_arguments, igv_image_report_arguments
 from franken_api.api.restplus import api
 from flask import jsonify
-from franken_api.api.franken.business import rna_html_files, rna_pdf_files, pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path, update_curated_info, send_json_mtbp_portal, get_clinical_report_file, get_rna_qc_status, get_table_fusion_inspector, get_table_fusion_report, get_cancer_type, read_igv_session_json, read_igv_session_xml
+from franken_api.api.franken.business import rna_html_files, rna_pdf_files, pdfs_files, check_frankenplot_files, frankenplot_files, get_table_cnv_header, check_nfs_mount, get_sample_ids, get_sample_design_ids, get_static_frankenplot, get_static_image, get_interactive_plot, get_table_svs_header, get_table_igv, save_igvnav_input_file, get_table_qc_header, get_purecn_ctdna, update_pureCN_somatic_germline, get_curated_json_file, generate_curated_json, generate_curated_pdf, fetch_patient_info, fetch_curated_pdf, get_pdf_file, get_pdf_file2, fetch_nfs_path, update_curated_info, send_json_mtbp_portal, get_clinical_report_file, get_rna_qc_status, get_table_fusion_inspector, get_table_fusion_report, get_cancer_type, read_igv_session_json, read_igv_session_xml, get_igv_report_image
 from franken_api.api.franken.serializers import status_result, dropdownlist, dropdownlist_capture, ploturl_list
 import io
 #import  franken_api.database.models
@@ -131,7 +131,7 @@ class FrankenStaticImages(Resource):
 						mimetype='image/png')
 		else:
 			return nfs_path,response_code
-
+		
 @ns.route('/plot')
 @api.response(200, 'Json file to plot')
 @api.response(400, 'sample or json file not found')
@@ -348,7 +348,6 @@ class FetchHTMLReports(Resource):
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
 			file_path = nfs_path + '/' + args['sdid'] + '/fusionreport/' + file_name
-			print(file_path)
 			return send_file(file_path, attachment_filename=file_name+'.html', mimetype='text/html')
 		else:
 			return nfs_path,response_code
@@ -367,7 +366,6 @@ class FetchHTMLReports(Resource):
 # 		nfs_path,response_code = fetch_nfs_path(proj_name)
 # 		if response_code == 200:
 # 			file_path = nfs_path + '/' + args['sdid'] + '/' + args['capture_id'] + "fusionreport/" + file_name
-# 			print(file_path)
 # 			return send_file(file_path, attachment_filename=file_name+'.html', mimetype='text/html')
 # 		else:
 # 			return nfs_path,response_code
@@ -774,7 +772,6 @@ class FetchIGVSessionFiles(Resource):
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
 			file_path = nfs_path + '/' +sample_id + '/' +capture_id +'/IGVnav/' + file_name
-			print(file_path)
 			# Set the mimetype to the appropriate content type
 			mimetype = 'text/plain'
 			# mimetype = 'application/octet-stream'
@@ -784,5 +781,29 @@ class FetchIGVSessionFiles(Resource):
 			return response
 			#return send_file(file_path, attachment_filename=file_name, mimetype=mimetype, as_attachment=False, conditional=True)
 			# return send_file(file_path, as_attachment=True)
+		else:
+			return nfs_path,response_code
+		
+@ns.route('/igv-image/<string:variant_type>')
+@api.response(200, 'Franken IGV Image')
+@api.response(400, 'No IGV Image found')
+class FrankenIGVStaticImage(Resource):
+	@api.representation('image/png')
+	@api.expect(igv_image_report_arguments, validate=True)
+	def get(self, variant_type):
+		"""
+			Returns staic IGV Image.
+		"""
+		args = igv_image_report_arguments.parse_args()
+		proj_name = args['project_name']
+		sample_id = args['sdid']
+		capture_id = args['capture_id']
+		chrom = args['CHROM']
+		start = args['START']
+		end = args['END']
+		nfs_path, response_code = fetch_nfs_path(proj_name)
+		if response_code == 200:
+			result, errorcode = get_igv_report_image(nfs_path, sample_id, capture_id, variant_type, chrom, start, end)
+			return send_file(result, attachment_filename='frankenplot.png',mimetype='image/png')
 		else:
 			return nfs_path,response_code

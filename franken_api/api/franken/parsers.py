@@ -282,3 +282,8 @@ igv_file_arguments.add_argument('file_name', type=str, required=True,  help='sdi
 
 igv_xml_arguments = reqparse.RequestParser()
 igv_xml_arguments.add_argument('file_name', type=str, required=True,  help='sdid example : P-00360714')
+
+igv_image_report_arguments = common_arguments.copy()
+igv_image_report_arguments.add_argument('CHROM', type=str, required=True, help="")
+igv_image_report_arguments.add_argument('START', type=str, required=True, help="")
+igv_image_report_arguments.add_argument('END', type=str, required=True, help="")

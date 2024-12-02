@@ -583,6 +583,16 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header=
 		missing_header = ['GENE', 'IMPACT', 'CONSEQUENCE', 'HGVSp', 'HGVSp_org', 'RSID', 'N_DP', 'N_ALT', 'N_VAF', 'CLIN_SIG', 'gnomAD', 'BRCAEx', 'OncoKB', 'include_variant_report_pdf']
 		return {'header': {}, 'data': [], 'status': False, 'error': 'unknown variant type: ' + variant_type}, 400
 
+	## check the igv Snapshot folder exits or not 
+	igv_snapshot_status = False
+	if variant_type == 'somatic':
+		igv_snapshot_dir = os.path.join(project_path,sdid,capture_id,'IGVsnapshots/somatic')
+	else:
+		igv_snapshot_dir = os.path.join(project_path,sdid,capture_id,'IGVsnapshots/germline')
+	
+	if os.path.isdir(igv_snapshot_dir):
+		igv_snapshot_status = True
+
 	try:
 		hide_header = ["PureCN_probability", "PureCN_status", "PureCN_tot_copies", "purecn_probability", "purecn_status", "purecn_tot_copies", "indexs", "CAPTURE_ID", "PROJECT_ID", "SDID"]
 
@@ -673,6 +683,8 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header=
 						
 
 					each_row['HOTSPOT'] = HGVSp_status
+					if igv_snapshot_status == True:
+						each_row['IGV_SNAPSHOT'] = igv_snapshot_status
 
 					if None in each_row:
 						if isinstance(each_row[None], list):
@@ -2055,3 +2067,16 @@ def read_xml_session_files(project_path, sdid, capture_id):
 		return file_path, 200
 
 	return file_path, 400
+
+def get_igv_report_image(project_path, sample_id, capture_id, variant, chrom, start, end):
+	"""retrun the IGV report image"""
+	# file format : chr13_48954377-48954378.png
+
+	igv_image_name = 'chr'+chrom+'_'+start+'-'+end+".png"
+	if variant == 'somatic':
+		file_path = project_path + '/' + sample_id + '/' + capture_id + '/IGVsnapshots/somatic/' + igv_image_name
+	else:
+		file_path = project_path + '/' + sample_id + '/' + capture_id + '/IGVsnapshots/germline/' + igv_image_name
+	
+	if os.path.exists(file_path):
+		return file_path, 200
