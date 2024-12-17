@@ -1585,7 +1585,10 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 
 def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
 
-	python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	if project_name == 'WGS':
+		python_cmd = "python3 {}/build_base_html_wgs.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	else:
+		python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 
 	try:
 		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)

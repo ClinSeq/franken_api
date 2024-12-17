@@ -768,12 +768,21 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 			sub_header_html = sub_header_txt
 			tag.string.replace_with(sub_header_html)
 
-		for images in soup.find_all(id='ki_logo_img'):
-			if 'PROBIO' in project_name or 'CLINPROST' in project_name:
+		if 'PROBIO' in project_name or 'CLINPROST' in project_name:
+			for images in soup.find_all(id='probio_logo_img'):
 				img_path = html_root_path +'/static/img/logo/probio_logo.png'
-			else:
+			images['src'] = images['src'].replace("#", img_path)
+		else:
+			for images in soup.find_all(id='ki_logo_img'):
 				img_path = html_root_path +'/static/img/logo/KS_SE.svg'
 			images['src'] = images['src'].replace("#", img_path)
+
+		# for images in soup.find_all(id='ki_logo_img'):
+		# 	if 'PROBIO' in project_name or 'CLINPROST' in project_name:
+		# 		img_path = html_root_path +'/static/img/logo/probio_logo.png'
+		# 	else:
+		# 		img_path = html_root_path +'/static/img/logo/KS_SE.svg'
+		# 	images['src'] = images['src'].replace("#", img_path)
 
 		for images in soup.find_all(id='logo_img'):
 			if 'PROBIO' in project_name or 'CLINPROST' in project_name:
