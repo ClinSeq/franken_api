@@ -190,6 +190,63 @@ html {
 	padding-left: 0.31em;
 }
 
+/* Header for WGS */
+
+
+#header-wgs{
+	display: flex;
+	/* flex-wrap: wrap; */
+	align-items:center;
+	justify-content: space-between;
+	position: running(header);
+	/* border: 1px solid red; */
+	width: 100%;
+}
+
+#header-wgs .ki-logo-img {
+	width: auto;
+	height: 22px;
+	display: block;
+	padding: 5px;
+}
+
+#header-wgs h4{
+	font-size: 1.20em;
+	text-transform: uppercase;
+	color: #0071c9;
+	/* padding-left: 75px; */
+	width: 45%;
+	text-align: end;
+	padding: 5px;
+}
+
+#header-wgs ul{
+	list-style: none;
+	font-size: 0.6em;
+	color: #9e1b34;
+	width: 35%;
+	display: flex;
+	align-items: center;
+	justify-content:center;
+	padding: 5px 0px;
+}
+
+#header-wgs .header-wgs-ul li{
+    display: flex;
+    flex-direction: column;
+	text-transform: uppercase;
+	color: #9e1b34;
+	padding-top: 5px;
+	padding-left: 8px;
+	text-align: center;
+}
+
+#header-wgs .header-wgs-ul li span{
+	text-transform: capitalize;
+	font-size: 1em;
+	color:#67696b;
+	padding-left: 0.31em;
+}
 
 /* Header CSS  - Common Page header */
 
