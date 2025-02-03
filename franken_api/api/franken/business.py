@@ -172,13 +172,15 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
 
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/qc/'
 	temp_url_list = []
-	ip_addr = 'localhost' if '5000' in request.host else request.host
+	app_port = request.environ.get('SERVER_PORT')
+
+	ip_addr = 'localhost' if app_port in request.host else request.host
 	port_no = ':5000' if 'localhost' in ip_addr else ''
-	host_url = 'http' if '5000' in request.host else 'https'
+	host_url = 'http' if 'localhost' in request.host else 'https'
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
 		for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
-			link = host_url+'://'+ip_addr+port_no+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
+			link = f'{host_url}://{ip_addr}{port_no}/api/franken/staticimage?project_name={project_name}&sdid={sample_id}&capture_id={capture_id}&imagename={each_file}'
 			temp_url_list.append(link)
 
 		if len(temp_url_list) > 0:
