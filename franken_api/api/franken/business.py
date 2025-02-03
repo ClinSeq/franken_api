@@ -174,10 +174,11 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
 	temp_url_list = []
 	ip_addr = 'localhost' if '5000' in request.host else request.host
 	port_no = ':5000' if 'localhost' in ip_addr else ''
+	host_url = 'http' if '5000' in request.host else 'https'
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
 		for each_file in filter(lambda x: x.endswith('liqbio-cna.png') and not x.startswith('.'), os.listdir(file_path)):
-			link = 'http://'+ip_addr+port_no+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
+			link = host_url+'://'+ip_addr+port_no+'/'+ 'api/franken/staticimage?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&imagename=' + each_file
 			temp_url_list.append(link)
 
 		if len(temp_url_list) > 0:
@@ -325,6 +326,13 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 	try:
 		file_path = project_path + '/' + sdid + '/' + capture_id + '/svs/igv/'
 
+		## Check the IGV Snapshot folder exits or not 
+		igv_snapshot_status = False
+		igv_snapshot_dir = os.path.join(project_path,sdid,capture_id,'IGVsnapshots/svs')
+		print(igv_snapshot_dir)
+		if os.path.isdir(igv_snapshot_dir):
+			igv_snapshot_status = True
+
 		file_search_txt = '-sv-annotated.txt'
 		regex = '(.*)(CFDNA|T)-(.*)({})$'.format(file_search_txt)
 
@@ -379,6 +387,10 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 					else:
 						df_filter = df_sorted.loc[(df['CURATOR'] == 'YES')]
 					
+
+					if igv_snapshot_status == True:
+						df_filter['IGV_SNAPSHOT'] = igv_snapshot_status
+
 					# Add Index column in the dataframe
 					df_filter['indexs'] = pd.RangeIndex(len(df_filter.index))
 				
@@ -388,6 +400,7 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 					data = json.loads(result)
 
 					svs_var_inc_key = 'include_variant_report_pdf'
+					igv_key = 'IGV_SNAPSHOT'
 					cal_key = 'CALL'
 					typ_key = 'TYPE'
 					sec_key = 'SECONDHIT'
@@ -448,6 +461,11 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 					# 	var_occr_indx = column_list.index(var_occr_key)
 					# 	del column_list[var_occr_indx]
 					# 	column_list.insert(0,var_occr_key)
+					
+					if igv_key in column_list:
+						igv_indx = column_list.index(igv_key)
+						del column_list[igv_indx]
+						column_list.insert(0,igv_key)
 
 					if svs_var_inc_key in column_list:
 						svs_var_inc_indx = column_list.index(svs_var_inc_key)
@@ -674,6 +692,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header=
 					consequence = each_row['CONSEQUENCE'].replace('&', ' & ')
 					each_row['CONSEQUENCE'] = consequence   
 
+
 					HGVSp_status = '' 
 					if variant_type == 'somatic' and each_row['HGVSp']:
 						ref = each_row['REF']
@@ -681,8 +700,17 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header=
 						hgvsp =  each_row['HGVSp']
 						HGVSp_status = check_hotspot_status_new(gene,ref, alt, hgvsp, consequence)
 						
+					hotspot_lookup = {
+						"Hotspot": '0',
+						"Warmspot": '1'
+					}
+					
+					if 'HOTSPOT' in each_row:
+						hotspot_str  = each_row['HOTSPOT']
+						each_row['HOTSPOT'] = hotspot_lookup[hotspot_str] if hotspot_str in hotspot_lookup else HGVSp_status
+					else:
+						each_row['HOTSPOT'] = HGVSp_status
 
-					each_row['HOTSPOT'] = HGVSp_status
 					if igv_snapshot_status == True:
 						each_row['IGV_SNAPSHOT'] = igv_snapshot_status
 
@@ -705,7 +733,7 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header=
 			if 'CGC_bool' in header:
 				del header[header.index('CGC_bool')]
 
-			if 'HOTSPOT' not in header and variant_type == 'somatic':
+			if 'HOTSPOT' not in header:
 				conseq_index = header.index('CONSEQUENCE') + 1
 				header.insert(conseq_index, 'HOTSPOT')
 
@@ -713,11 +741,17 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header=
 				header.insert(0, 'include_variant_report_pdf')
 
 			igv_var_inc_key = 'include_variant_report_pdf'
+			igv_key = 'IGV_SNAPSHOT'
 			asec_key = 'SECONDHIT'
 			ass_key = 'ASSESSMENT'
 			zyg_key = 'zygosity'
 			acl_key = 'CLONALITY'
 			var_occr_key = 'autoseq_variant_db'
+
+			if igv_key in header:
+				igv_indx = header.index(igv_key)
+				del header[igv_indx]
+				header.insert(0,igv_key)
 
 			if asec_key in header:
 				asec_indx = header.index(asec_key)
@@ -1585,7 +1619,7 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 
 def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
 
-	if project_name == 'WGS':
+	if project_name == 'WGS' or project_name == 'SARCOMA_PROSP':
 		python_cmd = "python3 {}/build_base_html_wgs.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 	else:
 		python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
@@ -1604,11 +1638,11 @@ def fetch_curated_pdf(project_path, project_name, sample_id, capture_id):
 	temp_pdf_url_list = []
 	ip_addr = 'localhost' if '5000' in request.host else request.host
 	port_no = ':5000' if 'localhost' in ip_addr else ''
-
+	host_url = 'http' if '5000' in request.host else 'https'
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
 		for each_file in filter(lambda x: x.endswith('.pdf') and not x.startswith('.'), os.listdir(file_path)):
-			link = 'http://'+ip_addr+port_no+'/'+ 'api/franken/viewPdf?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&pdf_name=' + each_file
+			link = host_url+'://'+ip_addr+port_no+'/'+ 'api/franken/viewPdf?project_name=' + project_name + '&sdid=' + sample_id + '&capture_id=' + capture_id + '&pdf_name=' + each_file
 			temp_pdf_url_list.append(link)
 
 		if len(temp_pdf_url_list) > 0:
@@ -2001,7 +2035,7 @@ def get_table_fusion_inspector(project_path, sdid, capture_id, user_id, header='
 # Get Cancer tissue type list
 def get_cancer_type():
 	try:
-		sql = "SELECT t_id as index, sub_type_name as tissue_code FROM ipcm_tissue_subtype order by t_id asc"
+		sql = "SELECT sub_type_code as index, sub_type_name as tissue_code FROM ipcm_tissue_subtype order by t_id asc"
 		res = create_db_session('ipcmLeaderboard', sql)
 		row = generate_list_to_dict(res)
 		return {'status': True, 'data': row, 'error': '' }, 200
@@ -2078,8 +2112,10 @@ def get_igv_report_image(project_path, sample_id, capture_id, variant, chrom, st
 	igv_image_name = 'chr'+chrom+'_'+start+'-'+end+".png"
 	if variant == 'somatic':
 		file_path = project_path + '/' + sample_id + '/' + capture_id + '/IGVsnapshots/somatic/' + igv_image_name
-	else:
+	elif variant == 'germline':
 		file_path = project_path + '/' + sample_id + '/' + capture_id + '/IGVsnapshots/germline/' + igv_image_name
+	else:
+		file_path = project_path + '/' + sample_id + '/' + capture_id + '/IGVsnapshots/svs/' + igv_image_name
 	
 	if os.path.exists(file_path):
 		return file_path, 200

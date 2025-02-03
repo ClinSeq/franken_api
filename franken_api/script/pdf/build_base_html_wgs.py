@@ -174,7 +174,7 @@ def build_genomic_profile_sample_details(project_name, sample_id, capture_id):
 	sample_data = {}
 
 	capture_arr = capture_id.split("-")
-	seq_date_str = re.findall(r'\d+', capture_arr[5])[0]
+	seq_date_str = re.findall(r'\d+', capture_arr[5])[0][:8]
 	seq_date = datetime.strptime(seq_date_str, "%Y%m%d").date().strftime("%Y-%m-%d")
 
 	sample_data["identifier"] = "NA"
@@ -258,11 +258,12 @@ def build_basic_html(project_name, sample_id, capture_id, study_id, disease_name
 					elif quality == 'Fail':
 						quality_str= '<span class="fail"></span>'
 				
+				specimen_assay = specimen_assay_json[i]["assay"] if 'assay' in specimen_assay_json[i] else ''
 
 				specimen_assay_html += '<tr>'
 				specimen_assay_html += '<th>'+specimen_assay_json[i]["specimen"]+'</th>'
 				specimen_assay_html += '<td>'+specimen_assay_json[i]["analyte"]+'</td>'
-				specimen_assay_html += '<td>'+specimen_assay_json[i]["assay"]+'</td>'
+				specimen_assay_html += '<td>'+specimen_assay+'</td>'
 				specimen_assay_html += '<td class="quality">'+quality_str+'</td>'
 				specimen_assay_html += '</tr>'
 
