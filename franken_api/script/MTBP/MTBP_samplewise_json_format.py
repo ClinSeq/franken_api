@@ -677,9 +677,11 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 		identifier_study_id = sample_details_json["identifier"].split("_")[2]
 
 	if sample_details_json["cancer_code"] == "NA" :
-		cancer_code = fetch_cancer_code(project_name, sample_id, capture_id)
-		if cancer_code != '':
-			sample_details_json["cancer_code"] = cancer_code
+		disease = fetch_cancer_code(project_name, sample_id, capture_id)
+		if disease != '':
+			tissue, cancer_code_new = fetch_cancer_type_code(disease)
+			sample_details_json["cancer_code"] = cancer_code_new if cancer_code_new !='NA' else sample_details_json['tissue']
+
 	
 	ecrf_tissue_type = sample_details_json['tissue_type']
 
