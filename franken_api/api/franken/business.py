@@ -132,7 +132,7 @@ def get_sample_design_ids(project_path, sample_id):
 		if not status:
 			return {'sample_capture': [], 'status': False}, error
 
-		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('CPC-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-') or x.startswith('BM-') or x.startswith('UM-') or x.startswith('COV-')),os.listdir(capture_dir)))
+		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('CPC-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-') or x.startswith('BM-') or x.startswith('UM-') or x.startswith('COV-') or x.startswith('GMCK-')),os.listdir(capture_dir)))
 
 		if len(sample_capture_list) < 1:
 			return {'sample_capture': [], 'status': False}, 400
@@ -1220,7 +1220,8 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 		user_role_status = check_user_role(user_id)
 		file_path = project_path + '/' + sdid + '/' + capture_id + '/' + 'cnv/'
 		if variant_type == 'somatic':
-			regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns$'
+			# regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+.cns$'
+			regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+(_ann)?\.cns$'
 			set_save_file = '_somatic_curated.cns' if not user_role_status else '_uid'+user_id+'somatic_curated.cns'
 		elif variant_type == 'germline':
 			regex = '^(?:(?!(-CFDNA-|germline_curated|-T-)).)*.cns$'
@@ -1231,6 +1232,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 		
 		file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
 
+		print(file_list)
 		if len(file_list) > 0:
 
 			cnv_filename = file_path + file_list[0]
@@ -1853,7 +1855,9 @@ def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 				df_sm["SECONDHIT"] = 'NA'
 			else:
 				df_sm["SECONDHIT"] = np.where(df_sm["CLONALITY"] == "SUBCLONAL", "NA", df_sm["SECONDHIT"])
-		
+		else:
+			df_sm["SECONDHIT"] = 'NA'
+
 		df_sm["SECONDHIT"].fillna("NA", inplace=True)
 		df_sm.to_csv(igv_nav_file,index = False, header=True, sep='\t')
 
