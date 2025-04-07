@@ -40,7 +40,9 @@ import math
 import hashlib
 import gzip
 import base64
+from tenacity import retry, stop_after_attempt, wait_fixed # type: ignore
 
+from sqlalchemy.exc import SQLAlchemyError # type: ignore
 
 # check the string contains special character or not 
 def check_special_char(seq_str):
@@ -110,19 +112,40 @@ def check_nfs_mount(file_path):
 	else :
 		return False, 400
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2)) 
 def create_db_session(db_name, query):
-	engine = db.get_engine(current_app, db_name)
-	session = db.create_scoped_session(options={'bind': engine})
-	res = session.execute(query)
-	session.commit()
-	return res
+	session = None
+	try:
+		engine = db.get_engine(current_app, db_name)
+		session = db.create_scoped_session(options={'bind': engine}) 
+		res = session.execute(query)
+		session.commit()
+		return res
+	except SQLAlchemyError as e:
+		if session:
+			session.rollback()
+		raise
+	finally:
+		if session:
+			session.remove()
 
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2))
 def create_db_session_update(db_name, query):
-	engine = db.get_engine(current_app, db_name)
-	session = db.create_scoped_session(options={'bind': engine})
-	session.execute(query)
-	session.commit()
-	return True
+
+	session = None
+	try:
+		engine = db.get_engine(current_app, db_name)
+		session = db.create_scoped_session(options={'bind': engine})		# sql_query = text(query)
+		session.execute(query)
+		session.commit()
+		return True
+	except SQLAlchemyError as e:
+		if session:
+			session.rollback()		
+		raise 
+	finally:
+		if session:
+			session.remove()
 
 def get_sample_design_ids(project_path, sample_id):
 	"get all sample design ids for given sample id"
@@ -331,7 +354,6 @@ def get_table_svs_header(project_path, sdid, capture_id, user_id, header='true')
 		## Check the IGV Snapshot folder exits or not 
 		igv_snapshot_status = False
 		igv_snapshot_dir = os.path.join(project_path,sdid,capture_id,'IGVsnapshots/svs')
-		print(igv_snapshot_dir)
 		if os.path.isdir(igv_snapshot_dir):
 			igv_snapshot_status = True
 
@@ -1213,6 +1235,31 @@ def get_curation_genomic_profile(record):
 	except Exception as e:
 		return {'status': True, 'data': [], 'error': str(e)}, 400		
 
+def get_annotation_cnv_record(file_path, variant_type):
+
+	try:
+		if variant_type == 'somatic':
+			regex = '[-\w]+-(CFDNA|T)-[A-Za-z0-9-]+_ann\.cns$'
+		elif variant_type == 'germline':
+			regex = '^(?:(?!(?:-CFDNA-|germline_curated|-T-)).)*_ann\.cns$'
+		
+		file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
+
+		if len(file_list) > 0:
+			cnv_ann_filename = os.path.join(file_path, file_list[0])
+
+			if not os.path.exists(cnv_ann_filename):
+				return []
+			
+			cnv_ann_df = pd.read_csv(cnv_ann_filename, delimiter="\t", keep_default_na=False)
+			return cnv_ann_df
+		else:
+			return []
+		
+	except Exception as e:
+			return {'header': [], 'data': [], 'status': False, 'error': str(e)}, 400
+
+
 def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, header='true'):
 	"read qc file from qc_overview.txt and return as json"
 	data = []
@@ -1230,9 +1277,9 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 		else:
 			return {'header': [], 'data': [], 'filename': '', 'error': 'Invalid end point', 'status': False}, 400
 		
+
 		file_list = list(filter(lambda x: (re.match(regex, x) ) and not x.startswith('.') and not x.endswith('.out'),os.listdir(file_path)))
 
-		print(file_list)
 		if len(file_list) > 0:
 
 			cnv_filename = file_path + file_list[0]
@@ -1284,6 +1331,22 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 					for data_dict in data:
 						size = int(data_dict['end']) - int(data_dict['start']) + 1
 						data_dict['SIZE'] = '{0:.2f} Mb'.format(size/1000000)
+				
+				if 'curate' not in header:
+					cnv_ann_df = get_annotation_cnv_record(file_path, variant_type)
+					if len(cnv_ann_df) > 0:
+						for data_dict in data:
+							chrom = data_dict['chromosome']
+							start_pos = data_dict['start']
+							end_pos = data_dict['end']
+							cnv_ann_df['chromosome'] = cnv_ann_df['chromosome'].astype(str)
+							cnv_ann_df['start'] = cnv_ann_df['start'].astype(str)
+							cnv_ann_df['end'] = cnv_ann_df['end'].astype(str)
+							res_curate = cnv_ann_df[(cnv_ann_df['chromosome'] == chrom) & (cnv_ann_df['start'] == start_pos) & (cnv_ann_df['end'] == end_pos)]['curate'].astype(str)
+							if not res_curate.empty:
+								data_dict['curate'] = res_curate.iloc[0]  # Access the first element
+							else:
+								data_dict['curate'] = ''
 
 				acn_key = 'ABSOLUTE_COPY_NUMBER'
 				ass_key = 'ASSESSMENT'
@@ -1293,6 +1356,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 				copy_nu_key = 'COPY_NUMBER'
 				plo_tp_key = 'PLOIDY_TYPE'
 				cnv_var_inc_key = 'include_variant_report_pdf'
+				curate_key = 'curate'
 
 
 				if acn_key in header:
@@ -1304,6 +1368,11 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 					ass_indx = header.index(ass_key)
 					del header[ass_indx]
 					header.insert(0,ass_key)
+
+				if curate_key in header:
+					ass_indx = header.index(curate_key)
+					del header[ass_indx]
+					header.insert(0,curate_key)
 
 				if com_key in header:
 					com_indx = header.index(com_key)
@@ -1342,6 +1411,7 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 				new_keys = {
 					acn_key: {'key': acn_key, 'title': 'ABSOLUTE_COPY_NUMBER'},
 					ass_key: {'key': ass_key, 'title': 'ASSESSMENT'},
+					curate_key: {'key': curate_key, 'title': 'Curate'},
 					com_key :  {'key': com_key, 'title': 'COMMENT'},
 					pur_key :  {'key': pur_key, 'title': 'CANCER CELL FRACTION'},
 					plo_key :  {'key': plo_key, 'title': 'PLOIDY'},

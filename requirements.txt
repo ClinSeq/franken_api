@@ -16,3 +16,4 @@ setuptools
 SQLAlchemy==1.4.41
 werkzeug==2.0.3
 weasyprint==52.5
+tenacity
