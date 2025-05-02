@@ -155,7 +155,7 @@ def get_sample_design_ids(project_path, sample_id):
 		if not status:
 			return {'sample_capture': [], 'status': False}, error
 
-		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('CPC-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-') or x.startswith('BM-') or x.startswith('UM-') or x.startswith('COV-') or x.startswith('GMCK-')),os.listdir(capture_dir)))
+		sample_capture_list = list(filter(lambda x: (x.startswith('PB-') or x.startswith('CPC-') or x.startswith('LB-') or x.startswith('AL-') or x.startswith('OT-') or x.startswith('PSFF-') or x.startswith('RB-') or x.startswith('iPCM-') or x.startswith('CRCR-') or x.startswith('UL-') or x.startswith('SARC-') or x.startswith('BM-') or x.startswith('UM-') or x.startswith('COV-') or x.startswith('GMCK-') or x.startswith('CEC-')),os.listdir(capture_dir)))
 
 		if len(sample_capture_list) < 1:
 			return {'sample_capture': [], 'status': False}, 400
@@ -731,7 +731,10 @@ def get_table_igv(variant_type, project_path, sdid, capture_id, user_id, header=
 					
 					if 'HOTSPOT' in each_row:
 						hotspot_str  = each_row['HOTSPOT']
-						each_row['HOTSPOT'] = hotspot_lookup[hotspot_str] if hotspot_str in hotspot_lookup else HGVSp_status
+						if hotspot_str.isdigit():
+							each_row['HOTSPOT'] = hotspot_str
+						else:
+							each_row['HOTSPOT'] = hotspot_lookup[hotspot_str] if hotspot_str in hotspot_lookup else HGVSp_status
 					else:
 						each_row['HOTSPOT'] = HGVSp_status
 
