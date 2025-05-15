@@ -1350,7 +1350,10 @@ def get_table_cnv_header(project_path, sdid, capture_id, variant_type, user_id, 
 								data_dict['curate'] = res_curate.iloc[0]  # Access the first element
 							else:
 								data_dict['curate'] = ''
-
+					else:
+						for data_dict in data:
+							data_dict['curate'] = ''
+			
 				acn_key = 'ABSOLUTE_COPY_NUMBER'
 				ass_key = 'ASSESSMENT'
 				com_key = 'COMMENT'
