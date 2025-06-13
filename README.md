@@ -1,21 +1,19 @@
-Franken Plot  API
-=============
+# Franken Plot  API
 
-- Install
-    --
-``` 
-    - cd franken_api
-    - python setup.py  install
-    - pip install -r requirements.txt
-    - pip install .
-``` 
- - Run application
-    --
-```
-    - franken_api -p 8090
-```
+### Setup and Prerequisite installation
 
-- Run DB Migration script:
+#### Back-End
+    cd franken_api
+```
+    python setup.py  install
+    pip install -r requirements.txt
+    pip install .
+``` 
+### Run application
+```
+    franken_api -p 5000
+```
+### Run DB Migration script:
 
 ```
 sudo docker exec -it probio_ui_docker_postgress_1 bash
@@ -32,15 +30,13 @@ python franken_api/migrate.py db init --multidb
 python franken_api/migrate.py db migrate
 python franken_api/migrate.py db upgrade
 ```
-
-- Generate Profile Summary for Project 
-    --
+### Generate Profile Summary for Project 
 ```
-    - cd franken_api/genomic_profile_lookup/
-    - python read_curation_info_store_postgresql_final.py '<nfs-autoseq-path>' '<project-name>
+    cd franken_api/genomic_profile_lookup/
+    python read_curation_info_store_postgresql_final.py '<nfs-autoseq-path>' '<project-name>
 ```
 
-- Export MTBP json format 
+### Export MTBP json format 
     --
 ```
     export MTBP_SCRIPT_PATH="<MTBP_Script_path>"
