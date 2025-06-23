@@ -1920,6 +1920,16 @@ def get_curated_db_record(project_id, sample_id, capture_id, table_name):
 	except Exception as e:
 		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
+def format_value(x):
+    if pd.isna(x):
+        return ''
+    elif x == 0.0:
+        return '0'
+    elif x.is_integer():
+        return str(int(x))
+    else:
+        return str(x)
+	
 def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 
 	regex = '.*-(CFDNA|T)-.*igvnav-input.txt$'
@@ -1941,6 +1951,9 @@ def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 				df_sm["SECONDHIT"] = np.where(df_sm["CLONALITY"] == "SUBCLONAL", "NA", df_sm["SECONDHIT"])
 		else:
 			df_sm["SECONDHIT"] = 'NA'
+		
+		#df_sm['HOTSPOT'] = df_sm['HOTSPOT'].apply(lambda x: '0' if x == 0.0 else (str(x) if not pd.isna(x) else ''))
+		df_sm['HOTSPOT'] = df_sm['HOTSPOT'].apply(format_value)
 
 		df_sm["SECONDHIT"].fillna("NA", inplace=True)
 		df_sm.to_csv(igv_nav_file,index = False, header=True, sep='\t')
