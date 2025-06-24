@@ -126,9 +126,11 @@ class FrankenStaticImages(Resource):
 		nfs_path, response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
 			result, errorcode = get_static_image(nfs_path, args['sdid'], args['capture_id'], args['imagename'])
-			return send_file(result,
-						attachment_filename='frankenplot.png',
-						mimetype='image/png')
+			if errorcode == 200:
+				return send_file(result, attachment_filename='frankenplot.png',mimetype='image/png')
+			else:
+				return '', errorcode
+
 		else:
 			return nfs_path,response_code
 		
