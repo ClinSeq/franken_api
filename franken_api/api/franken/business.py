@@ -12,6 +12,8 @@ from franken_api.database.models import TablePsffSummary as psff_profile
 from franken_api.database.models import TableProbioSummary as probio_profile
 from franken_api.database.models import TableGenomicProfileSummary as genomic_profile
 
+from franken_api.api.franken.generate_mtbp_json import *
+
 # from flask_restx import marshal_with, marshal
 
 from sqlalchemy import and_
@@ -202,10 +204,10 @@ def get_static_frankenplot(project_path, project_name, sample_id, capture_id):
 	# port_no = ':5000' if 'localhost' in ip_addr else ''
 	# host_url = 'http' if 'localhost' in request.host else 'https'
 
-	base_api_url = request.base_url.split(":")
+	base_api_url = request.base_url.split("://")
 	scheme = base_api_url[0]
 	api_router = base_api_url[1].split("/")
-	api_link = '/'.join(list(filter(None, api_router[:-1])))
+	api_link = '/'.join(list(filter(None, api_router))[:-1])
 	
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
@@ -1569,14 +1571,22 @@ def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 
 def generate_curated_json(project_path, project_name, sample_id, capture_id, script_path):
 
-	python_cmd = "python3 {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	# python_cmd = "python3 {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 
+	# try:
+	# 	proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
+	# 	return {'data': 'Json File Generated', 'status': True}, 200
+	# except subprocess.CalledProcessError as e:
+	# 	raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+	# 	return {'data':[], 'status': False}, 400
+	
 	try:
-		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
-		return {'data': 'Json File Generated', 'status': True}, 200
+		generate_json(project_path, project_name, sample_id, capture_id)
+
+		return {'message': 'MTBP JSON File Generated', 'status': True}, 200
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-		return {'data':[], 'status': False}, 400
+
 
 def build_ipcm_sample_details(cfdna_id, normal_id):
 	
@@ -1689,16 +1699,17 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 
 	capture_format = capture_id_arr[0]
 
+	sample_details_json={}
 	try:
 		if(project_name == "IPCM" or capture_format == "iPCM"):
 			sample_details_json = build_ipcm_sample_details(cfdna_id, normal_id)
-		else:
+		elif(project_name == "PROBIO" or capture_format == "PSFF"):
 			sample_details_json = build_sample_details(project_name, cfdna)
 
 		if sample_details_json:
 			return {'status': True, 'data': sample_details_json, 'error': ''}, 200
 		else:
-			return {'status': True, 'data': '', 'error': 'Patient Information not found'}, 200
+			return {'status': False, 'data': '', 'error': 'Patient Information not found'}, 200
 
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
@@ -1723,11 +1734,13 @@ def fetch_curated_pdf(project_path, project_name, sample_id, capture_id):
 
 	file_path = project_path + '/' + sample_id + '/' + capture_id + '/pdf/'
 	temp_pdf_url_list = []
+	
+	# app_port = requesbase_urlt.environ.get('SERVER_PORT')
 
-	base_api_url = request.base_url.split(":")
+	base_api_url = request.base_url.split("://")
 	scheme = base_api_url[0]
 	api_router = base_api_url[1].split("/")
-	api_link = '/'.join(list(filter(None, api_router[:-1])))
+	api_link = '/'.join(list(filter(None, api_router))[:-1])
 
 	status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
 	if status:
@@ -2006,6 +2019,10 @@ def check_cancer_code(json_file_path, key, expected_value):
 	return cancer_code_status
 
 def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_name, user_pwd):
+
+	mtbp_proj = 'KUH' if proj_name == 'PREDDLUNG' else '1'
+	mtbp_file = 'https://k7mtbpkuh01.onkpat.ki.se/UploadClinicalDataAPI.php' if proj_name == 'PREDDLUNG' else "--form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php"
+
 	try:
 		file_path = project_path + '/' + sample_id + '/' + capture_id + '/MTBP/'
 		status = True if os.path.exists(file_path) and len(os.listdir(file_path)) > 0 else False
@@ -2017,8 +2034,7 @@ def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_
 				expected_value ='NA'
 				cancer_code_status = check_cancer_code(json_file_path, key, expected_value)
 				if cancer_code_status:
-					curl_cmd = "curl -sk --form 'fileToUpload=@{}' --form 'username={}' --form 'password={}' --form 'Proj=1' --form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php".format(json_file_path, user_name, user_pwd)
-					# curl_cmd = "ls -l"
+					curl_cmd = f"curl -sk --form 'fileToUpload=@{json_file_path}' --form 'username={user_name}' --form 'password={user_pwd}' --form 'Proj={mtbp_proj}' {mtbp_file}"
 					proc = subprocess.run(curl_cmd, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, capture_output=False, text=True)
 					output= proc.stdout
 					res_error = proc.stderr
