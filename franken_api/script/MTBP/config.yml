@@ -20,7 +20,7 @@ leaderboard:
     host: localhost
     user: postgres
     password: postgres
-    database: genomic_board
+    database: genomic_leaderboard
     
 tableName:
     IPCM : ipcm_referral_t

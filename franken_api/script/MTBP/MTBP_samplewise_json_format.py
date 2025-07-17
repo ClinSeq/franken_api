@@ -42,11 +42,11 @@ import yaml
 import argparse
 import sys
 
-#### Get the current directory path
+### Get the current directory path
 def path():
 	return os.path.dirname(__file__)
 
-#### Read a DB information from yml file
+### Read a DB information from yml file
 def readConfig(section,filename=path()+"/config.yml"):
 	with open(filename, "r") as ymlfile:
 		cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
@@ -54,7 +54,7 @@ def readConfig(section,filename=path()+"/config.yml"):
 	return section
 
 
-#### Fetch SQL Query
+### Fetch SQL Query
 def fetch_sql_query(section, sql):
 	conn = None
 	try:
@@ -199,7 +199,7 @@ def build_sample_details(project_name, capture_id, cfdna, capture_format, sample
 	if(res_data):
 		sample_data["identifier"] = "MTBP_"+capture_format+"_"+res_data[0]['tid']+"_"+sample_type+cfdna
 		sample_data["referral_date"] = res_data[0]["datum"]
-		if res_data[0]["pnr"] != None :
+		if res_data[0]["pnr"] != None and res_data[0]["pnr"] != 'None':
 			pnr = res_data[0]["pnr"][0:8]
 			sample_data["birthdate"] =  datetime.strptime(pnr, "%Y%m%d").date().strftime("%Y-%m-%d")
 		else:
@@ -267,7 +267,7 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 			study_code = res_data[key]["study_code"]
 			dob = res_data[key]["dob"]
 			study_site = res_data[key]["study_site"]
-			
+		
 			if(study_code):
 				identifier_name =  "MTBP_"+capture_format+"_"+study_code+"_"+sample_type+cfdna if project_name !='PREDDLUNG' else "NA"
 				sample_data["identifier"] = identifier_name
@@ -317,6 +317,7 @@ def fetch_pipeline_version():
 		return curr_version
 	else:
 		return ''
+
 ### Build a QC Json 
 def build_qc(root_path, ecrf_tissue_type, sample_type):
 	file_path = root_path + '/qc/'
@@ -420,6 +421,34 @@ def build_ploidy(root_path):
 
 	return purity_list, ploidy_list
 
+### Extract the  SNV and indel value in the TMB Comments
+def parse_tumor_val(tumor_val):
+	if tumor_val == 'NA':
+		return ''
+	
+	tmb_snv = 'NA'
+	tmb_indel = 'NA'
+
+	parts = [p.strip() for p in tumor_val.split(',')]
+	tmb_dict = {}
+	for part in parts:
+		if 'SNV' in part:
+			match_snv = re.findall(r'\d+\.\d+|\d+', part)
+			if match_snv:
+				tmb_snv = match_snv[0]
+				tmb_dict['tmb_snv'] = int(tmb_snv)
+		elif 'INDEL' in part:
+			match_indel = re.findall(r'\d+\.\d+|\d+', part)
+			if match_indel:
+				tmb_indel = match_indel[0]
+				tmb_dict['tmb_indel'] = int(tmb_indel)
+
+	if len(tmb_dict) > 0:
+		return tmb_dict
+	else:
+		return ''
+
+
 ### Fetch MSI & TMB from genomic profile information
 def build_penotypes(project_name, sample_id, capture_id):
 	msi_status = "NA"
@@ -443,6 +472,8 @@ def build_penotypes(project_name, sample_id, capture_id):
 				ploidy_val = genome_wide_json[j]['result'] if ('result' in genome_wide_json[j] and genome_wide_json[j]['result'] != [] and genome_wide_json[j]['result'] != "") else 'NA'
 			elif (title == "TUMOR MUTATIONAL BURDEN"):
 				tumörmutationsbörda = genome_wide_json[j]['result'] if ('result' in genome_wide_json[j] and genome_wide_json[j]['result'] != [] and genome_wide_json[j]['result'] != "") else 'NA'
+				tumor_arr = genome_wide_json[j]['comment'] if ('comment' in genome_wide_json[j] and genome_wide_json[j]['comment'] != [] and genome_wide_json[j]['comment'] != "") else 'NA'
+				tumor_val = parse_tumor_val(tumor_arr)
 			elif (title == "MSI STATUS"):
 				msi_status = genome_wide_json[j]['result'] if ('result' in genome_wide_json[j] and genome_wide_json[j]['result'] != [] and genome_wide_json[j]['result'] != "") else 'NA'
 			elif (title == "PATHOGENIC GERMLINE VARIANTS"):
@@ -450,7 +481,7 @@ def build_penotypes(project_name, sample_id, capture_id):
 			elif (title == "OTHER GENOMIC PHENOTYPE"):
 				td = genome_wide_json[j]['result'] if ('result' in genome_wide_json[j] and genome_wide_json[j]['result'] != [] and genome_wide_json[j]['result'] != "") else 'NA'
 
-	return purity_val, ploidy_val, msi_status, tumörmutationsbörda, td, pathogenic_gDNA_variant
+	return purity_val, ploidy_val, msi_status, tumörmutationsbörda, td, pathogenic_gDNA_variant, tumor_val
 
 ### Build a Small variant Json (Somatic & Germline)
 def build_small_variants(root_path):
@@ -678,7 +709,7 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 		if project_name == 'PREDDLUNG':
 			dt = datetime.strptime(seq_date, "%Y-%m-%d")
 			two_digit_year = dt.strftime("%y")
-			sample_details_json["identifier"] = "MOL{}-{}-{}_{}{}".format(cfdna, two_digit_year, sample_type, cfdna, two_digit_year)
+			sample_details_json["identifier"] = "MOL{}-{}_{}{}{}".format(cfdna, two_digit_year, sample_type, cfdna, two_digit_year)
 			identifier_study_id = sample_id.replace("P-","P")
 		else:
 			identifier_study_id = sample_id
@@ -711,8 +742,8 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	#purity_val, ploidy_val = build_ploidy(root_path)
 
 	# Phenotype
-	purity_val, ploidy_val, msi, tmb, td, pathogenic_gDNA_variant = build_penotypes(project_name, sample_id, capture_id)
-	project_json["phenotypes"] = {"purity" : convert_to_numeric(purity_val) ,"ploidy": convert_to_numeric(ploidy_val), "msi": msi, "tmb": tmb, "td": td, "pathogenic_gDNA_variant": pathogenic_gDNA_variant}
+	purity_val, ploidy_val, msi, tmb, td, pathogenic_gDNA_variant, tumor_val = build_penotypes(project_name, sample_id, capture_id)
+	project_json["phenotypes"] = {"purity" : convert_to_numeric(purity_val) ,"ploidy": convert_to_numeric(ploidy_val), "msi": msi, "tmb": tmb, "td": td, "pathogenic_gDNA_variant": pathogenic_gDNA_variant, **(tumor_val if isinstance(tumor_val, dict) else {})}
 
 	# Small Variant (Somatic & Germline)
 	logging.info('--- Small Variant started ---')

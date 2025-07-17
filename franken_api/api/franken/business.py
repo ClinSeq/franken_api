@@ -1936,14 +1936,14 @@ def get_curated_db_record(project_id, sample_id, capture_id, table_name):
 		return {'status': True, 'message': 'Something wrong', 'error': str(e)}, 400
 
 def format_value(x):
-    if pd.isna(x):
-        return ''
-    elif x == 0.0:
-        return '0'
-    elif x.is_integer():
-        return str(int(x))
-    else:
-        return str(x)
+	if pd.isna(x):
+		return ''
+	elif x == 0.0:
+		return '0'
+	elif x.is_integer():
+		return str(int(x))
+	else:
+		return str(x)
 	
 def rd_somatic_update_curated(file_path, clonality_vaf, ctdna_val, tb_record):
 
