@@ -36,9 +36,14 @@ python franken_api/migrate.py db upgrade
     python read_curation_info_store_postgresql_final.py '<nfs-autoseq-path>' '<project-name>
 ```
 
-### Export MTBP json format 
-    --
+### ENV Setup in the .bashrc 
 ```
-    export MTBP_SCRIPT_PATH="<MTBP_Script_path>"
+    export DATABASE_URL="postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PWD>@127.0.0.1:5432/<REFERRAL_DB>"
+    export CURATION_DB_URL="postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PWD>@127.0.0.1:5432/<CURATION_DB>"
+    export LEADERBOARD_DB_URL="postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PWD>@127.0.0.1:5432/<LEADERBOARD_DB>"
+    export IPCM_DB_URL="postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PWD>@127.0.0.1:5432/<IPCM_DB>"
+
+    export MTBP_SCRIPT_PATH="<MTBP_SCRIPT_PATH>"
+    export PDF_SCRIPT_PATH="<PDF_SCRIPT_PATH>"
 
 ```
