@@ -13,13 +13,13 @@ from franken_api.database.models import TableProbioSummary as probio_profile
 from franken_api.database.models import TableGenomicProfileSummary as genomic_profile
 
 from franken_api.api.franken.generate_mtbp_json import *
+from franken_api.api.franken.generate_pdf import *
 
-# from flask_restx import marshal_with, marshal
+from flask_weasyprint import HTML, CSS,  render_pdf # type: ignore
 
 from sqlalchemy import and_
 from sqlalchemy import or_
 import os, io
-#from franken_api.settings import MOUNT_POINT
 from flask import current_app
 from franken_api.util_notfound import Not_found
 import json
@@ -1716,18 +1716,24 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 		#return {'data':[], 'status': False}, 400
 
 def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
-
-	if project_name == 'WGS' or project_name == 'SARCOMA_PROSP':
-		python_cmd = "python3 {}/build_base_html_wgs.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
-	else:
-		python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	
+	# if project_name == 'WGS' or project_name == 'SARCOMA_PROSP':
+	# 	python_cmd = "python3 {}/build_base_html_wgs.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
+	# else:
+	# 	python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
 
 	try:
-		proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
+
+		css_path = os.path.join(current_app.root_path, 'templates/pdf/static/css', 'base.css')
+		pdf_image_url = os.path.join(current_app.root_path, 'templates/pdf/static/img/')
+
+		html_text, pdf_file_name = generate_pdf(project_path, project_name, sample_id, capture_id)
+		HTML(string=html_text, base_url=pdf_image_url).write_pdf(pdf_file_name, stylesheets=[CSS(filename=css_path)])
+
+		# proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
 		return {'data': 'PDF File Generated', 'status': True}, 200
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-		# return {'data':[], 'status': False}, 400
 
 
 def fetch_curated_pdf(project_path, project_name, sample_id, capture_id):
