@@ -2026,8 +2026,9 @@ def check_cancer_code(json_file_path, key, expected_value):
 
 def send_json_mtbp_portal(project_path, proj_name,  sample_id, capture_id, user_name, user_pwd):
 
-	mtbp_proj = 'KUH' if proj_name == 'PREDDLUNG' else '1'
-	mtbp_file = 'https://k7mtbpkuh01.onkpat.ki.se/UploadClinicalDataAPI.php' if proj_name == 'PREDDLUNG' else "--form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php"
+	mtbp_proj = 'preddlung' if proj_name == 'PREDDLUNG' else '1' # KUH
+	# mtbp_file = 'https://k7mtbpkuh01.onkpat.ki.se/UploadClinicalDataAPI.php' if proj_name == 'PREDDLUNG' else "--form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php"
+	mtbp_file = 'https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php' if proj_name == 'PREDDLUNG' else "--form 'seqdata=1' https://cloud-mtb.scilifelab.se/UploadClinicalDataAPI.php"
 
 	try:
 		file_path = project_path + '/' + sample_id + '/' + capture_id + '/MTBP/'

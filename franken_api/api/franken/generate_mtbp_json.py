@@ -732,12 +732,14 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 		sample_details_json = build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date, germline_dna)
 		project_json["sample"] = sample_details_json
 
+
 	if sample_details_json["identifier"] == "NA" :
 		if project_name == 'PREDDLUNG':
-			dt = datetime.strptime(seq_date, "%Y-%m-%d")
-			two_digit_year = dt.strftime("%y")
-			sample_details_json["identifier"] = "MOL{}-{}_{}{}{}".format(cfdna, two_digit_year, sample_type, cfdna, two_digit_year)
+			# dt = datetime.strptime(seq_date, "%Y-%m-%d")
+			# two_digit_year = dt.strftime("%y")		
+			# sample_details_json["identifier"] = "MOL{}-{}_{}{}{}".format(cfdna, two_digit_year, sample_type, cfdna, two_digit_year)
 			identifier_study_id = sample_id.replace("P-","P")
+			sample_details_json["identifier"] = "MTBP_PreDDLung_{}_{}{}".format(identifier_study_id, sample_type, cfdna)
 		else:
 			identifier_study_id = sample_id
 	else:
