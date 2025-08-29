@@ -142,7 +142,6 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 		sql2 = "select rf.pnr, rf.cdk from ipcm_referral_t as rf WHERE rf.rid like'%{}%' OR rf.blood like'%{}%' OR rf.dna1 like'%{}%' OR rf.dna2 like'%{}%' OR rf.dna3 like'%{}%'".format(normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna, normal_cfdna)
 		res_2 = create_db_session('ipcmLeaderboard', sql2)
 		res_normal_data = generate_list_to_dict(res_2)
-
 		t_pnr = res_data[0]['pnr'] if len(res_data) > 0 else ''
 		t_cdk = res_data[0]['cdk'] if len(res_data) > 0 else ''
 
@@ -156,7 +155,7 @@ def build_ipcm_sample_details(normal_cfdna, cfdna, capture_format, sample_type, 
 
 			extra_cond = "" if study_id in ['None', ''] else " and ec.study_id='{}'".format(study_id)
 
-			query_ecrf = "SELECT CONCAT('MTBP_{}_', ec.study_id,'_{}{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as referral_date, '{}' as seq_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'NA' END as cancer_code, 'primary' as tissue_source, CASE WHEN ec.tissue_type ='' THEN 'NA' ELSE ec.tissue_type END as tissue_type, CASE WHEN cell_fraction <> '' THEN CAST(cell_fraction AS FLOAT) ELSE NULL END AS pathology_ccf, CASE WHEN ec.germline_dna = '0' THEN {} ELSE to_number(ec.germline_dna::text, '9'::text)::integer END as germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}' {} limit 1 ".format(capture_format, sample_type, cfdna, seq_date, germline_dna, pnr, extra_cond)		
+			query_ecrf = "SELECT CONCAT('MTBP_{}_', ec.study_id,'_{}{}') as identifier, TO_DATE(rf.datum::text, 'YYYYMMDD') as referral_date, '{}' as seq_date, TO_DATE(rf.date_birth::text, 'YYYYMMDD') as birthdate, get_hospital_code(ec.site_id) as hospital, 'oncotree' as cancer_taxonomy, CASE WHEN ec.cancer_type_id != 0 THEN get_tissue_name(ec.cancer_type_id,ec.cancer_type_code) ELSE 'NA' END as tissue, CASE WHEN ec.cancer_type_code !='' THEN ec.cancer_type_code ELSE 'NA' END as cancer_code, 'primary' as tissue_source, CASE WHEN ec.tissue_type ='' THEN 'NA' ELSE ec.tissue_type END as tissue_type, CASE WHEN cell_fraction <> '' THEN CAST(cell_fraction AS FLOAT) ELSE NULL END AS pathology_ccf, CASE WHEN ec.germline_dna = '0' THEN {} ELSE to_number(ec.germline_dna::text, '9'::text)::integer END as germline_dna  from ipcm_referral_t as rf INNER JOIN ipcm_ecrf_t as ec ON regexp_replace(CAST(ec.birth_date AS VARCHAR), '-', '', 'g') =  LEFT(rf.pnr, 8)  WHERE rf.pnr='{}' {} limit 1 ".format(capture_format, sample_type, cfdna, seq_date, germline_dna, pnr, extra_cond)
 			res_ecrf = create_db_session('ipcmLeaderboard', query_ecrf)
 			res_ecrd_data = generate_list_to_dict(res_ecrf)
 
@@ -201,7 +200,6 @@ def build_sample_details(project_name, capture_id, cfdna, capture_format, sample
 	sample_data = {}
 
 	identifier_status = False
-
 	sample_data["identifier"] = "NA"
 	sample_data["referral_date"] = "NA"
 	sample_data["seq_date"] = seq_date
@@ -293,7 +291,6 @@ def build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture
 			if(study_code):
 				identifier_name =  "MTBP_"+capture_format+"_"+study_code+"_"+sample_type+cfdna if project_name !='PREDDLUNG' else "NA"
 				sample_data["identifier"] = identifier_name
-
 			if(dob and dob !='NA'):
 				pattern = re.compile(r'^\d{4}\d{2}\d{2}$')  # '%Y%m%d'
 				if pattern.match(dob):
@@ -365,10 +362,6 @@ def build_qc(root_path, ecrf_tissue_type, sample_type):
 				else:
 					column_list.append('overall')
 					qc_df_data['overall'] = "Ok"
-
-				# if 'MEAN_TARGET_COVERAGE' in qc_df_data.columns:
-				# 	column_list.append('MEAN_TARGET_COVERAGE')
-				# 	column_dict['MEAN_TARGET_COVERAGE'] = 'coverage'
 
 				msi_list = "NA"
 				if 'msing_score' in qc_df_data.columns:
@@ -469,7 +462,6 @@ def parse_tumor_val(tumor_val):
 	else:
 		return ''
 
-
 ### Fetch MSI & TMB from genomic profile information
 def build_penotypes(project_name, sample_id, capture_id):
 	msi_status = "NA"
@@ -536,10 +528,6 @@ def build_small_variants(root_path):
 				column_list.extend(reads_column_list)
 
 				smv_df_data = smv_df_data.loc[(smv_df_data['CALL'] == "S") | (smv_df_data['CALL'] == "G")]
-				#smv_df_data["CHROM"] = smv_df_data["CHROM"].map(int)
-				#smv_df_data["CHROM"] =  smv_df_data['CHROM'].astype(str).str.isdigit().map(int)
-				#smv_df_data['CHROM'] = pd.to_numeric(smv_df_data['CHROM'], errors='coerce')
-
 
 				if 'CLONALITY' in smv_df_data.columns:
 					column_list.append('CLONALITY')
@@ -604,7 +592,6 @@ def build_cnv(root_path):
 					if cnv_df_data.empty:
 						print("CNV Data frame empty : {}".format(i))
 					else:
-						# cnv_df_data['chromosome'] = pd.to_numeric(cnv_df_data['chromosome'], errors='coerce')
 
 						if(re.match(regex, i)):
 							cnv_df_data['origin'] = "Germline"
@@ -732,12 +719,8 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 		sample_details_json = build_genomic_profile_sample_details(project_name, cfdna, sample_id, capture_id, capture_format, sample_type, seq_date, germline_dna)
 		project_json["sample"] = sample_details_json
 
-
 	if sample_details_json["identifier"] == "NA" :
 		if project_name == 'PREDDLUNG':
-			# dt = datetime.strptime(seq_date, "%Y-%m-%d")
-			# two_digit_year = dt.strftime("%y")		
-			# sample_details_json["identifier"] = "MOL{}-{}_{}{}{}".format(cfdna, two_digit_year, sample_type, cfdna, two_digit_year)
 			identifier_study_id = sample_id.replace("P-","P")
 			sample_details_json["identifier"] = "MTBP_PreDDLung_{}_{}{}".format(identifier_study_id, sample_type, cfdna)
 		else:
@@ -767,13 +750,10 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	project_json["qc"] =  "NA" if qc_json == "" else json.loads(qc_json)
 	logging.info('--- QC completed ---')
 
-	# Get the Ploidy value
-	#purity_val, ploidy_val = build_ploidy(root_path)
-
 	# Phenotype
 	purity_val, ploidy_val, msi, tmb, td, pathogenic_gDNA_variant, tumor_val = build_penotypes(project_name, sample_id, capture_id)
 	project_json["phenotypes"] = {"purity" : convert_to_numeric(purity_val) ,"ploidy": convert_to_numeric(ploidy_val), "msi": msi, "tmb": tmb, "td": td, "pathogenic_gDNA_variant": pathogenic_gDNA_variant, **(tumor_val if isinstance(tumor_val, dict) else {})}
-	
+
 	# Small Variant (Somatic & Germline)
 	logging.info('--- Small Variant started ---')
 	small_variant_json = build_small_variants(root_path)
@@ -795,8 +775,6 @@ def build_json(root_path, output_path, project_name, normal_cfdna, cfdna, sample
 	# final_json = json.dumps(project_json)
 	file_name = f"MTBP_{capture_format}_{identifier_study_id}_{sample_type}{cfdna}.json"
 	file_path = os.path.join(output_path,file_name)
-
-	# print("Path : ", root_path, file_path)
 
 	with open(file_path, 'w') as f:
 		json.dump(project_json, f, indent=4)
@@ -830,8 +808,6 @@ def generate_json(nfs_path, project_name, sample_id, capture_id):
 	seq_date_str = re.findall(r'\d+', capture_arr[5])[0]
 	seq_date = datetime.strptime(seq_date_str, "%Y%m%d").date().strftime("%Y-%m-%d")
 
-	# print(normal_cfdna, sample_type, cfdna, capture_format, seq_date)
-
 	log_name = f"{output_dir}/MTBP_{project_name}_{sample_id}_{sample_type}{cfdna}.log"
 
 	output_path = Path(output_dir)
@@ -843,10 +819,6 @@ def generate_json(nfs_path, project_name, sample_id, capture_id):
 				item.unlink()
 	else:
 		output_path.mkdir(parents=True)
-
-	# print("nfs_folder_path", nfs_folder_path, "\n")
-	# print("output_dir", output_dir, "\n")
-
 
 	logging.basicConfig(format = '%(asctime)s  %(levelname)-10s %(name)s %(message)s', level=logging.INFO , filename=log_name, datefmt="%Y-%m-%d %H:%M:%S")
 	logging.info('--- Generated Json format Started---')

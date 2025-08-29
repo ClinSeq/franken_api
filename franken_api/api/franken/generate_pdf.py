@@ -594,134 +594,137 @@ def build_clinical_txt(project_path, study_code, report_txt):
 def build_html(root_path, output_pdf_path, base_html_path, html_root_path, project_name, sample_id, capture_id, specimen, seq_date, report_date, epm_dnr_data_html):
 	
 	report_txt = ''
-	
-	sql = "SELECT study_code, study_site, dob, disease, specimen_assay, genome_wide, summary_txt from genomic_profile_summary WHERE sample_id='{}' and capture_id='{}' and project_name='{}' order by id desc limit 1".format(sample_id, capture_id, project_name)
-	res_sql = create_db_session('curation', sql)
-	genomic_json = generate_list_to_dict(res_sql)
-	
-	patient_info_html = ''
-	specimen_html = ''
-	genome_wide_html=''
+	try:
+		sql = "SELECT study_code, study_site, dob, disease, specimen_assay, genome_wide, summary_txt from genomic_profile_summary WHERE sample_id='{}' and capture_id='{}' and project_name='{}' order by id desc limit 1".format(sample_id, capture_id, project_name)
+		res_sql = create_db_session('curation', sql)
+		genomic_json = generate_list_to_dict(res_sql)
+		
+		patient_info_html = ''
+		specimen_html = ''
+		genome_wide_html=''
 
-	study_code = genomic_json[0]['study_code']
-	study_site = genomic_json[0]['study_site']
-	dob = genomic_json[0]['dob']
-	disease = genomic_json[0]['disease']
+		study_code = genomic_json[0]['study_code']
+		study_site = genomic_json[0]['study_site']
+		dob = genomic_json[0]['dob']
+		disease = genomic_json[0]['disease']
 
-	summary_txt = genomic_json[0]['summary_txt']
+		summary_txt = genomic_json[0]['summary_txt']
 
-	patient_info_html += '<tr><th>STUDY ID</th><td>{}</td></tr>'.format(study_code)
-	patient_info_html += '<tr><th>PERSONAL NUMBER</th><td>{}</td></tr>'.format(dob)
-	patient_info_html += '<tr><th>DISEASE</th><td>{}</td></tr>'.format(disease)
-	patient_info_html += '<tr><th>HOSPITAL</th><td>{}</td></tr>'.format(study_site)
+		patient_info_html += '<tr><th>STUDY ID</th><td>{}</td></tr>'.format(study_code)
+		patient_info_html += '<tr><th>PERSONAL NUMBER</th><td>{}</td></tr>'.format(dob)
+		patient_info_html += '<tr><th>DISEASE</th><td>{}</td></tr>'.format(disease)
+		patient_info_html += '<tr><th>HOSPITAL</th><td>{}</td></tr>'.format(study_site)
 
-	### Generate a clinical report txt 
-	report_txt = 'Genomisk karaktärisering av solid cancer - Implementation of Personalized Cancer Medicine (iPCM)\n'
-	report_txt += 'STUDIENUMMER\t{}\nTUMÖRTYP\t{}\n'.format(study_code, disease)
-	
-	specimen_assay = genomic_json[0]['specimen_assay']
-	specimen_html = build_specimen(specimen_assay)
-	if(specimen_html == ""):
-		specimen_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
+		### Generate a clinical report txt 
+		report_txt = 'Genomisk karaktärisering av solid cancer - Implementation of Personalized Cancer Medicine (iPCM)\n'
+		report_txt += 'STUDIENUMMER\t{}\nTUMÖRTYP\t{}\n'.format(study_code, disease)
+		
+		specimen_assay = genomic_json[0]['specimen_assay']
+		specimen_html = build_specimen(specimen_assay)
+		if(specimen_html == ""):
+			specimen_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
 
-	genome_wide = genomic_json[0]['genome_wide']
-	genome_wide_html, genome_wide_txt = build_genomic_feature(genome_wide)
-	report_txt += genome_wide_txt
-	if(genome_wide_html == ""):
-		genome_wide_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
+		genome_wide = genomic_json[0]['genome_wide']
+		genome_wide_html, genome_wide_txt = build_genomic_feature(genome_wide)
+		report_txt += genome_wide_txt
+		if(genome_wide_html == ""):
+			genome_wide_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
 
-	small_variant_html, smt_variant_txt= build_small_variants(root_path)
-	report_txt += smt_variant_txt
-	if(small_variant_html == ""):
-		small_variant_html = '<tr><td class="no-data" colspan="10">No relevant variants detected</td></tr>'
+		small_variant_html, smt_variant_txt= build_small_variants(root_path)
+		report_txt += smt_variant_txt
+		if(small_variant_html == ""):
+			small_variant_html = '<tr><td class="no-data" colspan="10">No relevant variants detected</td></tr>'
 
-	svs_html, svs_variant_txt= build_svs(root_path)
-	report_txt += svs_variant_txt
-	if(svs_html == ""):
-		svs_html = '<tr><td class="no-data" colspan="7">No relevant variants detected</td></tr>'
-	
-	cnv_html, cnv_variant_txt= build_cnv(root_path)
-	report_txt += cnv_variant_txt
-	if(cnv_html == ""):
-		cnv_html = '<tr><td class="no-data" colspan="5">No relevant variants detected</td></tr>'
-	
-	tech_valid_html, tech_header_html = build_tech_val_QC(root_path, project_name, capture_id)
-	if(tech_valid_html == ""):
-		tech_valid_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
+		svs_html, svs_variant_txt= build_svs(root_path)
+		report_txt += svs_variant_txt
+		if(svs_html == ""):
+			svs_html = '<tr><td class="no-data" colspan="7">No relevant variants detected</td></tr>'
+		
+		cnv_html, cnv_variant_txt= build_cnv(root_path)
+		report_txt += cnv_variant_txt
+		if(cnv_html == ""):
+			cnv_html = '<tr><td class="no-data" colspan="5">No relevant variants detected</td></tr>'
+		
+		tech_valid_html, tech_header_html = build_tech_val_QC(root_path, project_name, capture_id)
+		if(tech_valid_html == ""):
+			tech_valid_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
 
-	build_clinical_txt(output_pdf_path, study_code, report_txt)
+		build_clinical_txt(output_pdf_path, study_code, report_txt)
 
-	header_txt = '<li><b>SPECIMENS</b><span>'+specimen+'</span></li>'
-	header_txt += '<li><b>EPM DNR</b><span>'+epm_dnr_data_html+'</span></li>'
-	header_txt += '<li><b>REPORT DATE</b><span>'+report_date+'</span></li>'
-	header_txt += '<li><b>RECIEVED DATE</b><span>'+str(seq_date)+'</span></li>'
+		header_txt = '<li><b>SPECIMENS</b><span>'+specimen+'</span></li>'
+		header_txt += '<li><b>EPM DNR</b><span>'+epm_dnr_data_html+'</span></li>'
+		header_txt += '<li><b>REPORT DATE</b><span>'+report_date+'</span></li>'
+		header_txt += '<li><b>RECIEVED DATE</b><span>'+str(seq_date)+'</span></li>'
 
-	sub_header_txt = '<li><b>REPORT DATE</b><span>'+report_date+'</span></li>'
+		sub_header_txt = '<li><b>REPORT DATE</b><span>'+report_date+'</span></li>'
 
-	new_text = ""
-	## Read a base html and replace the curated text based on ids
-	with open(base_html_path, 'r') as f:
-		contents = f.read()
-		soup = BeautifulSoup(contents, "html.parser")
+		new_text = ""
+		## Read a base html and replace the curated text based on ids
+		with open(base_html_path, 'r') as f:
+			contents = f.read()
+			soup = BeautifulSoup(contents, "html.parser")
 
-		for tag in soup.find_all(title="custom css"):
-			tag['href'] = os.path.join(html_root_path, tag['href'])
+			for tag in soup.find_all(title="custom css"):
+				tag['href'] = os.path.join(html_root_path, tag['href'])
 
-		for tag in soup.find_all(id='header_ul_data'):
-			header_html = header_txt
-			tag.string.replace_with(header_html)
+			for tag in soup.find_all(id='header_ul_data'):
+				header_html = header_txt
+				tag.string.replace_with(header_html)
 
-		for tag in soup.find_all(id='header_ul_data2'):
-			sub_header_html = sub_header_txt
-			tag.string.replace_with(sub_header_html)
+			for tag in soup.find_all(id='header_ul_data2'):
+				sub_header_html = sub_header_txt
+				tag.string.replace_with(sub_header_html)
 
-		if 'PROBIO' in project_name or 'CLINPROST' in project_name:
-			for images in soup.find_all(id='probio_logo_img'):
-				img_path = html_root_path +'/static/img/logo/probio_logo.png'
-			images['src'] = images['src'].replace("#", img_path)
-		else:
-			for images in soup.find_all(id='ki_logo_img'):
-				img_path = html_root_path +'/static/img/logo/KS_SE.svg'
-			images['src'] = images['src'].replace("#", img_path)
-
-		for images in soup.find_all(id='logo_img'):
 			if 'PROBIO' in project_name or 'CLINPROST' in project_name:
-				img_path = html_root_path +'/static/img/logo/probio_logo.png'
+				for images in soup.find_all(id='probio_logo_img'):
+					img_path = html_root_path +'/static/img/logo/probio_logo.png'
+				images['src'] = images['src'].replace("#", img_path)
 			else:
-				img_path = html_root_path +'/static/img/logo/KS_logo.svg'
-			images['src'] = images['src'].replace("#", img_path)
+				for images in soup.find_all(id='ki_logo_img'):
+					img_path = html_root_path +'/static/img/logo/KS_SE.svg'
+				images['src'] = images['src'].replace("#", img_path)
 
-		for tag in soup.find_all(id='patient_info_table_data'):
-			tag.string.replace_with(patient_info_html)
+			for images in soup.find_all(id='logo_img'):
+				if 'PROBIO' in project_name or 'CLINPROST' in project_name:
+					img_path = html_root_path +'/static/img/logo/probio_logo.png'
+				else:
+					img_path = html_root_path +'/static/img/logo/KS_logo.svg'
+				images['src'] = images['src'].replace("#", img_path)
 
-		for tag in soup.find_all(id='specimen_assay_table_data'):
-			tag.string.replace_with(specimen_html)
+			for tag in soup.find_all(id='patient_info_table_data'):
+				tag.string.replace_with(patient_info_html)
 
-		for tag in soup.find_all(id='genome_wide_table_data'):
-			tag.string.replace_with(genome_wide_html)
+			for tag in soup.find_all(id='specimen_assay_table_data'):
+				tag.string.replace_with(specimen_html)
 
-		for tag in soup.find_all(id='somatic_table_data'):
-			tag.string.replace_with(small_variant_html)
+			for tag in soup.find_all(id='genome_wide_table_data'):
+				tag.string.replace_with(genome_wide_html)
 
-		for tag in soup.find_all(id='svs_table_data'):
-			tag.string.replace_with(svs_html)
+			for tag in soup.find_all(id='somatic_table_data'):
+				tag.string.replace_with(small_variant_html)
 
-		for tag in soup.find_all(id='cnv_table_data'):
-			tag.string.replace_with(cnv_html)
+			for tag in soup.find_all(id='svs_table_data'):
+				tag.string.replace_with(svs_html)
 
-		for tag in soup.find_all(id='tech_val_table_header'):
-			tag.string.replace_with(tech_header_html)
+			for tag in soup.find_all(id='cnv_table_data'):
+				tag.string.replace_with(cnv_html)
 
-		for tag in soup.find_all(id='tech_val_table_data'):
-			tag.string.replace_with(tech_valid_html)
+			for tag in soup.find_all(id='tech_val_table_header'):
+				tag.string.replace_with(tech_header_html)
 
-		for tag in soup.find_all(id='summary_notes_data'):
-			tag.string.replace_with(summary_txt)
+			for tag in soup.find_all(id='tech_val_table_data'):
+				tag.string.replace_with(tech_valid_html)
 
-		new_text = soup.prettify(formatter=None)
+			for tag in soup.find_all(id='summary_notes_data'):
+				tag.string.replace_with(summary_txt)
+
+			new_text = soup.prettify(formatter=None)
+		
+		return True, new_text
+	except Exception as e:
+		return False, str(e)
 
 
-	return new_text
 	
 def generate_pdf(project_path, project_name, sample_id, capture_id):
 	logging.info("--- PDF Started ---")
@@ -759,7 +762,11 @@ def generate_pdf(project_path, project_name, sample_id, capture_id):
 	log_name = output_pdf_path+"/log_"+project_name+"_"+sample_id+"_"+cfdna+".log"
 
 	if(not os.path.exists(output_pdf_path)):
-		os.mkdir(output_pdf_path)
+		try:
+			os.makedirs(output_pdf_path, exist_ok=True)
+		except Exception as e:
+			err = str(e)
+			return err, ""
 	else:
 		for f in os.listdir(output_pdf_path):
 			os.remove(os.path.join(output_pdf_path, f))
@@ -787,15 +794,16 @@ def generate_pdf(project_path, project_name, sample_id, capture_id):
 
 	try:
 		
-		html_text = build_html(root_path, output_pdf_path, base_html_path, html_root_path, project_name, sample_id, capture_id, specimen, seq_date, report_date, epm_dnr_data_html)
+		html_status, html_text = build_html(root_path, output_pdf_path, base_html_path, html_root_path, project_name, sample_id, capture_id, specimen, seq_date, report_date, epm_dnr_data_html)
 
-		if html_text:
+		if html_status:
 		 	# Create a new html based on the base template
 			with open(base_html_file, "w", encoding = 'utf-8') as file:
 				file.write(str(html_text))
 			logging.info("---- PDF Generated ----")
 			return html_text, pdf_file_name
-		
+		else:
+			return html_text, pdf_file_name
 
 	except Exception as e:
 		logging.error("Failed : {}".format(str(e)))
