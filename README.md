@@ -43,7 +43,4 @@ python franken_api/migrate.py db upgrade
     export LEADERBOARD_DB_URL="postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PWD>@127.0.0.1:5432/<LEADERBOARD_DB>"
     export IPCM_DB_URL="postgresql+psycopg2://<POSTGRES_USER>:<POSTGRES_PWD>@127.0.0.1:5432/<IPCM_DB>"
 
-    export MTBP_SCRIPT_PATH="<MTBP_SCRIPT_PATH>"
-    export PDF_SCRIPT_PATH="<PDF_SCRIPT_PATH>"
-
 ```

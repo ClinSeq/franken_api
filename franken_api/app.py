@@ -18,8 +18,6 @@ def configure_app(flask_app):
     flask_app.config['RESTX_VALIDATE'] = settings.RESTX_VALIDATE
     flask_app.config['RESTX_MASK_SWAGGER'] = settings.RESTX_MASK_SWAGGER
     flask_app.config['BUNDLE_ERRORS'] = settings.BUNDLE_ERRORS
-    flask_app.config['MTBP_SCRIPT'] = settings.MTBP_SCRIPT_PATH
-    flask_app.config['PDF_SCRIPT'] = settings.PDF_SCRIPT_PATH
 
 def initialize_app(flask_app):
     configure_app(flask_app)

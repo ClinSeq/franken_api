@@ -13,7 +13,3 @@ BUNDLE_ERRORS = False
 SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']  #'mysql+pymysql://username@host/database_name'
 SQLALCHEMY_BINDS = { "curation": os.environ['CURATION_DB_URL'], "leaderboard" : os.environ['LEADERBOARD_DB_URL'] , "ipcmLeaderboard": os.environ['IPCM_DB_URL']}
 SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-# MTBP Python script path 
-MTBP_SCRIPT_PATH = os.environ['MTBP_SCRIPT_PATH']
-PDF_SCRIPT_PATH = os.environ['PDF_SCRIPT_PATH']

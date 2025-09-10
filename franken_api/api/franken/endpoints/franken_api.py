@@ -509,7 +509,7 @@ class GenerateJsonFile(Resource):
 		proj_name = args['project_name']
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
-			result, errorcode = generate_curated_json(nfs_path, proj_name,  args['sdid'], args['capture_id'], current_app.config["MTBP_SCRIPT"])
+			result, errorcode = generate_curated_json(nfs_path, proj_name,  args['sdid'], args['capture_id'])
 			return result, errorcode
 		else:
 			return nfs_path,response_code
@@ -541,10 +541,9 @@ class GeneratePdfFile(Resource):
 		proj_name = args['project_name']
 		sample_id = args['sdid']
 		capture_id = args['capture_id']
-		pdf_script_path = current_app.config["PDF_SCRIPT"]
 		nfs_path,response_code = fetch_nfs_path(proj_name)
 		if response_code == 200:
-			result, errorcode = generate_curated_pdf(nfs_path, proj_name, sample_id, capture_id, pdf_script_path)
+			result, errorcode = generate_curated_pdf(nfs_path, proj_name, sample_id, capture_id)
 			return result, errorcode
 		else:
 			return nfs_path,response_code

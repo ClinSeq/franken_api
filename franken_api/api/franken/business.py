@@ -1569,17 +1569,8 @@ def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 
 	return {'data':[], 'file_name': '', 'status': False}, 400
 
-def generate_curated_json(project_path, project_name, sample_id, capture_id, script_path):
+def generate_curated_json(project_path, project_name, sample_id, capture_id):
 
-	# python_cmd = "python3 {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
-
-	# try:
-	# 	proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
-	# 	return {'data': 'Json File Generated', 'status': True}, 200
-	# except subprocess.CalledProcessError as e:
-	# 	raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-	# 	return {'data':[], 'status': False}, 400
-	
 	try:
 		generate_json(project_path, project_name, sample_id, capture_id)
 
@@ -3492,25 +3483,6 @@ def get_curated_json_file(project_path, project_name, sample_id, capture_id):
 
 	return {'data':[], 'file_name': '', 'status': False}, 400
 
-def generate_curated_json(project_path, project_name, sample_id, capture_id, script_path):
-
-	# python_cmd = "python3 {}/MTBP_samplewise_json_format.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
-
-	# try:
-	# 	proc = subprocess.check_output(python_cmd,shell=True,stderr=subprocess.STDOUT)
-	# 	return {'data': 'Json File Generated', 'status': True}, 200
-	# except subprocess.CalledProcessError as e:
-	# 	raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-	# 	return {'data':[], 'status': False}, 400
-	
-	try:
-		generate_json(project_path, project_name, sample_id, capture_id)
-
-		return {'message': 'MTBP JSON File Generated', 'status': True}, 200
-	except subprocess.CalledProcessError as e:
-		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
-
-
 def build_ipcm_sample_details(cfdna_id, normal_id):
 	
 	## tissue cfdna
@@ -3638,13 +3610,8 @@ def fetch_patient_info(project_name, sample_id, capture_id):
 		raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
 		#return {'data':[], 'status': False}, 400
 
-def generate_curated_pdf(project_path, project_name, sample_id, capture_id, script_path):
+def generate_curated_pdf(project_path, project_name, sample_id, capture_id):
 	
-	# if project_name == 'WGS' or project_name == 'SARCOMA_PROSP':
-	# 	python_cmd = "python3 {}/build_base_html_wgs.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
-	# else:
-	# 	python_cmd = "python3 {}/build_base_html.py --path {} --project {} --sample {} --capture {}".format(script_path,project_path, project_name, sample_id, capture_id)
-
 	try:
 
 		css_path = os.path.join(current_app.root_path, 'templates/pdf/static/css', 'base.css')
