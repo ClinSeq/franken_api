@@ -1,18 +1,62 @@
+"""
+curation_db_api.py
+
+"""
+
 import logging
-from flask import current_app
-from flask import request, send_file, make_response, send_from_directory
+
 from flask_restx import Resource
-from franken_api.api.franken.parsers import curation_germline_arguments, curation_somatic_arguments, curation_svs_arguments, curation_psff_profile_arguments, curation_psff_profile_id_arguments, curation_probio_profile_id_arguments, curation_probio_profile_arguments, curation_genomic_profile_arguments, curation_genomic_profile_id_arguments, project_list_arguments, cancer_hotspot_arguments
+
+from franken_api.api.franken.business import (
+    curation_update_profile,
+    fetch_cancer_hotsport_info,
+    get_curation_cancer_hotspot,
+    get_curation_genomic_profile,
+    get_curation_hotspot,
+    get_curation_igv_germline,
+    get_curation_igv_somatic,
+    get_curation_probio_profile,
+    get_curation_psff_profile,
+    get_curation_svs,
+    get_curation_warmspot,
+    list_curation_genomic_profile,
+    list_curation_probio_profile,
+    list_curation_psff_profile,
+    post_curation,
+)
+from franken_api.api.franken.parsers import (
+    cancer_hotspot_arguments,
+    curation_genomic_profile_arguments,
+    curation_genomic_profile_id_arguments,
+    curation_germline_arguments,
+    curation_probio_profile_arguments,
+    curation_probio_profile_id_arguments,
+    curation_psff_profile_arguments,
+    curation_psff_profile_id_arguments,
+    curation_somatic_arguments,
+    curation_svs_arguments,
+    project_list_arguments,
+)
+from franken_api.api.franken.serializers import (
+    cancer_hotspot_data_list,
+    genomic_profile_data_list,
+    germline_data_list,
+    hotspot_data_list,
+    probio_profile_data_list,
+    psff_profile_data_list,
+    somatic_data_list,
+    svs_data_list,
+    warmspot_data_list,
+)
 from franken_api.api.restplus import api
-from franken_api.api.franken.business import  get_curation_igv_germline, get_curation_igv_somatic, get_curation_svs, post_curation, get_curation_hotspot, get_curation_warmspot, get_curation_psff_profile, curation_update_profile, list_curation_psff_profile, list_curation_probio_profile, get_curation_probio_profile, get_curation_cancer_hotspot, list_curation_genomic_profile, get_curation_genomic_profile, fetch_cancer_hotsport_info
-from franken_api.api.franken.serializers import curation_germline, germline_data_list, somatic_data_list, svs_data_list, hotspot_data_list, warmspot_data_list, psff_profile_data_list, probio_profile_data_list, cancer_hotspot_data_list, genomic_profile_data_list
 
 log = logging.getLogger(__name__)
-ns3 = api.namespace('curation', description='Curation Database API')
+ns3 = api.namespace("curation", description="Curation Database API")
 
-@ns3.route('/')
-@api.response(200, 'Check API status')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/")
+@api.response(200, "Check API status")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationStatus(Resource):
     def get(self):
         """
@@ -21,11 +65,12 @@ class CurationStatus(Resource):
 
         ```
         """
-        return 'Working', 200
+        return "Working", 200
 
-@ns3.route('/igv/cancer-hotspot')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/igv/cancer-hotspot")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationCAncerHotspotTable(Resource):
     @api.marshal_with(cancer_hotspot_data_list)
     def get(self):
@@ -42,19 +87,19 @@ class CurationCAncerHotspotTable(Resource):
     @api.marshal_with(cancer_hotspot_data_list)
     def post(self):
         """
-           Fetch the patient information
+        Fetch the patient information
         """
         args = cancer_hotspot_arguments.parse_args()
-        gene = args['gene']
-        HGVSp = args['HGVSp']
-        position = args['position']
+        gene = args["gene"]
+        HGVSp = args["HGVSp"]
+        position = args["position"]
         result, errorcode = fetch_cancer_hotsport_info(gene, HGVSp, position)
         return result, errorcode
 
 
-@ns3.route('/igv/hotspot')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+@ns3.route("/igv/hotspot")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationHotspotTable(Resource):
     @api.marshal_with(hotspot_data_list)
     def get(self):
@@ -67,9 +112,10 @@ class CurationHotspotTable(Resource):
         result, error = get_curation_hotspot()
         return result, error
 
-@ns3.route('/igv/warmspot')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/igv/warmspot")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationWarmspotTable(Resource):
     @api.marshal_with(warmspot_data_list)
     def get(self):
@@ -82,9 +128,10 @@ class CurationWarmspotTable(Resource):
         result, error = get_curation_warmspot()
         return result, error
 
-@ns3.route('/igv/germline')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/igv/germline")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationIgvGermline(Resource):
     @api.marshal_with(germline_data_list)
     @api.expect(project_list_arguments, validate=True)
@@ -109,12 +156,13 @@ class CurationIgvGermline(Resource):
         ```
         """
         args = curation_germline_arguments.parse_args()
-        result, errorcode = post_curation(dict(args), 'germline')
-        return result, 200 #result, errorcode
+        result, errorcode = post_curation(dict(args), "germline")
+        return result, 200  # result, errorcode
 
-@ns3.route('/igv/somatic')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/igv/somatic")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationIgvSomatic(Resource):
     @api.marshal_with(somatic_data_list)
     @api.expect(project_list_arguments, validate=True)
@@ -139,12 +187,13 @@ class CurationIgvSomatic(Resource):
         ```
         """
         args = curation_somatic_arguments.parse_args()
-        result, errorcode = post_curation(dict(args), 'somatic')
+        result, errorcode = post_curation(dict(args), "somatic")
         return result, errorcode
 
-@ns3.route('/igv/svs')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/igv/svs")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationSVS(Resource):
     @api.marshal_with(svs_data_list)
     @api.expect(project_list_arguments, validate=True)
@@ -169,13 +218,13 @@ class CurationSVS(Resource):
         ```
         """
         args = curation_svs_arguments.parse_args()
-        result, errorcode = post_curation(dict(args), 'svs')
+        result, errorcode = post_curation(dict(args), "svs")
         return result, errorcode
 
 
-@ns3.route('/psff_profile')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+@ns3.route("/psff_profile")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationPSFFProfile(Resource):
     @api.marshal_with(psff_profile_data_list)
     @api.expect(curation_psff_profile_id_arguments, validate=True)
@@ -190,9 +239,10 @@ class CurationPSFFProfile(Resource):
         result, error = get_curation_psff_profile(dict(args))
         return result, error
 
-@ns3.route('/probio_profile')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/probio_profile")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationPROBIOProfile(Resource):
     @api.marshal_with(probio_profile_data_list)
     @api.expect(curation_probio_profile_id_arguments, validate=True)
@@ -207,15 +257,16 @@ class CurationPROBIOProfile(Resource):
         result, error = get_curation_probio_profile(dict(args))
         return result, error
 
-@ns3.route('/genomic_profile')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/genomic_profile")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationGenomicProfile(Resource):
     @api.marshal_with(genomic_profile_data_list)
     @api.expect(curation_genomic_profile_id_arguments, validate=True)
     def post(self):
         """
-         Get the Genomic Profiling for all project 
+         Get the Genomic Profiling for all project
         ```
 
         ```
@@ -224,9 +275,10 @@ class CurationGenomicProfile(Resource):
         result, error = get_curation_genomic_profile(dict(args))
         return result, error
 
-@ns3.route('/list_profile/psff')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/list_profile/psff")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationPSFFProfile(Resource):
     @api.marshal_with(psff_profile_data_list)
     def get(self):
@@ -239,9 +291,10 @@ class CurationPSFFProfile(Resource):
         result, error = list_curation_psff_profile()
         return result, error
 
-@ns3.route('/list_profile/probio')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/list_profile/probio")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationPSFFProfile(Resource):
     @api.marshal_with(probio_profile_data_list)
     def get(self):
@@ -254,9 +307,10 @@ class CurationPSFFProfile(Resource):
         result, error = list_curation_probio_profile()
         return result, error
 
-@ns3.route('/list_profile/genomic')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/list_profile/genomic")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationListGenomicProfile(Resource):
     @api.marshal_with(genomic_profile_data_list)
     @api.expect(project_list_arguments, validate=True)
@@ -285,9 +339,10 @@ class CurationListGenomicProfile(Resource):
     #     result, errorcode = fetch_genomic_profile(project_ids)
     #     return result, errorcode
 
-@ns3.route('/update_psff_profile')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/update_psff_profile")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationUpdatePSFFProfile(Resource):
     @api.expect(curation_psff_profile_arguments, validate=True)
     def post(self):
@@ -298,12 +353,13 @@ class CurationUpdatePSFFProfile(Resource):
         ```
         """
         args = curation_psff_profile_arguments.parse_args()
-        result, errorcode = curation_update_profile(dict(args), 'psff_summary')
+        result, errorcode = curation_update_profile(dict(args), "psff_summary")
         return result, errorcode
 
-@ns3.route('/update_probio_profile')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+
+@ns3.route("/update_probio_profile")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationUpdatePSFFProfile(Resource):
     @api.expect(curation_probio_profile_arguments, validate=True)
     def post(self):
@@ -314,13 +370,13 @@ class CurationUpdatePSFFProfile(Resource):
         ```
         """
         args = curation_probio_profile_arguments.parse_args()
-        result, errorcode = curation_update_profile(dict(args), 'probio_summary')
+        result, errorcode = curation_update_profile(dict(args), "probio_summary")
         return result, errorcode
 
 
-@ns3.route('/update_genomic_profile')
-@api.response(200, 'Success')
-@api.response(400, '/nfs is not mount locally no data found')
+@ns3.route("/update_genomic_profile")
+@api.response(200, "Success")
+@api.response(400, "/nfs is not mount locally no data found")
 class CurationUpdateGenomicProfile(Resource):
     @api.expect(curation_genomic_profile_arguments, validate=True)
     def post(self):
@@ -331,5 +387,7 @@ class CurationUpdateGenomicProfile(Resource):
         ```
         """
         args = curation_genomic_profile_arguments.parse_args()
-        result, errorcode = curation_update_profile(dict(args), 'genomic_profile_summary')
+        result, errorcode = curation_update_profile(
+            dict(args), "genomic_profile_summary"
+        )
         return result, errorcode
