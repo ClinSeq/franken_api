@@ -723,16 +723,25 @@ def build_tech_val_QC(root_path, project_name, capture_id):
 
         if len(qc_filename) > 0:
             qc_df_data = pd.read_csv(qc_filename, delimiter="\t")
+            
 
+            if "MEAN_TARGET_COVERAGE" in qc_df_data.columns: 
+                coverage_col = "MEAN_TARGET_COVERAGE" 
+            elif "MEAN_COVERAGE" in qc_df_data.columns: 
+                coverage_col = "MEAN_COVERAGE" 
+            else: 
+                raise KeyError("Neither MEAN_TARGET_COVERAGE nor MEAN_COVERAGE found in DataFrame")
+
+            
             column_list = [
                 "SAMP",
-                "MEAN_TARGET_COVERAGE",
+                coverage_col,
                 "READ_PAIRS_EXAMINED",
                 "PERCENT_DUPLICATION",
             ]
             column_dict = {
                 "SAMP": "sample",
-                "MEAN_TARGET_COVERAGE": "coverage",
+                coverage_col: "coverage",
                 "READ_PAIRS_EXAMINED": "read_pair",
                 "PERCENT_DUPLICATION": "duplication",
             }
@@ -848,34 +857,34 @@ def build_html(
         specimen_assay = genomic_json[0]["specimen_assay"]
         specimen_html = build_specimen(specimen_assay)
         if specimen_html == "":
-            specimen_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
+            specimen_html = '<tr><td class="no-data" colspan="3">No specific variants reported</td></tr>'
 
         genome_wide = genomic_json[0]["genome_wide"]
         genome_wide_html, genome_wide_txt = build_genomic_feature(genome_wide)
         report_txt += genome_wide_txt
         if genome_wide_html == "":
-            genome_wide_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
+            genome_wide_html = '<tr><td class="no-data" colspan="3">No specific variants reported</td></tr>'
 
         small_variant_html, smt_variant_txt = build_small_variants(root_path)
         report_txt += smt_variant_txt
         if small_variant_html == "":
-            small_variant_html = '<tr><td class="no-data" colspan="10">No relevant variants detected</td></tr>'
+            small_variant_html = '<tr><td class="no-data" colspan="10">No specific variants reported</td></tr>'
 
         svs_html, svs_variant_txt = build_svs(root_path)
         report_txt += svs_variant_txt
         if svs_html == "":
-            svs_html = '<tr><td class="no-data" colspan="7">No relevant variants detected</td></tr>'
+            svs_html = '<tr><td class="no-data" colspan="7">No specific variants reported</td></tr>'
 
         cnv_html, cnv_variant_txt = build_cnv(root_path)
         report_txt += cnv_variant_txt
         if cnv_html == "":
-            cnv_html = '<tr><td class="no-data" colspan="5">No relevant variants detected</td></tr>'
+            cnv_html = '<tr><td class="no-data" colspan="5">No specific variants reported</td></tr>'
 
         tech_valid_html, tech_header_html = build_tech_val_QC(
             root_path, project_name, capture_id
         )
         if tech_valid_html == "":
-            tech_valid_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
+            tech_valid_html = '<tr><td class="no-data" colspan="3">No specific variants reported</td></tr>'
 
         build_clinical_txt(output_pdf_path, study_code, report_txt)
 
@@ -967,9 +976,12 @@ def generate_pdf(project_path, project_name, sample_id, capture_id):
     ## Check the sample is 'PN' and 'C4' design
     KN_value = capture_arr[6]
 
-    if project_name in ("WGS","SARCOMA_PROSP"):
+    if project_name in ("WGS","SARCOMA_PROSP", "PWGS"):
         base_html_path = os.path.join(html_root_path, "base_wgs.html")
+        specimen = "Fresh Frozen"
     else:
+        specimen = "CFDNA" if "CFDNA" in capture_arr else ("FFPE" if "T" in capture_arr else "")
+
         if "PN" in KN_value:
             base_html_path = os.path.join(html_root_path, "base_pn.html")
         else:
@@ -1029,19 +1041,12 @@ def generate_pdf(project_path, project_name, sample_id, capture_id):
 
     report_date = date.today().strftime("%Y-%m-%d")
 
-    if "PROBIO" in project_name:
-        epm_dnr_data_html = "2016/101-32"
-    else:
-        epm_dnr_data_html = "2021-00135"
+    # if "PROBIO" in project_name:
+    #     epm_dnr_data_html = "2016/101-32"
+    # else:
+    #     epm_dnr_data_html = "2021-00135"
 
-    if project_name in ("WGS","SARCOMA_PROSP"):
-        specimen = "Fresh Frozen"
-    else:
-        specimen = (
-            "CFDNA"
-            if "CFDNA" in capture_arr
-            else ("FFPE" if "T" in capture_arr else "")
-        )
+    epm_dnr_data_html = ''
 
     seq_date_str = re.findall(r"\d+", capture_arr[5])[0][:8]
     seq_date = datetime.strptime(seq_date_str, "%Y%m%d").date().strftime("%Y-%m-%d")

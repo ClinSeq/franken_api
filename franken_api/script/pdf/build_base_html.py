@@ -726,7 +726,7 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 	small_variant_html, small_variant_txt = build_small_variants(root_path)
 	report_txt += small_variant_txt
 	if(small_variant_html == ""):
-		small_variant_html = '<tr><td class="no-data" colspan="9">No relevant variants detected</td></tr>'
+		small_variant_html = '<tr><td class="no-data" colspan="9">No specific variants reported</td></tr>'
 	logging.info('--- Small Variant completed ---')
 
 	# # SVS
@@ -734,7 +734,7 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 	svs_html, svs_txt = build_svs(root_path)
 	report_txt += "\n"+svs_txt
 	if(svs_html == ""):
-		svs_html = '<tr><td class="no-data" colspan="7">No relevant variants detected</td></tr>'
+		svs_html = '<tr><td class="no-data" colspan="7">No specific variants reported</td></tr>'
 	logging.info('--- SVS completed ---')
 
 	# # CNVs
@@ -742,14 +742,14 @@ def build_html(root_path, html_root_path, file_name, project_name, cfdna, captur
 	cnv_html, cnv_txt = build_cnv(root_path)
 	report_txt += "\n"+cnv_txt
 	if(cnv_html == ""):
-		cnv_html = '<tr><td class="no-data" colspan="5">No relevant variants detected</td></tr>'
+		cnv_html = '<tr><td class="no-data" colspan="5">No specific variants reported</td></tr>'
 	logging.info('--- CNVs completed ---')
 
 	# ## Get Technical Validation for QC
 	logging.info('--- Technical Validation started ---')
 	tech_valid_html, tech_header_html = build_tech_val_QC(root_path, project_name, capture_id)
 	if(tech_valid_html == ""):
-		tech_valid_html = '<tr><td class="no-data" colspan="3">No relevant variants detected</td></tr>'
+		tech_valid_html = '<tr><td class="no-data" colspan="3">No specific variants reported</td></tr>'
 	logging.info('--- Technical Validation completed ---')
 
 	new_text = ""

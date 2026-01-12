@@ -467,14 +467,19 @@ def build_qc(root_path, ecrf_tissue_type, sample_type):
 
             if len(qc_filename) > 0:
                 qc_df_data = pd.read_csv(qc_filename, delimiter="\t")
+                print(qc_df_data.columns)
 
-                column_list = ["SAMP", "MEAN_TARGET_COVERAGE", "contamination_%"]
-                column_dict = {
-                    "SAMP": "sample",
-                    "MEAN_TARGET_COVERAGE": "coverage",
-                    "contamination_%": "contamination",
-                }
+                if "MEAN_TARGET_COVERAGE" in qc_df_data.columns: 
+                    coverage_col = "MEAN_TARGET_COVERAGE" 
+                elif "MEAN_COVERAGE" in qc_df_data.columns: 
+                 coverage_col = "MEAN_COVERAGE" 
+                else: 
+                    raise KeyError("Neither MEAN_TARGET_COVERAGE nor MEAN_COVERAGE found in DataFrame")
 
+                # Prepare columns and rename mapping
+                column_list = ['SAMP', coverage_col, 'contamination_%']
+                column_dict = {'SAMP': 'sample', coverage_col: 'coverage', 'contamination_%': 'contamination'}
+                
                 if "Overall_QC" in qc_df_data.columns:
                     column_list.append("Overall_QC")
                     column_dict["Overall_QC"] = "overall"

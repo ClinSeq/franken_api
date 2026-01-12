@@ -203,6 +203,7 @@ def get_sample_design_ids(project_path, sample_id):
                     or x.startswith("GMCK-")
                     or x.startswith("CEC-")
                     or x.startswith("CCR-")
+                    or x.startswith("PWGS-")
                 ),
                 os.listdir(capture_dir),
             )
